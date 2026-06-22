@@ -372,12 +372,16 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
     <div class="g3" style="margin-bottom:8px;">
       <button class="btn btn-primary" id="pause-btn" onclick="togglePause()">Pause</button>
       <button class="btn btn-amber" onclick="resetQClock()">Reset Q</button>
-      <button class="btn btn-red" onclick="endGame()">End game</button>
+      <button class="btn btn-red" onclick="reopenIdx!==null?endReopenSession():endGame()">End game</button>
     </div>
     <div class="g2">
       <button class="btn btn-green" id="home-to-btn" onclick="callTimeout('home')">Home T/O</button>
       <button class="btn btn-purple" onclick="callTimeout('opp')">Opp T/O</button>
     </div>
+  </div>
+  <div class="to-banner" id="reopen-banner" style="background:var(--red-bg);border-color:rgba(220,38,38,0.35);color:var(--red);display:none;">
+    REPLAY SESSION — <span id="reopen-game-label"></span>
+    <button onclick="endReopenSession()" style="margin-left:12px;padding:4px 12px;border-radius:6px;border:1px solid rgba(220,38,38,0.4);background:var(--red);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">End &amp; Save</button>
   </div>
   <div class="to-banner" id="to-banner">TIMEOUT — <span id="to-team"></span></div>
   <!-- Team switcher tabs -->
@@ -1239,6 +1243,84 @@ function getOppPlayerMins(pid,now){
   const cg=state.currentGame;if(!cg)return 0;let t=cg.oppMinutes[pid]||0;if(now&&cg.oppStints[pid])t+=(now-cg.oppStints[pid])/60000;return t;
 }
 
+// ── REOPEN GAME FOR OPP TRACKING ──────────────────────
+let reopenIdx=null;  // index into state.games of the reopened game
+
+function reopenGameForOpp(idx){
+  if(state.currentGame&&!state.currentGame.ended){
+    if(!confirm('A game is already in progress. End it and open this one for opp tracking?'))return;
+    pauseInternal();
+  }
+  const g=state.games[idx];if(!g)return;
+  reopenIdx=idx;
+
+  // Deep-clone the saved game and restore it as currentGame
+  const cg=JSON.parse(JSON.stringify(g));
+  cg.ended=false;
+  cg.running=false;
+  cg.timeout=false;
+
+  // Ensure opp structures exist
+  if(!cg.oppRoster)cg.oppRoster=[];
+  if(!cg.oppOnCourt)cg.oppOnCourt=[];
+  if(!cg.oppStints)cg.oppStints={};
+  if(!cg.oppMinutes)cg.oppMinutes={};
+  if(!cg.oppStats)cg.oppStats={};
+  cg.oppRoster.forEach(p=>{
+    if(!cg.oppMinutes[p.id])cg.oppMinutes[p.id]=g.oppSummary?g.oppSummary.minutes[p.id]||0:0;
+    if(!cg.oppStats[p.id])cg.oppStats[p.id]=g.oppSummary?{...g.oppSummary.stats[p.id]}||emptyOppPlayerStats():emptyOppPlayerStats();
+  });
+
+  // Restore home player minutes from summary so live display is correct
+  state.players.forEach(p=>{
+    cg.minutes[p.id]=g.summary?g.summary.minutes[p.id]||0:cg.minutes[p.id]||0;
+    if(!cg.stats[p.id])cg.stats[p.id]=emptyStats();
+    if(g.summary&&g.summary.stats&&g.summary.stats[p.id])cg.stats[p.id]={...g.summary.stats[p.id]};
+  });
+
+  // Restore score from summary
+  cg.onCourt=[];cg.stints={};
+
+  state.currentGame=cg;
+  actionLog=[];oppScoreLog=[];oppActionLog=[];selectedPid=null;selectedOppPid=null;currentGameTab='opp';
+  save();
+  showScreen('game',document.getElementById('tab-btn-game'));
+  setGameTab('opp');
+  // Show reopen banner
+  const rb=document.getElementById('reopen-banner');
+  if(rb){rb.style.display='block';const rl=document.getElementById('reopen-game-label');if(rl)rl.textContent=(g.round?'R'+g.round+' ':'')+'vs '+g.opponent;}
+  renderStatus();renderTimer();
+}
+
+function endReopenSession(){
+  const cg=state.currentGame;if(!cg||reopenIdx===null)return;
+  if(!confirm('Save this session and return to Season?'))return;
+  pauseInternal();
+  cg.ended=true;cg.running=false;cg.timeout=false;cg.onCourt=[];cg.oppOnCourt=[];
+
+  // Rebuild summaries
+  const pmf=calcLivePlusMinus();
+  const summary={minutes:{},stats:{},plusMinus:{}};
+  state.players.forEach(p=>{summary.minutes[p.id]=cg.minutes[p.id]||0;summary.stats[p.id]={...cg.stats[p.id]};summary.plusMinus[p.id]=pmf[p.id]||0;});
+  cg.summary=summary;
+  const oppSum={minutes:{},stats:{}};
+  if(cg.oppRoster)cg.oppRoster.forEach(p=>{oppSum.minutes[p.id]=cg.oppMinutes[p.id]||0;oppSum.stats[p.id]={...cg.oppStats[p.id]};});
+  cg.oppSummary=oppSum;
+
+  // Update the existing game record in place
+  state.games[reopenIdx]={...cg};
+  const saved=state.games[reopenIdx];
+
+  // Hide reopen banner
+  const rb=document.getElementById('reopen-banner');if(rb)rb.style.display='none';
+
+  state.currentGame=null;actionLog=[];oppScoreLog=[];oppActionLog=[];selectedPid=null;selectedOppPid=null;
+  pendingStarters=new Set();pendingOppRoster=[];currentGameTab='home';reopenIdx=null;
+  save();render();renderStarterGrid();
+  showScreen('season',document.getElementById('tab-btn-season'));
+  if(sbOk())syncGameToCloud(saved);
+}
+
 // ── GAME CONTROL ──────────────────────────────────────
 function startGame(){
   document.getElementById('warn-starters').style.display='none';
@@ -1504,6 +1586,7 @@ function renderSeason(){
             <div class="game-card-footer"><div class="margin-text">${mt}</div>
               <div style="display:flex;gap:6px;align-items:center;">
                 <span style="font-size:12px;color:var(--accent);">Stats & timeline →</span>
+                <span class="gli-edit" onclick="event.stopPropagation();reopenGameForOpp(${idx})" style="border:1px solid rgba(220,38,38,0.35);border-radius:5px;padding:3px 8px;color:var(--red);font-weight:600;">Track opp</span>
                 <span class="gli-edit" onclick="event.stopPropagation();openEditModal(${idx})" style="border:1px solid var(--border2);border-radius:5px;padding:3px 8px;">Edit</span>
               </div>
             </div>
