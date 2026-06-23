@@ -321,14 +321,17 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
     <div class="sec-label">Game details</div>
     <div class="field">
       <div class="field-label">Game type</div>
-      <div class="game-type-row">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
         <button class="game-type-btn active" id="gt-rep" onclick="setGameType('rep')"><div class="gt-title">Rep</div><div class="gt-sub">4 × 10 min</div></button>
         <button class="game-type-btn" id="gt-domestic" onclick="setGameType('domestic')"><div class="gt-title">Domestic</div><div class="gt-sub">2 × 20 min</div></button>
+        <button class="game-type-btn" id="gt-tournament" onclick="setGameType('tournament')"><div class="gt-title">Tournament</div><div class="gt-sub">custom</div></button>
       </div>
     </div>
     <div class="field" id="domestic-duration-field" style="display:none;">
       <div class="field-label">Period length (minutes)</div>
-      <input type="number" id="g-period-mins" value="20" min="5" max="40" oninput="document.getElementById('gt-domestic').querySelector('.gt-sub').textContent='2 × '+this.value+' min'"/>
+      <input type="number" id="g-period-mins" value="20" min="5" max="40" oninput="
+        const lbl=document.getElementById('gt-domestic').classList.contains('active')?'gt-domestic':'gt-tournament';
+        document.getElementById(lbl).querySelector('.gt-sub').textContent='2 × '+this.value+' min';"/>
     </div>
     <div class="two-col">
       <div class="field"><div class="field-label">Date</div><input type="date" id="g-date"/></div>
@@ -782,8 +785,8 @@ let scSelectedPlayer='all',scShotFilter='all',scSelectedPeriod='all';
 let currentGameType='rep',currentSeasonView='results',currentStatsView='total',currentMinsFilter='all';
 const Q_SECS_REP=600;
 
-const TL_ICONS={pts_1:'🎯',pts_2:'🏀',pts_3:'🔥',opp_pts:'⚡',sub_on:'⬆️',sub_off:'⬇️',timeout:'🟢',opp_timeout:'🔴',fga:'❌',ft_miss:'✕',ast:'👐',reb:'💪',stl:'✋',blk:'🚫',tov:'🔄',foul:'🟡',qend:'🔔',start:'🏁'};
-const TL_CLASS={pts_1:'pts',pts_2:'pts',pts_3:'pts',opp_pts:'opp',sub_on:'sub',sub_off:'sub',timeout:'timeout',opp_timeout:'timeout',fga:'stat',ft_miss:'stat',ast:'stat',reb:'stat',stl:'stat',blk:'stat',tov:'stat',foul:'foul',qend:'system',start:'system'};
+const TL_ICONS={pts_1:'🎯',pts_2:'🏀',pts_3:'🔥',opp_pts:'⚡',opp_pts_1:'🎯',opp_pts_2:'🏀',opp_pts_3:'🔥',sub_on:'⬆️',sub_off:'⬇️',opp_sub_on:'⬆️',opp_sub_off:'⬇️',timeout:'🟢',opp_timeout:'🔴',fga:'❌',fga3:'❌',ft_miss:'✕',opp_ft_miss:'✕',ast:'👐',opp_ast:'👐',reb:'💪',oreb:'💪',dreb:'💪',opp_oreb:'💪',opp_dreb:'💪',stl:'✋',opp_stl:'✋',blk:'🚫',opp_blk:'🚫',tov:'🔄',opp_tov:'🔄',foul:'🟡',opp_foul:'🟡',opp_fga:'❌',opp_fga3:'❌',qend:'🔔',start:'🏁'};
+const TL_CLASS={pts_1:'pts',pts_2:'pts',pts_3:'pts',opp_pts:'opp',opp_pts_1:'opp',opp_pts_2:'opp',opp_pts_3:'opp',sub_on:'sub',sub_off:'sub',opp_sub_on:'sub',opp_sub_off:'sub',timeout:'timeout',opp_timeout:'timeout',fga:'stat',fga3:'stat',ft_miss:'stat',opp_ft_miss:'stat',ast:'stat',opp_ast:'stat',reb:'stat',oreb:'stat',dreb:'stat',opp_oreb:'stat',opp_dreb:'stat',stl:'stat',opp_stl:'stat',blk:'stat',opp_blk:'stat',tov:'stat',opp_tov:'stat',foul:'foul',opp_foul:'foul',opp_fga:'stat',opp_fga3:'stat',qend:'system',start:'system'};
 
 // ── PERSIST ───────────────────────────────────────────
 function save(){try{localStorage.setItem(APP_KEY,JSON.stringify({...state,_starters:[...pendingStarters]}));}catch(e){}}
@@ -823,7 +826,19 @@ function showApp(){
   document.getElementById('g-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('g-time').value='18:00';
   renderStarterGrid();renderOppPreRoster();
-  if(state.currentGame){currentGameType=state.currentGame.gameType||'rep';showScreen('game',document.getElementById('tab-btn-game'));}
+  if(state.currentGame){
+    currentGameType=state.currentGame.gameType||'rep';
+    // Restore undo logs from persisted game state
+    if(!state.currentGame.actionLog)state.currentGame.actionLog=[];
+    if(!state.currentGame.oppScoreLog)state.currentGame.oppScoreLog=[];
+    if(!state.currentGame.oppActionLog)state.currentGame.oppActionLog=[];
+    if(!state.currentGame.oppStatLog)state.currentGame.oppStatLog=[];
+    actionLog=state.currentGame.actionLog;
+    oppScoreLog=state.currentGame.oppScoreLog;
+    oppActionLog=state.currentGame.oppActionLog;
+    oppStatLog=state.currentGame.oppStatLog;
+    showScreen('game',document.getElementById('tab-btn-game'));
+  }
   render();
   if(state.currentGame&&state.currentGame.running)startTimer();
   requestWakeLock();loadShotsFromGames();
@@ -873,16 +888,25 @@ function updateCloudSettings(){
 // ── GAME TYPE ─────────────────────────────────────────
 function setGameType(t){
   currentGameType=t;
-  document.getElementById('gt-rep').classList.toggle('active',t==='rep');
-  document.getElementById('gt-domestic').classList.toggle('active',t==='domestic');
-  document.getElementById('domestic-duration-field').style.display=t==='domestic'?'':'none';
+  ['rep','domestic','tournament'].forEach(n=>{
+    const b=document.getElementById('gt-'+n);
+    if(b)b.classList.toggle('active',t===n);
+  });
+  const showDur=t==='domestic'||t==='tournament';
+  document.getElementById('domestic-duration-field').style.display=showDur?'':'none';
+  if(t==='tournament'){
+    const sub=document.getElementById('gt-tournament').querySelector('.gt-sub');
+    const mins=parseInt(document.getElementById('g-period-mins')?.value)||20;
+    if(sub)sub.textContent='2 × '+mins+' min';
+  }
 }
-function getQSecs(){if(currentGameType==='domestic'){const m=parseInt(document.getElementById('g-period-mins')?.value)||20;return m*60;}return Q_SECS_REP;}
+function getQSecs(){if(currentGameType==='domestic'||currentGameType==='tournament'){const m=parseInt(document.getElementById('g-period-mins')?.value)||20;return m*60;}return Q_SECS_REP;}
 
 // ── PERIOD BAR ────────────────────────────────────────
 function renderPeriodBar(game){
   const bar=document.getElementById('period-bar');if(!bar)return;
-  const count=game?(game.gameType==='domestic'?2:4):4;const isDom=game?game.gameType==='domestic':false;
+  const isTwoHalf=game?(game.gameType==='domestic'||game.gameType==='tournament'):false;
+  const count=game?(isTwoHalf?2:4):4;const isDom=isTwoHalf;
   bar.innerHTML='';
   for(let i=1;i<=count;i++){
     const btn=document.createElement('button');btn.className='q-btn';btn.id='q'+i;btn.textContent=isDom?'H'+i:'Q'+i;btn.onclick=()=>setQuarter(i);
@@ -982,9 +1006,6 @@ function renderScores(){
   document.getElementById('score-home').textContent=cg?cg.scoreHome:0;
   document.getElementById('score-away').textContent=cg?cg.scoreAway:0;
   renderOppScores();
-  // Update opp score source label
-  const lbl=document.getElementById('opp-score-source');
-  if(lbl&&cg&&cg.oppRoster&&cg.oppRoster.length)lbl.textContent='auto from opp tab';
 }
 
 // ── PLUS/MINUS ────────────────────────────────────────
@@ -1067,27 +1088,53 @@ function renderTimeline(){
       const icon=TL_ICONS[ev.type]||'●',cls=TL_CLASS[ev.type]||'stat';
       let title='',sub='';const score=ev.scoreHome+'–'+ev.scoreAway;
       const isPts=['pts_1','pts_2','pts_3','pts'].includes(ev.type);
-      const sb=(isPts||ev.type==='opp_pts'||ev.type==='qend')?`<span class="tl-score-badge${ev.type==='opp_pts'?' opp':''}">${score}</span>`:'';
+      const isOppPts=['opp_pts','opp_pts_1','opp_pts_2','opp_pts_3'].includes(ev.type);
+      const sb=(isPts||isOppPts||ev.type==='qend')?`<span class="tl-score-badge${isOppPts?' opp':''}">${score}</span>`:'';
       switch(ev.type){
-        case 'pts_1':title=ev.data.player+' — Free throw (+1)';break;
+        // Home scoring
+        case 'pts_1':title=ev.data.player+' — Free throw made (+1)';break;
         case 'pts_2':title=ev.data.player+' — Field goal (+2)';break;
         case 'pts_3':title=ev.data.player+' — Three pointer (+3)';break;
-        case 'opp_pts':title=opp+' — +'+ev.data.pts+' pts';break;
-        case 'sub_on':title='Sub on: '+ev.data.player;break;
-        case 'sub_off':title='Sub off: '+ev.data.player;break;
-        case 'timeout':title='Timeout — '+(state.config.clubName||'Home');break;
-        case 'opp_timeout':title='Timeout — '+opp;break;
-        case 'fga':title=ev.data.player+' — Missed shot';break;
-        case 'ft_miss':title=ev.data.player+' — FT missed';break;
+        case 'fga':title=ev.data.player+' — 2pt missed';break;
+        case 'fga3':title=ev.data.player+' — 3pt missed';break;
+        case 'ft_miss':title=ev.data.player+' — Free throw missed';break;
+        // Home stats
         case 'ast':title=ev.data.player+' — Assist';break;
-        case 'reb':title=ev.data.player+' — Rebound';break;
+        case 'oreb':title=ev.data.player+' — Offensive rebound';break;
+        case 'dreb':title=ev.data.player+' — Defensive rebound';break;
         case 'stl':title=ev.data.player+' — Steal';break;
         case 'blk':title=ev.data.player+' — Block';break;
         case 'tov':title=ev.data.player+' — Turnover';break;
         case 'foul':title=ev.data.player+' — Personal foul';break;
+        // Home subs / flow
+        case 'sub_on':title='Sub on: '+ev.data.player;break;
+        case 'sub_off':title='Sub off: '+ev.data.player;break;
+        case 'timeout':title='Timeout — '+(state.config.clubName||'Home');break;
+        // Opp scoring
+        case 'opp_pts':title=opp+' — +'+ev.data.pts+' pts';break;
+        case 'opp_pts_1':title=opp+' '+ev.data.player+' — Free throw (+1)';break;
+        case 'opp_pts_2':title=opp+' '+ev.data.player+' — Field goal (+2)';break;
+        case 'opp_pts_3':title=opp+' '+ev.data.player+' — Three pointer (+3)';break;
+        case 'opp_fga':title=opp+' '+ev.data.player+' — 2pt missed';break;
+        case 'opp_fga3':title=opp+' '+ev.data.player+' — 3pt missed';break;
+        case 'opp_ft_miss':title=opp+' '+ev.data.player+' — Free throw missed';break;
+        // Opp stats
+        case 'opp_ast':title=opp+' '+ev.data.player+' — Assist';break;
+        case 'opp_oreb':title=opp+' '+ev.data.player+' — Offensive rebound';break;
+        case 'opp_dreb':title=opp+' '+ev.data.player+' — Defensive rebound';break;
+        case 'opp_stl':title=opp+' '+ev.data.player+' — Steal';break;
+        case 'opp_blk':title=opp+' '+ev.data.player+' — Block';break;
+        case 'opp_tov':title=opp+' '+ev.data.player+' — Turnover';break;
+        case 'opp_foul':title=opp+' '+ev.data.player+' — Personal foul';break;
+        // Opp subs / flow
+        case 'opp_sub_on':title=opp+' sub on: '+ev.data.player;break;
+        case 'opp_sub_off':title=opp+' sub off: '+ev.data.player;break;
+        case 'opp_timeout':title='Timeout — '+opp;break;
+        // System
+        case 'reb':title=ev.data.player+' — Rebound';break;  // legacy
         case 'qend':title='End of '+ql;sub='Score: '+score;break;
         case 'start':title=ev.data.label||'Game started';break;
-        default:title=ev.type;
+        default:title=ev.type.replace(/_/g,' ');
       }
       html+=`<div class="tl-event"><div class="tl-time">${ev.ts}</div><div class="tl-icon ${cls}">${icon}</div><div class="tl-body"><div class="tl-title">${title}${sb}</div>${sub?`<div class="tl-sub-text">${sub}</div>`:''}</div></div>`;
     });
@@ -1281,7 +1328,9 @@ function startGame(){
   const now=Date.now();starters.forEach(pid=>{state.currentGame.stints[pid]=now;});
   const snames=starters.map(pid=>{const p=state.players.find(p=>p.id===pid);return p?p.name:'?';}).join(', ');
   addEvent('start',{label:'Starting 5: '+snames});
-  actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];selectedPid=null;selectedOppPid=null;
+  state.currentGame.actionLog=[];state.currentGame.oppScoreLog=[];state.currentGame.oppActionLog=[];state.currentGame.oppStatLog=[];
+  actionLog=state.currentGame.actionLog;oppScoreLog=state.currentGame.oppScoreLog;oppActionLog=state.currentGame.oppActionLog;oppStatLog=state.currentGame.oppStatLog;
+  selectedPid=null;selectedOppPid=null;
   startTimer();save();showScreen('game',document.getElementById('tab-btn-game'));render();renderPeriodBar(state.currentGame);requestWakeLock();
 }
 function fmtDate(d){if(!d)return'';try{const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}catch(e){return d;}}
@@ -1814,8 +1863,8 @@ async function pullFromCloud(){
 }
 function exportCSV(){
   const games=state.games;if(!games.length){showToast('No games to export');return;}
-  const sorted=[...state.players].sort((a,b)=>a.id-b.id);const rows=[['Date','Round','Opposition','Venue','Game Type','Result','Home Score','Opp Score','Player','#','MIN','PTS','FTM','FTA','FT%','FGM','FGA','FG%','AST','REB','STL','BLK','TO','FL'].join(',')];
-  games.forEach(g=>{const diff=(g.scoreHome||0)-(g.scoreAway||0),r=diff>0?'W':diff<0?'L':'D';sorted.forEach(p=>{const m=g.summary?g.summary.minutes[p.id]||0:0,s=g.summary&&g.summary.stats?g.summary.stats[p.id]||emptyStats():emptyStats();const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'',ft=s.fta>0?Math.round((s.ftm||0)/s.fta*100)+'%':'';rows.push([g.date||'',g.round?'R'+g.round:'','"'+(g.opponent||'').replace(/"/g,'""')+'"','"'+(g.venue||'').replace(/"/g,'""')+'"',g.gameType==='domestic'?'Domestic':'Rep',r,g.scoreHome||0,g.scoreAway||0,'"'+p.name.replace(/"/g,'""')+'"',p.num,(Math.round(m*10)/10).toFixed(1),s.pts||0,s.ftm||0,s.fta||0,ft,s.fgm,s.fga,fg,s.ast,(s.oreb||0)+(s.dreb||0),s.stl,s.blk,s.tov,s.foul||0].join(','));});});
+  const sorted=[...state.players].sort((a,b)=>a.id-b.id);const rows=[['Date','Round','Opposition','Venue','Game Type','Result','Home Score','Opp Score','Player','#','MIN','PTS','FTM','FTA','FT%','FGM','FGA','FG%','3PM','3PA','3P%','AST','OREB','DREB','STL','BLK','TO','FL'].join(',')];
+  games.forEach(g=>{const diff=(g.scoreHome||0)-(g.scoreAway||0),r=diff>0?'W':diff<0?'L':'D';sorted.forEach(p=>{const m=g.summary?g.summary.minutes[p.id]||0:0,s=g.summary&&g.summary.stats?g.summary.stats[p.id]||emptyStats():emptyStats();const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'',ft=s.fta>0?Math.round((s.ftm||0)/s.fta*100)+'%':'';const fg3=s.fga3>0?Math.round((s.fgm3||0)/s.fga3*100)+'%':'';rows.push([g.date||'',g.round?'R'+g.round:'','"'+(g.opponent||'').replace(/"/g,'""')+'"','"'+(g.venue||'').replace(/"/g,'""')+'"',g.gameType==='tournament'?'Tournament':g.gameType==='domestic'?'Domestic':'Rep',r,g.scoreHome||0,g.scoreAway||0,'"'+p.name.replace(/"/g,'""')+'"',p.num,(Math.round(m*10)/10).toFixed(1),s.pts||0,s.ftm||0,s.fta||0,ft,s.fgm,s.fga,fg,s.fgm3||0,s.fga3||0,fg3,s.ast,s.oreb||0,s.dreb||0,s.stl,s.blk,s.tov,s.foul||0].join(','));});});
   const csv=rows.join('\n'),blob=new Blob([csv],{type:'text/csv'}),url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='courttrack_analytics_'+new Date().toISOString().split('T')[0]+'.csv';a.click();URL.revokeObjectURL(url);showToast('✓ CSV exported');
 }
 
@@ -1823,7 +1872,6 @@ function exportCSV(){
 function showScreen(name,el){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+name).classList.add('active');
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');
-  if(name==='pregame'){renderStarterGrid();renderOppPreRoster();}
   if(name==='pregame'){renderStarterGrid();renderOppPreRoster();}
   if(name==='game'){renderPeriodBar(state.currentGame);renderStatus();renderTimer();applyFilmedUI(state.currentGame?state.currentGame.filmed:isFilmed);setGameTab(currentGameTab);}
   if(name==='season')renderSeason();
@@ -1902,7 +1950,9 @@ function reopenGameForOpp(idx){
   state.players.forEach(function(p){cg.minutes[p.id]=g.summary?g.summary.minutes[p.id]||0:cg.minutes[p.id]||0;if(!cg.stats[p.id])cg.stats[p.id]=emptyStats();if(g.summary&&g.summary.stats&&g.summary.stats[p.id])cg.stats[p.id]=Object.assign({},g.summary.stats[p.id]);});
   cg.scoreAway=0;cg.onCourt=[];cg.stints={};
   state.currentGame=cg;isFilmed=true;
-  actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];selectedPid=null;selectedOppPid=null;currentGameTab='opp';
+  cg.actionLog=[];cg.oppScoreLog=[];cg.oppActionLog=[];cg.oppStatLog=[];
+  actionLog=cg.actionLog;oppScoreLog=cg.oppScoreLog;oppActionLog=cg.oppActionLog;oppStatLog=cg.oppStatLog;
+  selectedPid=null;selectedOppPid=null;currentGameTab='opp';
   save();showScreen('game',document.getElementById('tab-btn-game'));
   applyFilmedUI(true);setGameTab('opp');
   const rb=document.getElementById('reopen-banner');
