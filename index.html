@@ -378,7 +378,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
     </div>
     <div class="g3" style="margin-bottom:8px;">
       <button class="btn btn-primary" id="pause-btn" onclick="togglePause()">Pause</button>
-      <button class="btn btn-amber" onclick="resetQClock()">Reset Q</button>
+      <button class="btn btn-amber" onclick="resetQClock()">Set clock</button>
       <button class="btn btn-red" onclick="reopenIdx!==null?endReopenSession():endGame()">End game</button>
     </div>
     <div class="g2">
@@ -418,12 +418,13 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
             <button class="action-btn miss" onclick="logAction('fga')">FGA<div class="abl">2pt missed</div></button>
             <button class="action-btn pts3" onclick="logAction('3pt')">+3<div class="abl">3pt made</div></button>
             <button class="action-btn miss" onclick="logAction('fga3')">3PA<div class="abl">3pt missed</div></button>
+            <button class="action-btn" onclick="logAction('oreb')">OREB<div class="abl">Off rebound</div></button>
+            <button class="action-btn" onclick="logAction('dreb')">DREB<div class="abl">Def rebound</div></button>
             <button class="action-btn" onclick="logAction('ast')">AST<div class="abl">Assist</div></button>
-            <button class="action-btn" onclick="logAction('reb')">REB<div class="abl">Rebound</div></button>
             <button class="action-btn" onclick="logAction('stl')">STL<div class="abl">Steal</div></button>
             <button class="action-btn" onclick="logAction('blk')">BLK<div class="abl">Block</div></button>
             <button class="action-btn tov" onclick="logAction('tov')">TO<div class="abl">Turnover</div></button>
-            <button class="action-btn foul-btn" onclick="logAction('foul')">FOUL<div class="abl">Personal foul</div></button>
+            <button class="action-btn foul-btn" onclick="logAction('foul')" style="grid-column:1/-1;">FOUL<div class="abl">Personal foul</div></button>
             <button class="action-btn undo-btn" onclick="undoAction()" style="grid-column:1/-1;flex-direction:row;gap:6px;padding:13px 6px;font-size:14px;font-weight:700;">&#8629; Undo last</button>
           </div>
           <div class="last-action-bar" id="last-action" style="font-size:14px;font-weight:500;padding:10px 12px;min-height:40px;">&#8212;</div>
@@ -464,7 +465,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
       <div class="sec-label" style="padding:0 14px 6px;">All players <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">— tap ● to sub on/off</span></div>
       <div class="roster-wrap">
         <table class="rtbl">
-          <thead><tr><th>Player</th><th>MIN</th><th>+/−</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3PA</th><th>AST</th><th>REB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead>
+          <thead><tr><th>Player</th><th>MIN</th><th>+/−</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3PA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead>
           <tbody id="roster-body"></tbody>
         </table>
       </div>
@@ -499,13 +500,13 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
             <button class="action-btn miss" onclick="logOppAction('fga')">FGA<div class="abl">2pt missed</div></button>
             <button class="action-btn pts3" onclick="logOppAction('3pt')">+3<div class="abl">3pt made</div></button>
             <button class="action-btn miss" onclick="logOppAction('fga3')">3PA<div class="abl">3pt missed</div></button>
-            <button class="action-btn" onclick="logOppAction('ast')">AST<div class="abl">Assist</div></button>
             <button class="action-btn" onclick="logOppAction('oreb')">OREB<div class="abl">Off rebound</div></button>
             <button class="action-btn" onclick="logOppAction('dreb')">DREB<div class="abl">Def rebound</div></button>
+            <button class="action-btn" onclick="logOppAction('ast')">AST<div class="abl">Assist</div></button>
             <button class="action-btn" onclick="logOppAction('stl')">STL<div class="abl">Steal</div></button>
             <button class="action-btn" onclick="logOppAction('blk')">BLK<div class="abl">Block</div></button>
             <button class="action-btn tov" onclick="logOppAction('tov')">TO<div class="abl">Turnover</div></button>
-            <button class="action-btn foul-btn" onclick="logOppAction('foul')">FOUL<div class="abl">Personal foul</div></button>
+            <button class="action-btn foul-btn" onclick="logOppAction('foul')" style="grid-column:1/-1;">FOUL<div class="abl">Personal foul</div></button>
             <button class="action-btn undo-btn" onclick="undoOppAction()" style="grid-column:1/-1;flex-direction:row;gap:6px;padding:13px 6px;font-size:14px;font-weight:700;">&#8629; Undo last</button>
           </div>
           <div class="last-action-bar" id="opp-last-action" style="font-size:14px;font-weight:500;padding:10px 12px;min-height:40px;">&#8212;</div>
@@ -921,7 +922,7 @@ function addEvent(type,data){
 }
 
 // ── RENDER ────────────────────────────────────────────
-function emptyStats(){return{fgm:0,fga:0,fgm3:0,fga3:0,ftm:0,fta:0,ast:0,reb:0,stl:0,blk:0,tov:0,foul:0,pts:0};}
+function emptyStats(){return{fgm:0,fga:0,fgm3:0,fga3:0,ftm:0,fta:0,ast:0,oreb:0,dreb:0,stl:0,blk:0,tov:0,foul:0,pts:0};}
 function emptyOppStats(){return{pts:0,fgm:0,fga:0,ftm:0,fta:0,ast:0,oreb:0,dreb:0,stl:0,blk:0,tov:0,foul:0};}
 function render(){renderOnCourtSection();renderActionPanel();renderRosterTable();renderScores();renderStatus();renderTimer();renderPeriodBar(state.currentGame);}
 
@@ -1023,10 +1024,10 @@ function renderRosterTable(){
     if(pm===null){pd.textContent='—';pd.className='pm-zero';}else if(pm>0){pd.textContent='+'+pm;pd.className='pm-pos';}else if(pm<0){pd.textContent=pm;pd.className='pm-neg';}else{pd.textContent='0';pd.className='pm-zero';}
     tr.appendChild(pd);
     const fgp=s&&s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'—',ftp=s&&s.fta>0?Math.round(s.ftm/s.fta*100)+'%':'—';
-    const vals=s?[s.ftm||0,s.fta||0,ftp,s.fgm,s.fga,fgp,s.fgm3||0,s.fga3||0,s.ast,s.reb,s.stl,s.blk,s.tov,s.foul||0]:['—','—','—','—','—','—','—','—','—','—','—','—','—','—'];
+    const vals=s?[s.ftm||0,s.fta||0,ftp,s.fgm,s.fga,fgp,s.fgm3||0,s.fga3||0,s.ast,s.oreb||0,s.dreb||0,s.stl,s.blk,s.tov,s.foul||0]:['—','—','—','—','—','—','—','—','—','—','—','—','—','—','—'];
     vals.forEach((v,i)=>{const td=document.createElement('td');if(i===3)td.className='fgm-val';if(i===10)td.className='tov-val';if(i===11)td.style.color='var(--amber)';td.textContent=v;tr.appendChild(td);});
     tbody.appendChild(tr);
-    if(s){tMins+=mins;tFtm+=s.ftm||0;tFta+=s.fta||0;tFgm+=s.fgm;tFga+=s.fga;tAst+=s.ast;tReb+=s.reb;tStl+=s.stl;tBlk+=s.blk;tTov+=s.tov;tFoul+=s.foul||0;}
+    if(s){tMins+=mins;tFtm+=s.ftm||0;tFta+=s.fta||0;tFgm+=s.fgm;tFga+=s.fga;tAst+=s.ast;tReb+=(s.oreb||0)+(s.dreb||0);tStl+=s.stl;tBlk+=s.blk;tTov+=s.tov;tFoul+=s.foul||0;}
   });
   if(cg){
     const ttr=document.createElement('tr');ttr.style.cssText='border-top:2px solid var(--border2);background:var(--surface2);font-weight:600;';
@@ -1351,7 +1352,7 @@ function deselectPlayer(){selectedPid=null;renderOnCourtSection();renderActionPa
 function logAction(type){
   const cg=state.currentGame;if(!cg||cg.ended||selectedPid===null)return;
   const s=cg.stats[selectedPid],p=state.players.find(p=>p.id===selectedPid),pn=p?p.name:'?';
-  const lbls={ft_miss:'FT missed','1pt':'FT made','2pt':'2pt made','3pt':'3pt made','fga':'2pt missed','fga3':'3pt missed',ast:'Assist',reb:'Rebound',stl:'Steal',blk:'Block',tov:'Turnover',foul:'Foul'};
+  const lbls={ft_miss:'FT missed','1pt':'FT made','2pt':'2pt made','3pt':'3pt made','fga':'2pt missed','fga3':'3pt missed',ast:'Assist',oreb:'Off rebound',dreb:'Def rebound',stl:'Steal',blk:'Block',tov:'Turnover',foul:'Foul'};
   let pts=0;
   if(type==='1pt'){s.ftm++;s.fta++;s.pts+=1;pts=1;cg.scoreHome+=1;addEvent('pts_1',{player:pn,pts:1});}
   else if(type==='ft_miss'){s.fta++;addEvent('ft_miss',{player:pn});}
@@ -1360,7 +1361,8 @@ function logAction(type){
   else if(type==='fga3'){s.fga++;s.fga3=(s.fga3||0)+1;addEvent('fga3',{player:pn});}
   else if(type==='fga'){s.fga++;addEvent('fga',{player:pn});}
   else if(type==='ast'){s.ast++;addEvent('ast',{player:pn});}
-  else if(type==='reb'){s.reb++;addEvent('reb',{player:pn});}
+  else if(type==='oreb'){s.oreb++;addEvent('oreb',{player:pn});}
+  else if(type==='dreb'){s.dreb++;addEvent('dreb',{player:pn});}
   else if(type==='stl'){s.stl++;addEvent('stl',{player:pn});}
   else if(type==='blk'){s.blk++;addEvent('blk',{player:pn});}
   else if(type==='tov'){s.tov++;addEvent('tov',{player:pn});}
@@ -1577,7 +1579,7 @@ function renderSeasonStatsTable(totS,gpC,totPm){
     const s=totS[p.id],gp=gpC[p.id],pm=totPm[p.id];
     if(!gp)return`<tr style="opacity:0.45;"><td>${p.num} ${p.name}</td><td>0</td><td colspan="14" style="color:var(--muted);font-size:11px;">No games</td></tr>`;
     const pmC=pm>0?'var(--green)':pm<0?'var(--red)':'var(--muted)';
-    return`<tr><td>${p.num} ${p.name}</td><td style="color:var(--muted);">${gp}</td><td style="font-weight:600;">${fmt(s.pts||0,gp)}</td><td>${fmt(s.ftm||0,gp)}</td><td>${fmt(s.fta,gp)}</td><td style="color:var(--muted);">${fp(s.ftm||0,s.fta)}</td><td style="color:#2563eb;">${fmt(s.fgm,gp)}</td><td>${fmt(s.fga,gp)}</td><td style="color:var(--muted);">${fp(s.fgm,s.fga)}</td><td style="color:#7c3aed;">${fmt(s.fgm3||0,gp)}</td><td>${fmt(s.fga3||0,gp)}</td><td>${fmt(s.ast,gp)}</td><td>${fmt(s.reb,gp)}</td><td>${fmt(s.stl,gp)}</td><td>${fmt(s.blk,gp)}</td><td style="color:var(--red);">${fmt(s.tov,gp)}</td><td style="color:var(--amber);">${fmt(s.foul||0,gp)}</td><td style="color:${pmC};font-weight:600;">${pm>0?'+'+pm:pm}</td></tr>`;
+    return`<tr><td>${p.num} ${p.name}</td><td style="color:var(--muted);">${gp}</td><td style="font-weight:600;">${fmt(s.pts||0,gp)}</td><td>${fmt(s.ftm||0,gp)}</td><td>${fmt(s.fta,gp)}</td><td style="color:var(--muted);">${fp(s.ftm||0,s.fta)}</td><td style="color:#2563eb;">${fmt(s.fgm,gp)}</td><td>${fmt(s.fga,gp)}</td><td style="color:var(--muted);">${fp(s.fgm,s.fga)}</td><td style="color:#7c3aed;">${fmt(s.fgm3||0,gp)}</td><td>${fmt(s.fga3||0,gp)}</td><td>${fmt(s.ast,gp)}</td><td>${fmt((s.oreb||0)+(s.dreb||0),gp)}</td><td>${fmt(s.stl,gp)}</td><td>${fmt(s.blk,gp)}</td><td style="color:var(--red);">${fmt(s.tov,gp)}</td><td style="color:var(--amber);">${fmt(s.foul||0,gp)}</td><td style="color:${pmC};font-weight:600;">${pm>0?'+'+pm:pm}</td></tr>`;
   }).join('');
 }
 
@@ -1637,7 +1639,7 @@ function openGameDetail(idx){
     const pm=g.summary&&g.summary.plusMinus?g.summary.plusMinus[p.id]:null;
     const pms=pm===null||pm===undefined?'—':(pm>0?'+'+pm:String(pm)),pmc=pm>0?'var(--green)':pm<0?'var(--red)':'var(--muted)';
     const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'—',ft=s.fta>0?Math.round((s.ftm||0)/s.fta*100)+'%':'—';
-    html+=`<tr><td><span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">${p.num}</span> ${p.name}</td><td style="font-family:'DM Mono',monospace;font-size:11px;">${fmtMins(m)}</td><td style="font-weight:600;color:${pmc};">${pms}</td><td>${s.pts||0}</td><td>${s.ftm||0}</td><td>${s.fta||0}</td><td style="color:var(--muted);">${ft}</td><td>${s.fgm}</td><td>${s.fga}</td><td style="color:var(--muted);">${fg}</td><td>${s.ast}</td><td>${s.reb}</td><td>${s.stl}</td><td>${s.blk}</td><td style="color:var(--red);">${s.tov}</td><td style="color:var(--amber);">${s.foul||0}</td></tr>`;
+    html+=`<tr><td><span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">${p.num}</span> ${p.name}</td><td style="font-family:'DM Mono',monospace;font-size:11px;">${fmtMins(m)}</td><td style="font-weight:600;color:${pmc};">${pms}</td><td>${s.pts||0}</td><td>${s.ftm||0}</td><td>${s.fta||0}</td><td style="color:var(--muted);">${ft}</td><td>${s.fgm}</td><td>${s.fga}</td><td style="color:var(--muted);">${fg}</td><td>${s.ast}</td><td>${(s.oreb||0)+(s.dreb||0)}</td><td>${s.stl}</td><td>${s.blk}</td><td style="color:var(--red);">${s.tov}</td><td style="color:var(--amber);">${s.foul||0}</td></tr>`;
   });
   html+=`</tbody></table></div></div>`;
   if(g.timeline&&g.timeline.length){
@@ -1671,7 +1673,7 @@ function computePlusMinus(g){
   for(const ev of(g.timeline||[])){const sh=ev.scoreHome||0,sa=ev.scoreAway||0,pn=ev.data&&ev.data.player?ev.data.player:'';if(ev.type==='sub_on'){const p=state.players.find(p=>p.name===pn);if(p)onAt[p.id]={sh,sa};}else if(ev.type==='sub_off'){const p=state.players.find(p=>p.name===pn);if(p&&onAt[p.id]!==undefined){pm[p.id]+=(sh-onAt[p.id].sh)-(sa-onAt[p.id].sa);delete onAt[p.id];}}}
   const fsh=g.scoreHome||0,fsa=g.scoreAway||0;Object.keys(onAt).forEach(pid=>{const n=parseInt(pid);pm[n]=(pm[n]||0)+(fsh-onAt[n].sh)-(fsa-onAt[n].sa);});return pm;
 }
-function computeRating(s,mins,pm){if(mins<0.5)return null;const sc=40/mins;return((s.pts||0)*1.0+(s.stl||0)*1.5+(s.blk||0)*1.2+(s.reb||0)*0.8+(s.ast||0)*1.0-(s.tov||0)*1.5-(s.foul||0)*1.0)*sc+pm*0.15;}
+function computeRating(s,mins,pm){if(mins<0.5)return null;const sc=40/mins;const reb=(s.oreb||0)+(s.dreb||0);return((s.pts||0)*1.0+(s.stl||0)*1.5+(s.blk||0)*1.2+reb*0.8+(s.ast||0)*1.0-(s.tov||0)*1.5-(s.foul||0)*1.0)*sc+pm*0.15;}
 
 function openGameReport(idx){
   const g=state.games[idx];if(!g)return;
@@ -1691,8 +1693,8 @@ function openGameReport(idx){
   function rBg2(r){return r===null?'#fff':r>=6.5?'#f0faf5':r>=4.0?'#fffbf0':'#fff8f8';}
   const sbd=[...pd].sort((a,b)=>{if(a.rating===null&&b.rating===null)return 0;if(a.rating===null)return 1;if(b.rating===null)return-1;return b.rating-a.rating;});
   let sRows='';
-  sbd.forEach(p=>{const s=p.s,m=p.mins,pm=p.pm,r=p.rating,col=r!==null?rCol2(r):'#aaa';const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'—',ft=s.fta>0?Math.round((s.ftm||0)/s.fta*100)+'%':'—';sRows+=`<tr style="background:${rBg2(r)};"><td style="text-align:left;font-weight:500;padding:7px 8px;">${p.num} ${p.name}</td><td>${Math.floor(m)}:${String(Math.floor((m-Math.floor(m))*60)).padStart(2,'0')}</td><td>${pmB(pm)}</td><td style="font-weight:600;">${s.pts||0}</td><td>${s.ftm||0}/${s.fta||0}</td><td style="color:#666;">${ft}</td><td style="color:#2563eb;">${s.fgm}/${s.fga}</td><td style="color:#666;">${fg}</td><td>${s.ast}</td><td>${s.reb}</td><td>${s.stl}</td><td>${s.blk}</td><td style="color:#dc2626;">${s.tov}</td><td style="color:${s.foul>=4?'#a32d2d':'#d97706'};${s.foul>=4?'font-weight:700;':''}">${s.foul||0}</td><td>${rBar(r,col)}</td></tr>`;});
-  const tpts=pd.reduce((a,p)=>a+(p.s.pts||0),0),tfgm=pd.reduce((a,p)=>a+p.s.fgm,0),tfga=pd.reduce((a,p)=>a+p.s.fga,0),tftm=pd.reduce((a,p)=>a+(p.s.ftm||0),0),tfta=pd.reduce((a,p)=>a+p.s.fta,0),tast=pd.reduce((a,p)=>a+p.s.ast,0),treb=pd.reduce((a,p)=>a+p.s.reb,0),tstl=pd.reduce((a,p)=>a+p.s.stl,0),tblk=pd.reduce((a,p)=>a+p.s.blk,0),ttov=pd.reduce((a,p)=>a+p.s.tov,0),tfoul=pd.reduce((a,p)=>a+(p.s.foul||0),0);
+  sbd.forEach(p=>{const s=p.s,m=p.mins,pm=p.pm,r=p.rating,col=r!==null?rCol2(r):'#aaa';const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'—',ft=s.fta>0?Math.round((s.ftm||0)/s.fta*100)+'%':'—';sRows+=`<tr style="background:${rBg2(r)};"><td style="text-align:left;font-weight:500;padding:7px 8px;">${p.num} ${p.name}</td><td>${Math.floor(m)}:${String(Math.floor((m-Math.floor(m))*60)).padStart(2,'0')}</td><td>${pmB(pm)}</td><td style="font-weight:600;">${s.pts||0}</td><td>${s.ftm||0}/${s.fta||0}</td><td style="color:#666;">${ft}</td><td style="color:#2563eb;">${s.fgm}/${s.fga}</td><td style="color:#666;">${fg}</td><td>${s.ast}</td><td>${(s.oreb||0)+(s.dreb||0)}</td><td>${s.stl}</td><td>${s.blk}</td><td style="color:#dc2626;">${s.tov}</td><td style="color:${s.foul>=4?'#a32d2d':'#d97706'};${s.foul>=4?'font-weight:700;':''}">${s.foul||0}</td><td>${rBar(r,col)}</td></tr>`;});
+  const tpts=pd.reduce((a,p)=>a+(p.s.pts||0),0),tfgm=pd.reduce((a,p)=>a+p.s.fgm,0),tfga=pd.reduce((a,p)=>a+p.s.fga,0),tftm=pd.reduce((a,p)=>a+(p.s.ftm||0),0),tfta=pd.reduce((a,p)=>a+p.s.fta,0),tast=pd.reduce((a,p)=>a+p.s.ast,0),treb=pd.reduce((a,p)=>a+(p.s.oreb||0)+(p.s.dreb||0),0),tstl=pd.reduce((a,p)=>a+p.s.stl,0),tblk=pd.reduce((a,p)=>a+p.s.blk,0),ttov=pd.reduce((a,p)=>a+p.s.tov,0),tfoul=pd.reduce((a,p)=>a+(p.s.foul||0),0);
   sRows+=`<tr style="background:#f5f5f7;font-weight:700;border-top:2px solid #dde;"><td style="text-align:left;padding:7px 8px;">TEAM</td><td>—</td><td>—</td><td>${tpts}</td><td>${tftm}/${tfta}</td><td style="color:#666;">${tfta>0?Math.round(tftm/tfta*100)+'%':'—'}</td><td style="color:#2563eb;">${tfgm}/${tfga}</td><td style="color:#666;">${tfga>0?Math.round(tfgm/tfga*100)+'%':'—'}</td><td>${tast}</td><td>${treb}</td><td>${tstl}</td><td>${tblk}</td><td style="color:#dc2626;">${ttov}</td><td style="color:#d97706;">${tfoul}</td><td>—</td></tr>`;
   // Period scores
   let qHtml='';
@@ -1813,7 +1815,7 @@ async function pullFromCloud(){
 function exportCSV(){
   const games=state.games;if(!games.length){showToast('No games to export');return;}
   const sorted=[...state.players].sort((a,b)=>a.id-b.id);const rows=[['Date','Round','Opposition','Venue','Game Type','Result','Home Score','Opp Score','Player','#','MIN','PTS','FTM','FTA','FT%','FGM','FGA','FG%','AST','REB','STL','BLK','TO','FL'].join(',')];
-  games.forEach(g=>{const diff=(g.scoreHome||0)-(g.scoreAway||0),r=diff>0?'W':diff<0?'L':'D';sorted.forEach(p=>{const m=g.summary?g.summary.minutes[p.id]||0:0,s=g.summary&&g.summary.stats?g.summary.stats[p.id]||emptyStats():emptyStats();const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'',ft=s.fta>0?Math.round((s.ftm||0)/s.fta*100)+'%':'';rows.push([g.date||'',g.round?'R'+g.round:'','"'+(g.opponent||'').replace(/"/g,'""')+'"','"'+(g.venue||'').replace(/"/g,'""')+'"',g.gameType==='domestic'?'Domestic':'Rep',r,g.scoreHome||0,g.scoreAway||0,'"'+p.name.replace(/"/g,'""')+'"',p.num,(Math.round(m*10)/10).toFixed(1),s.pts||0,s.ftm||0,s.fta||0,ft,s.fgm,s.fga,fg,s.ast,s.reb,s.stl,s.blk,s.tov,s.foul||0].join(','));});});
+  games.forEach(g=>{const diff=(g.scoreHome||0)-(g.scoreAway||0),r=diff>0?'W':diff<0?'L':'D';sorted.forEach(p=>{const m=g.summary?g.summary.minutes[p.id]||0:0,s=g.summary&&g.summary.stats?g.summary.stats[p.id]||emptyStats():emptyStats();const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'',ft=s.fta>0?Math.round((s.ftm||0)/s.fta*100)+'%':'';rows.push([g.date||'',g.round?'R'+g.round:'','"'+(g.opponent||'').replace(/"/g,'""')+'"','"'+(g.venue||'').replace(/"/g,'""')+'"',g.gameType==='domestic'?'Domestic':'Rep',r,g.scoreHome||0,g.scoreAway||0,'"'+p.name.replace(/"/g,'""')+'"',p.num,(Math.round(m*10)/10).toFixed(1),s.pts||0,s.ftm||0,s.fta||0,ft,s.fgm,s.fga,fg,s.ast,(s.oreb||0)+(s.dreb||0),s.stl,s.blk,s.tov,s.foul||0].join(','));});});
   const csv=rows.join('\n'),blob=new Blob([csv],{type:'text/csv'}),url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='courttrack_analytics_'+new Date().toISOString().split('T')[0]+'.csv';a.click();URL.revokeObjectURL(url);showToast('✓ CSV exported');
 }
 
