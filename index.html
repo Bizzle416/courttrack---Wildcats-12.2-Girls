@@ -386,15 +386,12 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
       <button class="btn btn-purple" onclick="callTimeout('opp')">Opp T/O</button>
     </div>
   </div>
-  <div class="to-banner" id="reopen-banner" style="background:var(--red-bg);border-color:rgba(220,38,38,0.35);color:var(--red);display:none;">
-    REPLAY SESSION — <span id="reopen-game-label"></span>
-    <button onclick="endReopenSession()" style="margin-left:12px;padding:4px 12px;border-radius:6px;border:1px solid rgba(220,38,38,0.4);background:var(--red);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">End &amp; Save</button>
-  </div>
   <div class="to-banner" id="to-banner">TIMEOUT — <span id="to-team"></span></div>
-  <!-- Team switcher tabs — filmed games only -->
+  <div class="to-banner" id="reopen-banner" style="background:var(--red-bg);border-color:rgba(220,38,38,0.35);color:var(--red);display:none;">REPLAY SESSION - <span id="reopen-game-label"></span><button onclick="endReopenSession()" style="margin-left:12px;padding:4px 12px;border-radius:6px;border:1px solid rgba(220,38,38,0.4);background:var(--red);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;">End &amp; Save</button></div>
+  <!-- Team switcher tabs - filmed only -->
   <div id="game-tab-switcher" style="display:flex;gap:0;margin-bottom:10px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--border2);">
     <button id="game-tab-home" onclick="setGameTab('home')" style="flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;">🏠 Our Team</button>
-    <button id="game-tab-opp" onclick="setGameTab('opp')" style="flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:var(--surface2);color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;">🔴 Opposition</button>
+    <button id="game-tab-opp" onclick="setGameTab('opp')" style="flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:var(--surface2);color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;" id="game-tab-opp">🔴 Opposition</button>
   </div>
 
   <!-- HOME TEAM PANEL -->
@@ -417,19 +414,19 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
           <div class="action-grid-v">
             <button class="action-btn pts1" onclick="logAction('1pt')">+1<div class="abl">FT made</div></button>
             <button class="action-btn miss" onclick="logAction('ft_miss')">FT-X<div class="abl">FT missed</div></button>
-            <button class="action-btn pts2" onclick="logAction('2pt')">+2<div class="abl">Field goal</div></button>
-            <button class="action-btn pts3" onclick="logAction('3pt')">+3<div class="abl">3-pointer</div></button>
-            <button class="action-btn miss" onclick="logAction('fga3')">3PA<div class="abl">3pt missed</div></button>
+            <button class="action-btn pts2" onclick="logAction('2pt')">+2<div class="abl">2pt made</div></button>
             <button class="action-btn miss" onclick="logAction('fga')">FGA<div class="abl">2pt missed</div></button>
+            <button class="action-btn pts3" onclick="logAction('3pt')">+3<div class="abl">3pt made</div></button>
+            <button class="action-btn miss" onclick="logAction('fga3')">3PA<div class="abl">3pt missed</div></button>
             <button class="action-btn" onclick="logAction('ast')">AST<div class="abl">Assist</div></button>
             <button class="action-btn" onclick="logAction('reb')">REB<div class="abl">Rebound</div></button>
             <button class="action-btn" onclick="logAction('stl')">STL<div class="abl">Steal</div></button>
             <button class="action-btn" onclick="logAction('blk')">BLK<div class="abl">Block</div></button>
             <button class="action-btn tov" onclick="logAction('tov')">TO<div class="abl">Turnover</div></button>
             <button class="action-btn foul-btn" onclick="logAction('foul')">FOUL<div class="abl">Personal foul</div></button>
-            <button class="action-btn undo-btn" onclick="undoAction()" style="grid-column:1/-1;flex-direction:row;gap:4px;padding:9px 6px;font-size:12px;">↩ Undo last</button>
+            <button class="action-btn undo-btn" onclick="undoAction()" style="grid-column:1/-1;flex-direction:row;gap:6px;padding:13px 6px;font-size:14px;font-weight:700;">&#8629; Undo last</button>
           </div>
-          <div class="last-action-bar" id="last-action">—</div>
+          <div class="last-action-bar" id="last-action" style="font-size:14px;font-weight:500;padding:10px 12px;min-height:40px;">&#8212;</div>
         </div>
       </div>
     </div>
@@ -444,27 +441,25 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
       <div class="score-side">
         <div class="score-side-label" id="score-opp-label">Opponent</div>
         <div class="score-num away" id="score-away">0</div>
-        <!-- Unfilmed: manual score + rebounds -->
+        <div id="opp-filmed-note" style="display:none;font-size:11px;color:var(--muted);">auto from opp tab</div>
         <div id="opp-manual-controls">
           <div class="pts-row" style="margin-top:6px;">
             <button class="pts-btn away" onclick="addOppScore(1)">+1</button>
             <button class="pts-btn away" onclick="addOppScore(2)">+2</button>
             <button class="pts-btn away" onclick="addOppScore(3)">+3</button>
           </div>
-          <button class="btn btn-red" style="width:100%;margin-top:6px;padding:9px;" onclick="undoOppScore()">↩ Undo</button>
+          <button class="btn btn-red" style="width:100%;margin-top:6px;padding:9px;" onclick="undoOppScore()">&#8629; Undo</button>
           <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
             <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px;">Rebounds</div>
             <div class="pts-row" style="margin-bottom:6px;">
               <button class="pts-btn away" onclick="addOppStat('oreb')">OREB</button>
               <button class="pts-btn away" onclick="addOppStat('dreb')">DREB</button>
             </div>
-            <button class="btn" style="width:100%;padding:7px;font-size:12px;color:var(--muted);" onclick="undoOppStat()">↩ Undo reb</button>
+            <button class="btn" style="width:100%;padding:7px;font-size:12px;color:var(--muted);" onclick="undoOppStat()">&#8629; Undo reb</button>
           </div>
         </div>
-        <!-- Filmed: just shows score, entry via opp tab -->
-        <div id="opp-filmed-note" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;">auto from opp tab →</div>
       </div>
-    </div>
+    </div><!-- /scores-row -->
     <div class="card" style="padding:10px 0;">
       <div class="sec-label" style="padding:0 14px 6px;">All players <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">— tap ● to sub on/off</span></div>
       <div class="roster-wrap">
@@ -500,10 +495,10 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
           <div class="action-grid-v">
             <button class="action-btn pts1" onclick="logOppAction('1pt')">+1<div class="abl">FT made</div></button>
             <button class="action-btn miss" onclick="logOppAction('ft_miss')">FT-X<div class="abl">FT missed</div></button>
-            <button class="action-btn pts2" onclick="logOppAction('2pt')">+2<div class="abl">Field goal</div></button>
-            <button class="action-btn pts3" onclick="logOppAction('3pt')">+3<div class="abl">3-pointer</div></button>
-            <button class="action-btn miss" onclick="logOppAction('fga3')">3PA<div class="abl">3pt missed</div></button>
+            <button class="action-btn pts2" onclick="logOppAction('2pt')">+2<div class="abl">2pt made</div></button>
             <button class="action-btn miss" onclick="logOppAction('fga')">FGA<div class="abl">2pt missed</div></button>
+            <button class="action-btn pts3" onclick="logOppAction('3pt')">+3<div class="abl">3pt made</div></button>
+            <button class="action-btn miss" onclick="logOppAction('fga3')">3PA<div class="abl">3pt missed</div></button>
             <button class="action-btn" onclick="logOppAction('ast')">AST<div class="abl">Assist</div></button>
             <button class="action-btn" onclick="logOppAction('oreb')">OREB<div class="abl">Off rebound</div></button>
             <button class="action-btn" onclick="logOppAction('dreb')">DREB<div class="abl">Def rebound</div></button>
@@ -511,9 +506,9 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
             <button class="action-btn" onclick="logOppAction('blk')">BLK<div class="abl">Block</div></button>
             <button class="action-btn tov" onclick="logOppAction('tov')">TO<div class="abl">Turnover</div></button>
             <button class="action-btn foul-btn" onclick="logOppAction('foul')">FOUL<div class="abl">Personal foul</div></button>
-            <button class="action-btn undo-btn" onclick="undoOppAction()" style="grid-column:1/-1;flex-direction:row;gap:4px;padding:9px 6px;font-size:12px;">↩ Undo last</button>
+            <button class="action-btn undo-btn" onclick="undoOppAction()" style="grid-column:1/-1;flex-direction:row;gap:6px;padding:13px 6px;font-size:14px;font-weight:700;">&#8629; Undo last</button>
           </div>
-          <div class="last-action-bar" id="opp-last-action">—</div>
+          <div class="last-action-bar" id="opp-last-action" style="font-size:14px;font-weight:500;padding:10px 12px;min-height:40px;">&#8212;</div>
         </div>
       </div>
     </div>
@@ -564,31 +559,35 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
     <div style="width:1px;height:20px;background:var(--border2);"></div>
     <div style="font-size:12px;color:var(--muted);" id="wl-diff">—</div>
   </div>
-  <div style="display:flex;gap:6px;margin-bottom:10px;">
+  <div style="display:flex;gap:6px;margin-bottom:8px;">
     <button class="btn" id="sv-results-btn" onclick="setSeasonView('results')" style="flex:1;">Results</button>
     <button class="btn" id="sv-stats-btn" onclick="setSeasonView('stats')" style="flex:1;">Player Stats</button>
     <button class="btn" id="sv-mins-btn" onclick="setSeasonView('mins')" style="flex:1;">Minutes</button>
   </div>
+  <div style="display:flex;gap:4px;margin-bottom:10px;">
+    <button class="btn sv-btn-active" id="cat-all" onclick="setCategory('all')" style="flex:1;font-size:12px;">All</button>
+    <button class="btn" id="cat-vjbl" onclick="setCategory('vjbl')" style="flex:1;font-size:12px;">VJBL</button>
+    <button class="btn" id="cat-domestic" onclick="setCategory('domestic')" style="flex:1;font-size:12px;">Domestic</button>
+    <button class="btn" id="cat-tournament" onclick="setCategory('tournament')" style="flex:1;font-size:12px;">Tournament</button>
+  </div>
   <div id="sv-results"><div id="season-results-list"><div style="font-size:13px;color:var(--muted);padding:16px 0;">No games yet</div></div></div>
   <div id="sv-stats" style="display:none;">
     <div class="card">
-      <div class="sec-label">Season stats</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;"><span id="game-count">0</span> games played</div>
-      <div style="display:flex;gap:6px;margin-bottom:8px;">
-        <button class="btn sv-btn-active" id="stats-view-total" onclick="setStatsView('total')" style="font-size:11px;padding:5px 10px;">Totals</button>
-        <button class="btn" id="stats-view-avg" onclick="setStatsView('avg')" style="font-size:11px;padding:5px 10px;">Per game avg</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="sec-label" style="margin-bottom:0;">Stats - <span id="stats-category-label">All games</span></div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn sv-btn-active" id="stats-view-total" onclick="setStatsView('total')" style="font-size:11px;padding:5px 10px;">Totals</button>
+          <button class="btn" id="stats-view-avg" onclick="setStatsView('avg')" style="font-size:11px;padding:5px 10px;">Per game avg</button>
+        </div>
       </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;"><span id="game-count">0</span> games - <span id="stats-wl-label"></span></div>
       <div class="tbl-wrap">
-        <table class="stbl"><thead><tr><th style="min-width:100px;">Player</th><th>GP</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>AST</th><th>REB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th><th>+/−</th></tr></thead><tbody id="season-stats-body"></tbody></table>
+        <table class="stbl"><thead><tr><th style="min-width:100px;">Player</th><th>GP</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3PA</th><th>AST</th><th>REB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th><th>+/−</th></tr></thead><tbody id="season-stats-body"></tbody></table>
       </div>
     </div>
   </div>
   <div id="sv-mins" style="display:none;">
-    <div style="display:flex;gap:6px;margin-bottom:10px;">
-      <button class="btn sv-btn-active" id="mins-filter-all" onclick="setMinsFilter('all')" style="flex:1;font-size:12px;">All games</button>
-      <button class="btn" id="mins-filter-rep" onclick="setMinsFilter('rep')" style="flex:1;font-size:12px;">Rep (4×10)</button>
-      <button class="btn" id="mins-filter-domestic" onclick="setMinsFilter('domestic')" style="flex:1;font-size:12px;">Domestic</button>
-    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;" id="mins-category-label">All games</div>
     <div id="mins-sections"></div>
   </div>
   <div id="game-detail-panel" style="display:none;">
@@ -655,21 +654,13 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
   </div>
   <div class="card" style="background:var(--accent-bg);border-color:rgba(59,130,246,0.25);">
     <div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:4px;">📋 Import from Shot Logger</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Copy shot data from <strong>shots.html</strong> and paste into the matching slot below. Home and opposition shots are stored separately.</div>
-    <div style="margin-bottom:10px;">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Attach to game:</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Paste shot data from <strong>shots.html</strong>, select the matching game, then tap Import.</div>
+    <div style="margin-bottom:8px;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Attach shots to game:</div>
       <select id="import-game-sel" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;outline:none;-webkit-appearance:none;"><option value="">— Select game —</option></select>
     </div>
-    <div style="border:1px solid rgba(59,130,246,0.2);border-radius:var(--rs);padding:10px;margin-bottom:8px;background:var(--surface);">
-      <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🏠 Home shots</div>
-      <textarea id="paste-shots-home" placeholder="Paste home team shot data here..." style="width:100%;height:70px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px;resize:none;outline:none;"></textarea>
-      <button class="btn btn-primary" style="margin-top:6px;width:100%;" onclick="importShotsFromPaste('home')">⬆ Import home shots</button>
-    </div>
-    <div style="border:1px solid rgba(220,38,38,0.2);border-radius:var(--rs);padding:10px;background:var(--surface);">
-      <div style="font-size:11px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🔴 Opposition shots</div>
-      <textarea id="paste-shots-opp" placeholder="Paste opposition shot data here..." style="width:100%;height:70px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px;resize:none;outline:none;"></textarea>
-      <button class="btn btn-red" style="margin-top:6px;width:100%;background:var(--red-bg);padding:10px;" onclick="importShotsFromPaste('opp')">⬆ Import opposition shots</button>
-    </div>
+    <textarea id="paste-shots-json" placeholder="Paste shot data here..." style="width:100%;height:80px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px;resize:none;outline:none;"></textarea>
+    <button class="btn btn-primary" style="margin-top:8px;" onclick="importShotsFromPaste()">⬆ Import shots</button>
   </div>
 </div>
 
@@ -1096,48 +1087,10 @@ function renderTimeline(){
   content.innerHTML=html;
 }
 
-function applyFilmedUI(filmed){
-  const switcher=document.getElementById('game-tab-switcher');
-  const oppPanel=document.getElementById('game-panel-opp');
-  const manualControls=document.getElementById('opp-manual-controls');
-  const filmedNote=document.getElementById('opp-filmed-note');
-  if(filmed){
-    if(switcher)switcher.style.display='flex';
-    if(manualControls)manualControls.style.display='none';
-    if(filmedNote)filmedNote.style.display='block';
-  } else {
-    if(switcher)switcher.style.display='none';
-    if(oppPanel)oppPanel.style.display='none';
-    if(document.getElementById('game-panel-home'))document.getElementById('game-panel-home').style.display='block';
-    if(manualControls)manualControls.style.display='block';
-    if(filmedNote)filmedNote.style.display='none';
-  }
-}
-let isFilmed=false;
-
-function setFilmed(val){
-  isFilmed=val;
-  document.getElementById('filmed-yes').classList.toggle('active',val);
-  document.getElementById('filmed-no').classList.toggle('active',!val);
-  const rc=document.getElementById('opp-roster-card');if(rc)rc.style.display=val?'block':'none';
-}
-
-// Simple opp stat tracking for unfilmed games (aggregate only)
-let oppStatLog=[];
-function addOppStat(stat){
-  const cg=state.currentGame;if(!cg||cg.ended)return;
-  if(!cg.oppAggregate)cg.oppAggregate={oreb:0,dreb:0};
-  cg.oppAggregate[stat]=(cg.oppAggregate[stat]||0)+1;
-  oppStatLog.push({stat});save();
-}
-function undoOppStat(){
-  const cg=state.currentGame;if(!cg||!oppStatLog.length)return;
-  const last=oppStatLog.pop();
-  if(cg.oppAggregate&&(cg.oppAggregate[last.stat]||0)>0)cg.oppAggregate[last.stat]--;
-  save();
-}
+// ── OPPOSITION TRACKER ────────────────────────────────
 let pendingOppRoster=[];   // built in pregame
 let selectedOppPid=null;
+let oppActionLog=[];
 let currentGameTab='home';
 
 function emptyOppPlayerStats(){return{pts:0,fgm:0,fga:0,fgm3:0,fga3:0,ftm:0,fta:0,ast:0,oreb:0,dreb:0,stl:0,blk:0,tov:0,foul:0};}
@@ -1178,7 +1131,7 @@ function renderOppOnCourtSection(){
   const cg=state.currentGame;
   const onCount=cg?cg.oppOnCourt.length:0;
   const countEl=document.getElementById('opp-on-count');if(countEl)countEl.textContent=onCount+'/5';
-  const w5o=document.getElementById('warn5-opp');if(w5o)w5o.style.display=(onCount>=5&&cg&&!cg.ended)?'block':'none';
+  document.getElementById('warn5-opp').style.display=(onCount>=5&&cg&&!cg.ended)?'block':'none';
   const list=document.getElementById('opp-oncourt-list');if(!list)return;
   if(!cg||!cg.oppRoster||cg.oppOnCourt.length===0){list.innerHTML='<span class="oncourt-empty">No players on court</span>';renderOppBench();return;}
   list.innerHTML='';
@@ -1247,7 +1200,7 @@ function renderOppScores(){
 function toggleOppPlayer(pid){
   const cg=state.currentGame;if(!cg||cg.ended)return;
   const idx=cg.oppOnCourt.indexOf(pid),isOn=idx!==-1;
-  if(!isOn&&cg.oppOnCourt.length>=5){const w=document.getElementById('warn5-opp');if(w)w.style.display='block';return;}
+  if(!isOn&&cg.oppOnCourt.length>=5){document.getElementById('warn5-opp').style.display='block';return;}
   const now=Date.now(),p=cg.oppRoster.find(p=>p.id===pid);
   if(isOn){
     cg.oppOnCourt.splice(idx,1);
@@ -1268,14 +1221,14 @@ function deselectOppPlayer(){selectedOppPid=null;renderOppOnCourtSection();rende
 function logOppAction(type){
   const cg=state.currentGame;if(!cg||cg.ended||selectedOppPid===null)return;
   const s=cg.oppStats[selectedOppPid];const p=cg.oppRoster.find(p=>p.id===selectedOppPid);const pn=p?p.name:'?';
-  const lbls={ft_miss:'FT missed','1pt':'FT made','2pt':'FG (+2)','3pt':'3pt made','fga':'2pt missed','fga3':'3pt missed',ast:'Assist',oreb:'Off rebound',dreb:'Def rebound',stl:'Steal',blk:'Block',tov:'Turnover',foul:'Foul'};
+  const lbls={ft_miss:'FT missed','1pt':'FT made','2pt':'2pt made','3pt':'3pt made','fga':'2pt missed','fga3':'3pt missed',ast:'Assist',oreb:'Off rebound',dreb:'Def rebound',stl:'Steal',blk:'Block',tov:'Turnover',foul:'Foul'};
   let pts=0;
   if(type==='1pt'){s.ftm++;s.fta++;s.pts+=1;pts=1;cg.scoreAway+=1;addEvent('opp_pts_1',{player:pn,pts:1});}
   else if(type==='ft_miss'){s.fta++;addEvent('opp_ft_miss',{player:pn});}
   else if(type==='2pt'){s.fgm++;s.fga++;s.pts+=2;pts=2;cg.scoreAway+=2;addEvent('opp_pts_2',{player:pn,pts:2});}
   else if(type==='3pt'){s.fgm++;s.fga++;s.fgm3=(s.fgm3||0)+1;s.fga3=(s.fga3||0)+1;s.pts+=3;pts=3;cg.scoreAway+=3;addEvent('opp_pts_3',{player:pn,pts:3});}
-  else if(type==='fga'){s.fga++;addEvent('opp_fga',{player:pn});}
   else if(type==='fga3'){s.fga++;s.fga3=(s.fga3||0)+1;addEvent('opp_fga3',{player:pn});}
+  else if(type==='fga'){s.fga++;addEvent('opp_fga',{player:pn});}
   else if(type==='ast'){s.ast++;addEvent('opp_ast',{player:pn});}
   else if(type==='oreb'){s.oreb++;addEvent('opp_oreb',{player:pn});}
   else if(type==='dreb'){s.dreb++;addEvent('opp_dreb',{player:pn});}
@@ -1296,7 +1249,7 @@ function undoOppAction(){
   else if(last.type==='3pt'){if(s.fgm>0)s.fgm--;if(s.fga>0)s.fga--;if((s.fgm3||0)>0)s.fgm3--;if((s.fga3||0)>0)s.fga3--;s.pts=Math.max(0,s.pts-last.pts);cg.scoreAway=Math.max(0,cg.scoreAway-last.pts);}
   else if(last.type==='ft_miss'){if(s.fta>0)s.fta--;}
   else if(last.type==='fga'){if(s.fga>0)s.fga--;}
-  else if(last.type==='fga3'){if(s.fga>0)s.fga--;if(s.fga3>0)s.fga3--;}
+  else if(last.type==='fga3'){if(s.fga>0)s.fga--;if((s.fga3||0)>0)s.fga3--;}
   else{if(s[last.type]!==undefined&&s[last.type]>0)s[last.type]--;}
   if(cg.timeline&&last.tlId!=null){const pos=cg.timeline.findIndex(e=>e.id===last.tlId);if(pos!==-1)cg.timeline.splice(pos,1);}
   const el=document.getElementById('opp-last-action');if(el)el.textContent='Undone.';
@@ -1304,87 +1257,6 @@ function undoOppAction(){
 }
 function getOppPlayerMins(pid,now){
   const cg=state.currentGame;if(!cg)return 0;let t=cg.oppMinutes[pid]||0;if(now&&cg.oppStints[pid])t+=(now-cg.oppStints[pid])/60000;return t;
-}
-
-// ── REOPEN GAME FOR OPP TRACKING ──────────────────────
-let reopenIdx=null;  // index into state.games of the reopened game
-
-function reopenGameForOpp(idx){
-  if(state.currentGame&&!state.currentGame.ended){
-    if(!confirm('A game is already in progress. End it and open this one for opp tracking?'))return;
-    pauseInternal();
-  }
-  const g=state.games[idx];if(!g)return;
-  reopenIdx=idx;
-
-  // Deep-clone the saved game and restore it as currentGame
-  const cg=JSON.parse(JSON.stringify(g));
-  cg.ended=false;
-  cg.running=false;
-  cg.timeout=false;
-
-  // Ensure opp structures exist
-  if(!cg.oppRoster)cg.oppRoster=[];
-  if(!cg.oppOnCourt)cg.oppOnCourt=[];
-  if(!cg.oppStints)cg.oppStints={};
-  if(!cg.oppMinutes)cg.oppMinutes={};
-  if(!cg.oppStats)cg.oppStats={};
-  cg.oppRoster.forEach(p=>{
-    cg.oppMinutes[p.id]=0;
-    cg.oppStats[p.id]=emptyOppPlayerStats();
-  });
-
-  // Restore home player minutes from summary so live display is correct
-  state.players.forEach(p=>{
-    cg.minutes[p.id]=g.summary?g.summary.minutes[p.id]||0:cg.minutes[p.id]||0;
-    if(!cg.stats[p.id])cg.stats[p.id]=emptyStats();
-    if(g.summary&&g.summary.stats&&g.summary.stats[p.id])cg.stats[p.id]={...g.summary.stats[p.id]};
-  });
-
-  // Reset opp score to 0 — will be rebuilt from opp player actions during replay
-  cg.scoreAway=0;
-  cg.oppOnCourt=[];cg.stints={};
-
-  state.currentGame=cg;
-  isFilmed=true;  // reopen is always filmed
-  actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];selectedPid=null;selectedOppPid=null;currentGameTab='opp';
-  save();
-  showScreen('game',document.getElementById('tab-btn-game'));
-  applyFilmedUI(true);
-  setGameTab('opp');
-  // Show reopen banner
-  const rb=document.getElementById('reopen-banner');
-  if(rb){rb.style.display='block';const rl=document.getElementById('reopen-game-label');if(rl)rl.textContent=(g.round?'R'+g.round+' ':'')+'vs '+g.opponent;}
-  renderStatus();renderTimer();
-}
-
-function endReopenSession(){
-  const cg=state.currentGame;if(!cg||reopenIdx===null)return;
-  if(!confirm('Save this session and return to Season?'))return;
-  pauseInternal();
-  cg.ended=true;cg.running=false;cg.timeout=false;cg.onCourt=[];cg.oppOnCourt=[];
-
-  // Rebuild summaries
-  const pmf=calcLivePlusMinus();
-  const summary={minutes:{},stats:{},plusMinus:{}};
-  state.players.forEach(p=>{summary.minutes[p.id]=cg.minutes[p.id]||0;summary.stats[p.id]={...cg.stats[p.id]};summary.plusMinus[p.id]=pmf[p.id]||0;});
-  cg.summary=summary;
-  const oppSum={minutes:{},stats:{}};
-  if(cg.oppRoster)cg.oppRoster.forEach(p=>{oppSum.minutes[p.id]=cg.oppMinutes[p.id]||0;oppSum.stats[p.id]={...cg.oppStats[p.id]};});
-  cg.oppSummary=oppSum;
-
-  // Update the existing game record in place
-  state.games[reopenIdx]={...cg};
-  const saved=state.games[reopenIdx];
-
-  // Hide reopen banner
-  const rb=document.getElementById('reopen-banner');if(rb)rb.style.display='none';
-
-  state.currentGame=null;actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];selectedPid=null;selectedOppPid=null;
-  pendingStarters=new Set();pendingOppRoster=[];currentGameTab='home';reopenIdx=null;isFilmed=false;
-  save();render();renderStarterGrid();
-  showScreen('season',document.getElementById('tab-btn-season'));
-  if(sbOk())syncGameToCloud(saved);
 }
 
 // ── GAME CONTROL ──────────────────────────────────────
@@ -1401,7 +1273,7 @@ function startGame(){
   const now=Date.now();starters.forEach(pid=>{state.currentGame.stints[pid]=now;});
   const snames=starters.map(pid=>{const p=state.players.find(p=>p.id===pid);return p?p.name:'?';}).join(', ');
   addEvent('start',{label:'Starting 5: '+snames});
-  actionLog=[];oppScoreLog=[];oppActionLog=[];selectedPid=null;selectedOppPid=null;
+  actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];selectedPid=null;selectedOppPid=null;
   startTimer();save();showScreen('game',document.getElementById('tab-btn-game'));render();renderPeriodBar(state.currentGame);requestWakeLock();
 }
 function fmtDate(d){if(!d)return'';try{const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}catch(e){return d;}}
@@ -1426,7 +1298,7 @@ function pauseInternal(){
 function togglePause(){
   const cg=state.currentGame;if(!cg||cg.ended)return;
   if(cg.running){pauseInternal();cg.timeout=false;save();render();}
-  else{cg.running=true;cg.timeout=false;const now=Date.now();cg.lastTick=now;cg.onCourt.forEach(pid=>{cg.stints[pid]=now;});if(cg.oppOnCourt)cg.oppOnCourt.forEach(pid=>{cg.oppStints[pid]=now;});startTimer();save();render();requestWakeLock();}
+  else{cg.running=true;cg.timeout=false;const now=Date.now();cg.lastTick=now;cg.onCourt.forEach(pid=>{cg.stints[pid]=now;});if(cg.oppOnCourt)cg.oppOnCourt.forEach(pid=>{cg.oppStints[pid]=now;});if(cg.oppOnCourt)cg.oppOnCourt.forEach(pid=>{cg.oppStints[pid]=now;});startTimer();save();render();requestWakeLock();}
 }
 function callTimeout(team){
   const cg=state.currentGame;if(!cg||cg.ended)return;if(cg.running)pauseInternal();
@@ -1440,7 +1312,7 @@ function setQuarter(q){
 }
 function endGame(){
   const cg=state.currentGame;if(!cg)return;if(!confirm('End game and save to season?'))return;
-  pauseInternal();cg.ended=true;cg.running=false;cg.timeout=false;cg.onCourt=[];cg.oppOnCourt=[];
+  pauseInternal();cg.ended=true;cg.running=false;cg.timeout=false;cg.onCourt=[];if(cg.oppOnCourt)cg.oppOnCourt=[];
   const pc=cg.gameType==='domestic'?2:4;cg.totalGameMins=(cg.periodSecs||600)/60*pc;
   const pmf=calcLivePlusMinus();
   const summary={minutes:{},stats:{},plusMinus:{}};
@@ -1452,7 +1324,7 @@ function endGame(){
   cg.oppSummary=oppSum;
   const saved={...cg};state.games.push(saved);state.games.sort((a,b)=>parseDateStr(b.date)-parseDateStr(a.date));
   state.currentGame=null;actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];selectedPid=null;selectedOppPid=null;pendingStarters=new Set();pendingOppRoster=[];currentGameTab='home';isFilmed=false;
-  save();render();renderStarterGrid();showScreen('season',document.getElementById('tab-btn-season'));
+  save();render();renderStarterGrid();renderOppPreRoster();showScreen('season',document.getElementById('tab-btn-season'));
   if(sbOk())syncGameToCloud(saved);
 }
 function parseDateStr(d){if(!d)return 0;try{const p=d.split('/');return new Date(p[2]+'-'+p[1]+'-'+p[0]).getTime();}catch(e){return 0;}}
@@ -1472,14 +1344,14 @@ function deselectPlayer(){selectedPid=null;renderOnCourtSection();renderActionPa
 function logAction(type){
   const cg=state.currentGame;if(!cg||cg.ended||selectedPid===null)return;
   const s=cg.stats[selectedPid],p=state.players.find(p=>p.id===selectedPid),pn=p?p.name:'?';
-  const lbls={ft_miss:'FT missed','1pt':'FT made','2pt':'FG (+2)','3pt':'3pt made','fga':'2pt missed','fga3':'3pt missed',ast:'Assist',reb:'Rebound',stl:'Steal',blk:'Block',tov:'Turnover',foul:'Foul'};
+  const lbls={ft_miss:'FT missed','1pt':'FT made','2pt':'2pt made','3pt':'3pt made','fga':'2pt missed','fga3':'3pt missed',ast:'Assist',reb:'Rebound',stl:'Steal',blk:'Block',tov:'Turnover',foul:'Foul'};
   let pts=0;
   if(type==='1pt'){s.ftm++;s.fta++;s.pts+=1;pts=1;cg.scoreHome+=1;addEvent('pts_1',{player:pn,pts:1});}
   else if(type==='ft_miss'){s.fta++;addEvent('ft_miss',{player:pn});}
   else if(type==='2pt'){s.fgm++;s.fga++;s.pts+=2;pts=2;cg.scoreHome+=2;addEvent('pts_2',{player:pn,pts:2});}
   else if(type==='3pt'){s.fgm++;s.fga++;s.fgm3=(s.fgm3||0)+1;s.fga3=(s.fga3||0)+1;s.pts+=3;pts=3;cg.scoreHome+=3;addEvent('pts_3',{player:pn,pts:3});}
-  else if(type==='fga'){s.fga++;addEvent('fga',{player:pn});}
   else if(type==='fga3'){s.fga++;s.fga3=(s.fga3||0)+1;addEvent('fga3',{player:pn});}
+  else if(type==='fga'){s.fga++;addEvent('fga',{player:pn});}
   else if(type==='ast'){s.ast++;addEvent('ast',{player:pn});}
   else if(type==='reb'){s.reb++;addEvent('reb',{player:pn});}
   else if(type==='stl'){s.stl++;addEvent('stl',{player:pn});}
@@ -1499,7 +1371,7 @@ function undoAction(){
   else if(last.type==='3pt'){if(s.fgm>0)s.fgm--;if(s.fga>0)s.fga--;if((s.fgm3||0)>0)s.fgm3--;if((s.fga3||0)>0)s.fga3--;s.pts=Math.max(0,s.pts-last.pts);cg.scoreHome=Math.max(0,cg.scoreHome-last.pts);}
   else if(last.type==='ft_miss'){if(s.fta>0)s.fta--;}
   else if(last.type==='fga'){if(s.fga>0)s.fga--;}
-  else if(last.type==='fga3'){if(s.fga>0)s.fga--;if(s.fga3>0)s.fga3--;}
+  else if(last.type==='fga3'){if(s.fga>0)s.fga--;if((s.fga3||0)>0)s.fga3--;}
   else{if(s[last.type]!==undefined&&s[last.type]>0)s[last.type]--;}
   if(cg.timeline&&last.tlId!=null){const pos=cg.timeline.findIndex(e=>e.id===last.tlId);if(pos!==-1)cg.timeline.splice(pos,1);}
   document.getElementById('last-action').textContent='Undone.';save();renderRosterTable();renderScores();
@@ -1552,26 +1424,23 @@ function populateImportGameSel(){
 }
 function getShotsForGame(gid){if(shotCache[gid]&&shotCache[gid].length)return shotCache[gid];if(gid==='all')return[];const g=state.games.find(g=>String(g.id)===gid);return(g&&g.shots)||[];}
 function loadShotsFromGames(){state.games.forEach(g=>{if(g.shots&&g.shots.length){const gid=String(g.id);if(!shotCache[gid])shotCache[gid]=[];g.shots.forEach(s=>{if(!shotCache[gid].find(x=>x.id===s.id))shotCache[gid].push(s);})}});}
-function importShotsFromPaste(teamSlot){
-  const taId=teamSlot==='opp'?'paste-shots-opp':'paste-shots-home';
-  const ta=document.getElementById(taId);if(!ta||!ta.value.trim()){showToast('Nothing to import');return;}
+function importShotsFromPaste(){
+  const ta=document.getElementById('paste-shots-json');if(!ta||!ta.value.trim()){showToast('Nothing to import');return;}
   const sel=document.getElementById('import-game-sel'),tgid=sel?sel.value:'';
   if(!tgid){showToast('⚠ Select a game first');return;}
   try{
     const data=JSON.parse(ta.value.trim()),shots=Array.isArray(data)?data:(data.shots||[]);
-    const detectedTeam=data.team||teamSlot||'home';  // use tag from export if present
     if(!shots.length){showToast('⚠ No shots found');return;}
-    // Tag each shot with team
-    const taggedShots=shots.map(s=>({...s,game_id:tgid,shotTeam:detectedTeam}));
     let imp=0;
-    taggedShots.forEach(shot=>{
+    shots.forEach(s=>{
+      const shot={...s,game_id:tgid};
       if(!shotCache[tgid])shotCache[tgid]=[];
       if(!shotCache[tgid].find(x=>x.id===shot.id)){shotCache[tgid].push(shot);imp++;}
       const g=state.games.find(g=>String(g.id)===tgid);
       if(g){if(!g.shots)g.shots=[];if(!g.shots.find(x=>x.id===shot.id))g.shots.push(shot);}
       if(state.currentGame&&String(state.currentGame.id)===tgid){if(!state.currentGame.shots)state.currentGame.shots=[];if(!state.currentGame.shots.find(x=>x.id===shot.id))state.currentGame.shots.push(shot);}
     });
-    save();ta.value='';showToast('✓ '+imp+' '+(detectedTeam==='opp'?'opp':'home')+' shots imported');populateScGameSel();
+    save();ta.value='';showToast('✓ '+imp+' shots imported');populateScGameSel();
     const scSel=document.getElementById('sc-game-sel');if(scSel){scSel.value=tgid;renderShotChart();}
   }catch(e){showToast('⚠ Invalid JSON');}
 }
@@ -1619,54 +1488,76 @@ function scSelectPlayer(pid){scSelectedPlayer=pid;renderShotChart();}
 
 // ── SEASON ────────────────────────────────────────────
 function renderSeason(){
-  const games=state.games;const gc=document.getElementById('game-count');if(gc)gc.textContent=games.length;
-  const rb=document.getElementById('season-record-bar');
-  if(rb){
-    if(games.length>0){
-      rb.style.display='flex';let w=0,l=0,d=0,pf=0,pa=0;
-      games.forEach(g=>{const diff=(g.scoreHome||0)-(g.scoreAway||0);pf+=(g.scoreHome||0);pa+=(g.scoreAway||0);if(diff>0)w++;else if(diff<0)l++;else d++;});
-      document.getElementById('wl-record').textContent=d>0?`${w}W – ${l}L – ${d}D`:`${w}W – ${l}L`;
-      document.getElementById('wl-scored').textContent=`${pf} pts for · ${pa} against`;
+  const allGames=state.games;
+  const games=filterByCategory(allGames,currentCategory);
+  const catLabels={all:'All games',vjbl:'VJBL',domestic:'Domestic',tournament:'Tournament'};
+  const catLabel=catLabels[currentCategory]||'All games';
+  const rb2=document.getElementById('season-record-bar');
+  if(rb2){
+    if(allGames.length>0){
+      rb2.style.display='flex';let w=0,l=0,d=0,pf=0,pa=0;
+      games.forEach(function(g){const diff=(g.scoreHome||0)-(g.scoreAway||0);pf+=(g.scoreHome||0);pa+=(g.scoreAway||0);if(diff>0)w++;else if(diff<0)l++;else d++;});
+      const rec=d>0?(w+'W - '+l+'L - '+d+'D'):(w+'W - '+l+'L');
+      document.getElementById('wl-record').textContent=rec+(currentCategory!=='all'?' ('+catLabel+')':'');
+      document.getElementById('wl-scored').textContent=pf+' pts for - '+pa+' against';
       const dv=pf-pa,dc=dv>0?'var(--green)':dv<0?'var(--red)':'var(--muted)';
-      document.getElementById('wl-diff').innerHTML=`Net <strong style="color:${dc};">${(dv>=0?'+':'')+dv}</strong>`;
-    } else rb.style.display='none';
+      document.getElementById('wl-diff').innerHTML='Net <strong style="color:'+dc+';">'+(dv>=0?'+':'')+dv+'</strong>';
+    } else rb2.style.display='none';
   }
   const rl=document.getElementById('season-results-list');
   if(rl){
-    if(!games.length){rl.innerHTML='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No games yet</div>';}
+    if(!games.length){rl.innerHTML='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No '+catLabel.toLowerCase()+' games yet</div>';}
     else{
       const homeAbbr=(state.config.clubName||'HOME').substring(0,3).toUpperCase();
       const homeTeam=(state.config.clubName||'Home')+' '+(state.config.teamName||'');
-      rl.innerHTML=games.map((g,idx)=>{
+      rl.innerHTML=games.map(function(g){
+        const idx=allGames.indexOf(g);
         const diff=(g.scoreHome||0)-(g.scoreAway||0),ew=diff>0,ow=diff<0;
         const mt=diff===0?'Draw':((ew?(state.config.clubName||'Home'):(g.opponent||'Opp'))+' won by '+Math.abs(diff)+' pt'+(Math.abs(diff)===1?'':'s'));
-        const rl2=g.round?'Round '+g.round:'Game',mt2=g.gameType==='domestic'?' · Domestic':' · Rep';
-        return`<div class="round-block"><div class="round-header"><div class="round-header-title">${rl2}</div><div class="round-header-date">${g.date}${g.time?' · '+g.time:''}${mt2}</div></div>
-          <div class="game-card" onclick="openGameDetail(${idx})">
-            <div class="game-card-teams"><div class="game-card-names">
-              <div class="team-row"><div class="team-badge opp">${(g.opponent||'OPP').substring(0,3).toUpperCase()}</div><span class="team-name opp">${g.opponent||'Opponent'}</span></div>
-              <div class="team-row"><div class="team-badge">${homeAbbr}</div><span class="team-name">${homeTeam.trim()}</span></div>
-            </div><div class="game-card-scores">
-              <div class="team-score${ow?' winner':''}">${g.scoreAway||0}</div>
-              <div class="score-divider">FINAL</div>
-              <div class="team-score${ew?' winner':''}">${g.scoreHome||0}</div>
-            </div></div>
-            <div class="game-card-meta">${g.venue?`<div class="meta-item">📍 ${g.venue}</div>`:''}</div>
-            <div class="game-card-footer"><div class="margin-text">${mt}</div>
-              <div style="display:flex;gap:6px;align-items:center;">
-                <span style="font-size:12px;color:var(--accent);">Stats & timeline →</span>
-                ${g.filmed!==false?`<span class="gli-edit" onclick="event.stopPropagation();reopenGameForOpp(${idx})" style="border:1px solid rgba(220,38,38,0.35);border-radius:5px;padding:3px 8px;color:var(--red);font-weight:600;">Track opp</span>`:''}
-                <span class="gli-edit" onclick="event.stopPropagation();openEditModal(${idx})" style="border:1px solid var(--border2);border-radius:5px;padding:3px 8px;">Edit</span>
-              </div>
-            </div>
-          </div></div>`;
+        const rl2=g.round?'Round '+g.round:'Game';
+        const mt2=' - '+(g.gameType==='domestic'?'Domestic':g.gameType==='tournament'?'Tournament':'Rep');
+        const trackBtn=g.filmed!==false?'<span class="gli-edit" onclick="event.stopPropagation();reopenGameForOpp('+idx+')" style="border:1px solid rgba(220,38,38,0.35);border-radius:5px;padding:3px 8px;color:var(--red);font-weight:600;">Track opp</span>':'';
+        return '<div class="round-block">'
+          +'<div class="round-header"><div class="round-header-title">'+rl2+'</div>'
+          +'<div class="round-header-date">'+g.date+(g.time?' - '+g.time:'')+mt2+'</div></div>'
+          +'<div class="game-card" onclick="openGameDetail('+idx+')">'
+          +'<div class="game-card-teams"><div class="game-card-names">'
+          +'<div class="team-row"><div class="team-badge opp">'+(g.opponent||'OPP').substring(0,3).toUpperCase()+'</div><span class="team-name opp">'+(g.opponent||'Opponent')+'</span></div>'
+          +'<div class="team-row"><div class="team-badge">'+homeAbbr+'</div><span class="team-name">'+homeTeam.trim()+'</span></div>'
+          +'</div><div class="game-card-scores">'
+          +'<div class="team-score'+(ow?' winner':'')+'">'+( g.scoreAway||0)+'</div>'
+          +'<div class="score-divider">FINAL</div>'
+          +'<div class="team-score'+(ew?' winner':'')+'">'+( g.scoreHome||0)+'</div>'
+          +'</div></div>'
+          +(g.venue?'<div class="game-card-meta"><div class="meta-item">@ '+g.venue+'</div></div>':'')
+          +'<div class="game-card-footer"><div class="margin-text">'+mt+'</div>'
+          +'<div style="display:flex;gap:6px;align-items:center;">'
+          +'<span style="font-size:12px;color:var(--accent);">Stats & timeline</span>'
+          +trackBtn
+          +'<span class="gli-edit" onclick="event.stopPropagation();openEditModal('+idx+')" style="border:1px solid var(--border2);border-radius:5px;padding:3px 8px;">Edit</span>'
+          +'</div></div></div></div>';
       }).join('');
     }
   }
-  if(!games.length){document.getElementById('season-stats-body').innerHTML='<tr><td colspan="16" style="color:var(--muted);padding:12px 0;">No games yet</td></tr>';renderMinsSections();return;}
-  const totS={},gpC={},totPm={};state.players.forEach(p=>{totS[p.id]=emptyStats();gpC[p.id]=0;totPm[p.id]=0;});
-  games.forEach(g=>{if(g.summary){state.players.forEach(p=>{const hm=(g.summary.minutes[p.id]||0)>0.5;if(hm)gpC[p.id]++;if(g.summary.stats){['fgm','fga','ftm','fta','ast','reb','stl','blk','tov','foul','pts'].forEach(k=>{totS[p.id][k]+=(g.summary.stats[p.id]?g.summary.stats[p.id][k]||0:0);});}totPm[p.id]+=(g.summary.plusMinus?g.summary.plusMinus[p.id]||0:0);});}});
-  renderSeasonStatsTable(totS,gpC,totPm);renderMinsSections();
+  const scl=document.getElementById('stats-category-label');if(scl)scl.textContent=catLabel;
+  const swl=document.getElementById('stats-wl-label');
+  if(swl){let w2=0,l2=0;games.forEach(function(g){const d2=(g.scoreHome||0)-(g.scoreAway||0);if(d2>0)w2++;else if(d2<0)l2++;});swl.textContent=games.length+' played - '+w2+'W '+l2+'L';}
+  const gc=document.getElementById('game-count');if(gc)gc.textContent=games.length;
+  if(!games.length){
+    const sb=document.getElementById('season-stats-body');
+    if(sb)sb.innerHTML='<tr><td colspan="18" style="color:var(--muted);padding:12px 0;">No games yet</td></tr>';
+    renderMinsSections(games);return;
+  }
+  const totS={},gpC={},totPm={};
+  state.players.forEach(function(p){totS[p.id]=emptyStats();gpC[p.id]=0;totPm[p.id]=0;});
+  games.forEach(function(g){if(g.summary){state.players.forEach(function(p){
+    const hm=(g.summary.minutes[p.id]||0)>0.5;if(hm)gpC[p.id]++;
+    if(g.summary.stats){['fgm','fga','fgm3','fga3','ftm','fta','ast','reb','stl','blk','tov','foul','pts'].forEach(function(k){totS[p.id][k]+=(g.summary.stats[p.id]?g.summary.stats[p.id][k]||0:0);});}
+    totPm[p.id]+=(g.summary.plusMinus?g.summary.plusMinus[p.id]||0:0);
+  });}});
+  renderSeasonStatsTable(totS,gpC,totPm);
+  const mcl=document.getElementById('mins-category-label');if(mcl)mcl.textContent=catLabel+' - '+games.length+' game'+(games.length===1?'':'s');
+  renderMinsSections(games);
 }
 function setStatsView(v){currentStatsView=v;['total','avg'].forEach(n=>{const b=document.getElementById('stats-view-'+n);if(b){b.className=n===v?'btn sv-btn-active':'btn';b.style.cssText='font-size:11px;padding:5px 10px;';}});renderSeason();}
 function renderSeasonStatsTable(totS,gpC,totPm){
@@ -1677,15 +1568,15 @@ function renderSeasonStatsTable(totS,gpC,totPm){
     const s=totS[p.id],gp=gpC[p.id],pm=totPm[p.id];
     if(!gp)return`<tr style="opacity:0.45;"><td>${p.num} ${p.name}</td><td>0</td><td colspan="14" style="color:var(--muted);font-size:11px;">No games</td></tr>`;
     const pmC=pm>0?'var(--green)':pm<0?'var(--red)':'var(--muted)';
-    return`<tr><td>${p.num} ${p.name}</td><td style="color:var(--muted);">${gp}</td><td style="font-weight:600;">${fmt(s.pts||0,gp)}</td><td>${fmt(s.ftm||0,gp)}</td><td>${fmt(s.fta,gp)}</td><td style="color:var(--muted);">${fp(s.ftm||0,s.fta)}</td><td style="color:#2563eb;">${fmt(s.fgm,gp)}</td><td>${fmt(s.fga,gp)}</td><td style="color:var(--muted);">${fp(s.fgm,s.fga)}</td><td>${fmt(s.ast,gp)}</td><td>${fmt(s.reb,gp)}</td><td>${fmt(s.stl,gp)}</td><td>${fmt(s.blk,gp)}</td><td style="color:var(--red);">${fmt(s.tov,gp)}</td><td style="color:var(--amber);">${fmt(s.foul||0,gp)}</td><td style="color:${pmC};font-weight:600;">${pm>0?'+'+pm:pm}</td></tr>`;
+    return`<tr><td>${p.num} ${p.name}</td><td style="color:var(--muted);">${gp}</td><td style="font-weight:600;">${fmt(s.pts||0,gp)}</td><td>${fmt(s.ftm||0,gp)}</td><td>${fmt(s.fta,gp)}</td><td style="color:var(--muted);">${fp(s.ftm||0,s.fta)}</td><td style="color:#2563eb;">${fmt(s.fgm,gp)}</td><td>${fmt(s.fga,gp)}</td><td style="color:var(--muted);">${fp(s.fgm,s.fga)}</td><td style="color:#7c3aed;">${fmt(s.fgm3||0,gp)}</td><td>${fmt(s.fga3||0,gp)}</td><td>${fmt(s.ast,gp)}</td><td>${fmt(s.reb,gp)}</td><td>${fmt(s.stl,gp)}</td><td>${fmt(s.blk,gp)}</td><td style="color:var(--red);">${fmt(s.tov,gp)}</td><td style="color:var(--amber);">${fmt(s.foul||0,gp)}</td><td style="color:${pmC};font-weight:600;">${pm>0?'+'+pm:pm}</td></tr>`;
   }).join('');
 }
 
 // ── MINUTES ───────────────────────────────────────────
-function setMinsFilter(f){currentMinsFilter=f;['all','rep','domestic'].forEach(n=>{const b=document.getElementById('mins-filter-'+n);if(b){b.className=n===f?'btn sv-btn-active':'btn';b.style.fontSize='12px';}});renderMinsSections();}
+function setMinsFilter(f){currentMinsFilter=f;renderMinsSections();}
 function getGameTotalMins(g){if(g.totalGameMins)return g.totalGameMins;const pc=g.gameType==='domestic'?2:4,pm=g.periodSecs?g.periodSecs/60:(g.gameType==='domestic'?20:10);return pc*pm;}
-function renderMinsSections(){
-  const c=document.getElementById('mins-sections');if(!c)return;const games=state.games;
+function renderMinsSections(games){
+  games=games||state.games;const c=document.getElementById('mins-sections');if(!c)return;
   if(!games.length){c.innerHTML='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No games yet</div>';return;}
   const rep=games.filter(g=>g.gameType!=='domestic'),dom=games.filter(g=>g.gameType==='domestic');
   const dg={};dom.forEach(g=>{const hl=Math.round(getGameTotalMins(g)/2),k=hl+'min';if(!dg[k])dg[k]={hl,games:[]};dg[k].games.push(g);});
@@ -1922,6 +1813,7 @@ function showScreen(name,el){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+name).classList.add('active');
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');
   if(name==='pregame'){renderStarterGrid();renderOppPreRoster();}
+  if(name==='pregame'){renderStarterGrid();renderOppPreRoster();}
   if(name==='game'){renderPeriodBar(state.currentGame);renderStatus();renderTimer();applyFilmedUI(state.currentGame?state.currentGame.filmed:isFilmed);setGameTab(currentGameTab);}
   if(name==='season')renderSeason();
   if(name==='squad'){renderSetup();document.getElementById('settings-club').value=state.config.clubName||'';document.getElementById('settings-team').value=state.config.teamName||'';document.getElementById('settings-season').value=state.config.season||'';document.getElementById('settings-sb-url').value=state.config.sbUrl||'';document.getElementById('settings-sb-key').value=state.config.sbKey||'';}
@@ -1942,6 +1834,92 @@ function toggleTheme(){const d=document.body.classList.toggle('dark');document.g
 function applyTheme(){const s=localStorage.getItem('ct_theme');if(s==='dark'){document.body.classList.add('dark');document.getElementById('theme-toggle').textContent='☀️ Light';}else{document.body.classList.remove('dark');document.getElementById('theme-toggle').textContent='🌙 Dark';}}
 
 // ── BOOT ──────────────────────────────────────────────
+
+// ── FILMING FLAG ──────────────────────────────────────
+let isFilmed=false;
+let reopenIdx=null;
+let oppStatLog=[];
+
+function setFilmed(val){
+  isFilmed=val;
+  const yb=document.getElementById('filmed-yes'),nb=document.getElementById('filmed-no');
+  if(yb)yb.classList.toggle('active',val);
+  if(nb)nb.classList.toggle('active',!val);
+  const rc=document.getElementById('opp-roster-card');if(rc)rc.style.display=val?'block':'none';
+}
+function applyFilmedUI(filmed){
+  const sw=document.getElementById('game-tab-switcher');
+  const hp=document.getElementById('game-panel-home'),op=document.getElementById('game-panel-opp');
+  const mc=document.getElementById('opp-manual-controls'),fn=document.getElementById('opp-filmed-note');
+  if(filmed){
+    if(sw)sw.style.display='flex';
+    if(mc)mc.style.display='none';if(fn)fn.style.display='block';
+  } else {
+    if(sw)sw.style.display='none';
+    if(op)op.style.display='none';if(hp)hp.style.display='block';
+    if(mc)mc.style.display='block';if(fn)fn.style.display='none';
+  }
+}
+function addOppStat(stat){
+  const cg=state.currentGame;if(!cg||cg.ended)return;
+  if(!cg.oppAggregate)cg.oppAggregate={oreb:0,dreb:0};
+  cg.oppAggregate[stat]=(cg.oppAggregate[stat]||0)+1;
+  oppStatLog.push({stat});save();
+}
+function undoOppStat(){
+  const cg=state.currentGame;if(!cg||!oppStatLog.length)return;
+  const last=oppStatLog.pop();
+  if(cg.oppAggregate&&(cg.oppAggregate[last.stat]||0)>0)cg.oppAggregate[last.stat]--;
+  save();
+}
+let currentCategory='all';
+function gameCategory(g){if(g.gameType==='domestic')return'domestic';if(g.gameType==='tournament')return'tournament';return'vjbl';}
+function filterByCategory(games,cat){if(cat==='all')return games;return games.filter(g=>gameCategory(g)===cat);}
+function setCategory(cat){
+  currentCategory=cat;
+  ['all','vjbl','domestic','tournament'].forEach(function(c2){const b=document.getElementById('cat-'+c2);if(b)b.className=c2===cat?'btn sv-btn-active':'btn';});
+  renderSeason();
+}
+function reopenGameForOpp(idx){
+  if(state.currentGame&&!state.currentGame.ended){if(!confirm('A game is in progress. End it?'))return;pauseInternal();}
+  const g=state.games[idx];if(!g)return;reopenIdx=idx;
+  const cg=JSON.parse(JSON.stringify(g));
+  cg.ended=false;cg.running=false;cg.timeout=false;
+  if(!cg.oppRoster)cg.oppRoster=[];if(!cg.oppOnCourt)cg.oppOnCourt=[];
+  if(!cg.oppStints)cg.oppStints={};if(!cg.oppMinutes)cg.oppMinutes={};if(!cg.oppStats)cg.oppStats={};
+  cg.oppRoster.forEach(function(p){cg.oppMinutes[p.id]=0;cg.oppStats[p.id]=emptyOppPlayerStats();});
+  state.players.forEach(function(p){cg.minutes[p.id]=g.summary?g.summary.minutes[p.id]||0:cg.minutes[p.id]||0;if(!cg.stats[p.id])cg.stats[p.id]=emptyStats();if(g.summary&&g.summary.stats&&g.summary.stats[p.id])cg.stats[p.id]=Object.assign({},g.summary.stats[p.id]);});
+  cg.scoreAway=0;cg.onCourt=[];cg.stints={};
+  state.currentGame=cg;isFilmed=true;
+  actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];selectedPid=null;selectedOppPid=null;currentGameTab='opp';
+  save();showScreen('game',document.getElementById('tab-btn-game'));
+  applyFilmedUI(true);setGameTab('opp');
+  const rb=document.getElementById('reopen-banner');
+  if(rb){rb.style.display='block';const rl2=document.getElementById('reopen-game-label');if(rl2)rl2.textContent=(g.round?'R'+g.round+' ':'')+'vs '+g.opponent;}
+  renderStatus();renderTimer();
+}
+function endReopenSession(){
+  const cg=state.currentGame;if(!cg||reopenIdx===null)return;
+  if(!confirm('Save this session?'))return;
+  pauseInternal();cg.ended=true;cg.running=false;cg.timeout=false;
+  cg.onCourt=[];if(cg.oppOnCourt)cg.oppOnCourt=[];
+  const pc=cg.gameType==='domestic'?2:4;cg.totalGameMins=(cg.periodSecs||600)/60*pc;
+  const pmf=calcLivePlusMinus();
+  const summary={minutes:{},stats:{},plusMinus:{}};
+  state.players.forEach(function(p){summary.minutes[p.id]=cg.minutes[p.id]||0;summary.stats[p.id]=Object.assign({},cg.stats[p.id]);summary.plusMinus[p.id]=pmf[p.id]||0;});
+  cg.summary=summary;
+  const oppSum={minutes:{},stats:{}};
+  if(cg.oppRoster)cg.oppRoster.forEach(function(p){oppSum.minutes[p.id]=cg.oppMinutes[p.id]||0;oppSum.stats[p.id]=Object.assign({},cg.oppStats&&cg.oppStats[p.id]||emptyOppPlayerStats());});
+  cg.oppSummary=oppSum;
+  state.games[reopenIdx]=Object.assign({},cg);const saved=state.games[reopenIdx];
+  const rb=document.getElementById('reopen-banner');if(rb)rb.style.display='none';
+  state.currentGame=null;actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];
+  selectedPid=null;selectedOppPid=null;pendingStarters=new Set();pendingOppRoster=[];
+  currentGameTab='home';reopenIdx=null;isFilmed=false;
+  save();render();renderStarterGrid();renderOppPreRoster();
+  showScreen('season',document.getElementById('tab-btn-season'));
+  if(sbOk())syncGameToCloud(saved);
+}
 applyTheme();
 load();
 </script>
