@@ -409,6 +409,8 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
       <div class="card action-card">
         <div class="sec-label">Action</div>
         <div id="action-no-player" class="no-player-msg" style="padding:12px 0;font-size:12px;">← Select a player</div>
+        <button class="action-btn undo-btn" id="undo-btn-always" onclick="undoAction()" style="width:100%;flex-direction:row;gap:6px;padding:11px 6px;font-size:13px;font-weight:700;margin-bottom:6px;">&#8629; Undo last</button>
+        <div class="last-action-bar" id="last-action-always" style="font-size:13px;font-weight:500;padding:8px 10px;min-height:36px;margin-bottom:6px;">&#8212;</div>
         <div id="action-panel" style="display:none;">
           <div class="spb-bar">
             <div class="spb-name" id="spb-name"></div>
@@ -428,9 +430,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
             <button class="action-btn" onclick="logAction('blk')">BLK<div class="abl">Block</div></button>
             <button class="action-btn tov" onclick="logAction('tov')">TO<div class="abl">Turnover</div></button>
             <button class="action-btn foul-btn" onclick="logAction('foul')" style="grid-column:1/-1;">FOUL<div class="abl">Personal foul</div></button>
-            <button class="action-btn undo-btn" onclick="undoAction()" style="grid-column:1/-1;flex-direction:row;gap:6px;padding:13px 6px;font-size:14px;font-weight:700;">&#8629; Undo last</button>
-          </div>
-          <div class="last-action-bar" id="last-action" style="font-size:14px;font-weight:500;padding:10px 12px;min-height:40px;">&#8212;</div>
+
         </div>
       </div>
     </div>
@@ -491,6 +491,8 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
       <div class="card action-card">
         <div class="sec-label" style="color:var(--red);">Action</div>
         <div id="opp-action-no-player" class="no-player-msg" style="padding:12px 0;font-size:12px;">← Select a player</div>
+        <button class="action-btn undo-btn" id="opp-undo-btn-always" onclick="undoOppAction()" style="width:100%;flex-direction:row;gap:6px;padding:11px 6px;font-size:13px;font-weight:700;margin-bottom:6px;border-color:rgba(220,38,38,0.35);color:var(--red);">&#8629; Undo last</button>
+        <div class="last-action-bar" id="opp-last-action-always" style="font-size:13px;font-weight:500;padding:8px 10px;min-height:36px;margin-bottom:6px;">&#8212;</div>
         <div id="opp-action-panel" style="display:none;">
           <div class="spb-bar" style="background:var(--red-bg);border-color:rgba(220,38,38,0.3);">
             <div class="spb-name" id="opp-spb-name" style="color:var(--red);"></div>
@@ -510,9 +512,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
             <button class="action-btn" onclick="logOppAction('blk')">BLK<div class="abl">Block</div></button>
             <button class="action-btn tov" onclick="logOppAction('tov')">TO<div class="abl">Turnover</div></button>
             <button class="action-btn foul-btn" onclick="logOppAction('foul')" style="grid-column:1/-1;">FOUL<div class="abl">Personal foul</div></button>
-            <button class="action-btn undo-btn" onclick="undoOppAction()" style="grid-column:1/-1;flex-direction:row;gap:6px;padding:13px 6px;font-size:14px;font-weight:700;">&#8629; Undo last</button>
-          </div>
-          <div class="last-action-bar" id="opp-last-action" style="font-size:14px;font-weight:500;padding:10px 12px;min-height:40px;">&#8212;</div>
+
         </div>
       </div>
     </div>
@@ -659,6 +659,14 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
     <div class="tbl-wrap"><table class="stbl"><thead><tr><th style="text-align:left;">Zone</th><th>FGM</th><th>FGA</th><th>FG%</th></tr></thead><tbody id="sc-zone-body"></tbody></table></div>
   </div>
 
+  <!-- SHOT CHART CSV EXPORT -->
+  <div class="card" id="sc-export-card" style="display:none;">
+    <div class="sec-label" style="margin-bottom:6px;">Export shots as CSV</div>
+    <div class="g2">
+      <button class="btn btn-primary" onclick="exportShotsCsv('home')">⬇ Home shots CSV</button>
+      <button class="btn btn-red" style="background:var(--red-bg);" onclick="exportShotsCsv('opp')">⬇ Opp shots CSV</button>
+    </div>
+  </div>
   <!-- HOME IMPORT -->
   <div class="card" style="background:var(--accent-bg);border-color:rgba(59,130,246,0.25);">
     <div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:4px;">📋 Import Home Shots</div>
@@ -667,7 +675,8 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
       <select id="import-game-sel" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;outline:none;-webkit-appearance:none;"><option value="">— Select game —</option></select>
     </div>
     <textarea id="paste-shots-home" placeholder="Paste home team shot data here..." style="width:100%;height:70px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px;resize:none;outline:none;"></textarea>
-    <button class="btn btn-primary" style="margin-top:6px;width:100%;" onclick="importShotsFromPaste('home')">⬆ Import home shots</button>
+    <button class="btn btn-primary" style="margin-top:6px;width:100%;margin-bottom:6px;" onclick="importShotsFromPaste('home')">⬆ Import home shots</button>
+    <button class="btn" style="width:100%;font-size:12px;color:var(--red);border-color:rgba(220,38,38,0.3);" onclick="clearImportedShots('home')">✕ Clear home shots</button>
   </div>
 
   <!-- OPP SHOT CHART -->
@@ -720,7 +729,8 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
       <select id="import-game-sel-opp" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;outline:none;-webkit-appearance:none;"><option value="">— Select game —</option></select>
     </div>
     <textarea id="paste-shots-opp" placeholder="Paste opposition shot data here..." style="width:100%;height:70px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px;resize:none;outline:none;"></textarea>
-    <button class="btn btn-red" style="margin-top:6px;width:100%;background:var(--red-bg);padding:10px;" onclick="importShotsFromPaste('opp')">⬆ Import opposition shots</button>
+    <button class="btn btn-red" style="margin-top:6px;width:100%;background:var(--red-bg);padding:10px;margin-bottom:6px;" onclick="importShotsFromPaste('opp')">⬆ Import opposition shots</button>
+    <button class="btn" style="width:100%;font-size:12px;color:var(--red);border-color:rgba(220,38,38,0.3);" onclick="clearImportedShots('opp')">✕ Clear opposition shots</button>
   </div>
 </div>
 
@@ -1110,7 +1120,7 @@ function renderRosterTable(){
   const now=(cg&&cg.running)?Date.now():null;
   const sorted=[...state.players].sort((a,b)=>a.id-b.id);tbody.innerHTML='';
   const pmMap=calcLivePlusMinus();
-  let tMins=0,tFtm=0,tFta=0,tFgm=0,tFga=0,tAst=0,tReb=0,tStl=0,tBlk=0,tTov=0,tFoul=0;
+  let tMins=0,tFtm=0,tFta=0,tFgm=0,tFga=0,tFgm3=0,tFga3=0,tAst=0,tReb=0,tStl=0,tBlk=0,tTov=0,tFoul=0;
   sorted.forEach(p=>{
     const isOn=cg&&cg.onCourt.includes(p.id),mins=getPlayerMins(p.id,now),s=cg&&cg.stats?cg.stats[p.id]:null;
     const tr=document.createElement('tr');if(isOn)tr.classList.add('on-row');
@@ -1126,7 +1136,7 @@ function renderRosterTable(){
     const vals=s?[s.ftm||0,s.fta||0,ftp,s.fgm,s.fga,fgp,s.fgm3||0,s.fga3||0,s.ast,s.oreb||0,s.dreb||0,s.stl,s.blk,s.tov,s.foul||0]:['—','—','—','—','—','—','—','—','—','—','—','—','—','—','—'];
     vals.forEach((v,i)=>{const td=document.createElement('td');if(i===3)td.className='fgm-val';if(i===10)td.className='tov-val';if(i===11)td.style.color='var(--amber)';td.textContent=v;tr.appendChild(td);});
     tbody.appendChild(tr);
-    if(s){tMins+=mins;tFtm+=s.ftm||0;tFta+=s.fta||0;tFgm+=s.fgm;tFga+=s.fga;tAst+=s.ast;tReb+=(s.oreb||0)+(s.dreb||0);tStl+=s.stl;tBlk+=s.blk;tTov+=s.tov;tFoul+=s.foul||0;}
+    if(s){tMins+=mins;tFtm+=s.ftm||0;tFta+=s.fta||0;tFgm+=s.fgm;tFga+=s.fga;tFgm3+=s.fgm3||0;tFga3+=s.fga3||0;tAst+=s.ast;tReb+=(s.oreb||0)+(s.dreb||0);tStl+=s.stl;tBlk+=s.blk;tTov+=s.tov;tFoul+=s.foul||0;}
   });
   if(cg){
     const ttr=document.createElement('tr');ttr.style.cssText='border-top:2px solid var(--border2);background:var(--surface2);font-weight:600;';
@@ -1134,7 +1144,7 @@ function renderRosterTable(){
     const tm=document.createElement('td');tm.className='mins-cell';tm.style.fontWeight='700';tm.textContent=fmtMins(tMins);ttr.appendChild(tm);
     const tp=document.createElement('td');tp.textContent='—';tp.className='pm-zero';ttr.appendChild(tp);
     const tftp=tFta>0?Math.round(tFtm/tFta*100)+'%':'—',tfgp=tFga>0?Math.round(tFgm/tFga*100)+'%':'—';
-    [tFtm,tFta,tftp,tFgm,tFga,tfgp,tAst,tReb,tStl,tBlk,tTov,tFoul].forEach((v,i)=>{const td=document.createElement('td');td.style.fontWeight='700';if(i===3)td.style.color='#2563eb';if(i===10)td.style.color='var(--red)';if(i===11)td.style.color='var(--amber)';td.textContent=v;ttr.appendChild(td);});
+    [tFtm,tFta,tftp,tFgm,tFga,tfgp,tFgm3,tFga3,tAst,tReb,tStl,tBlk,tTov,tFoul].forEach((v,i)=>{const td=document.createElement('td');td.style.fontWeight='700';if(i===3)td.style.color='#2563eb';if(i===10)td.style.color='var(--red)';if(i===11)td.style.color='var(--amber)';td.textContent=v;ttr.appendChild(td);});
     tbody.appendChild(ttr);
   }
 }
@@ -1373,11 +1383,11 @@ function logOppAction(type){
   else if(type==='foul'){s.foul++;addEvent('opp_foul',{player:pn});}
   const tlId=cg.timeline&&cg.timeline.length>0?cg.timeline[cg.timeline.length-1].id:null;
   oppActionLog.push({pid:selectedOppPid,type,pts,tlId});
-  const lastEl=document.getElementById('opp-last-action');if(lastEl)lastEl.textContent=pn+' — '+(lbls[type]||type);
+  const lastEl=document.getElementById('opp-last-action-always');if(lastEl)lastEl.textContent=pn+' — '+(lbls[type]||type);
   selectedOppPid=null;save();renderOppRosterTable();renderScores();renderOppScores();renderOppOnCourtSection();renderOppActionPanel();
 }
 function undoOppAction(){
-  const cg=state.currentGame;if(!cg||!oppActionLog.length){const el=document.getElementById('opp-last-action');if(el)el.textContent='Nothing to undo.';return;}
+  const cg=state.currentGame;if(!cg||!oppActionLog.length){const el=document.getElementById('opp-last-action-always');if(el)el.textContent='Nothing to undo.';return;}
   const last=oppActionLog.pop(),s=cg.oppStats[last.pid];
   if(last.type==='1pt'){if(s.ftm>0)s.ftm--;if(s.fta>0)s.fta--;s.pts=Math.max(0,s.pts-last.pts);cg.scoreAway=Math.max(0,cg.scoreAway-last.pts);}
   else if(last.type==='2pt'){if(s.fgm>0)s.fgm--;if(s.fga>0)s.fga--;s.pts=Math.max(0,s.pts-last.pts);cg.scoreAway=Math.max(0,cg.scoreAway-last.pts);}
@@ -1387,7 +1397,7 @@ function undoOppAction(){
   else if(last.type==='fga3'){if(s.fga>0)s.fga--;if((s.fga3||0)>0)s.fga3--;}
   else{if(s[last.type]!==undefined&&s[last.type]>0)s[last.type]--;}
   if(cg.timeline&&last.tlId!=null){const pos=cg.timeline.findIndex(e=>e.id===last.tlId);if(pos!==-1)cg.timeline.splice(pos,1);}
-  const el=document.getElementById('opp-last-action');if(el)el.textContent='Undone.';
+  const el=document.getElementById('opp-last-action-always');if(el)el.textContent='Undone.';
   save();renderOppRosterTable();renderScores();renderOppScores();
 }
 function getOppPlayerMins(pid,now){
@@ -1524,7 +1534,7 @@ function logAction(type){
   else if(type==='foul'){s.foul++;addEvent('foul',{player:pn});}
   const tlId=cg.timeline&&cg.timeline.length>0?cg.timeline[cg.timeline.length-1].id:null;
   actionLog.push({pid:selectedPid,type,pts,tlId});
-  document.getElementById('last-action').textContent=pn+' — '+(lbls[type]||type);
+  document.getElementById('last-action-always').textContent=pn+' — '+(lbls[type]||type);
   selectedPid=null;save();renderRosterTable();renderScores();renderOnCourtSection();renderActionPanel();
 }
 function undoAction(){
@@ -1538,7 +1548,7 @@ function undoAction(){
   else if(last.type==='fga3'){if(s.fga>0)s.fga--;if((s.fga3||0)>0)s.fga3--;}
   else{if(s[last.type]!==undefined&&s[last.type]>0)s[last.type]--;}
   if(cg.timeline&&last.tlId!=null){const pos=cg.timeline.findIndex(e=>e.id===last.tlId);if(pos!==-1)cg.timeline.splice(pos,1);}
-  document.getElementById('last-action').textContent='Undone.';save();renderRosterTable();renderScores();
+  document.getElementById('last-action-always').textContent='Undone.';save();renderRosterTable();renderScores();
 }
 function addOppScore(pts){
   const cg=state.currentGame;if(!cg||cg.ended)return;cg.scoreAway+=pts;addEvent('opp_pts',{pts});
@@ -1591,6 +1601,34 @@ function populateImportGameSel(){
 }
 function getShotsForGame(gid){if(shotCache[gid]&&shotCache[gid].length)return shotCache[gid];if(gid==='all')return[];const g=state.games.find(g=>String(g.id)===gid);return(g&&g.shots)||[];}
 function loadShotsFromGames(){state.games.forEach(g=>{if(g.shots&&g.shots.length){const gid=String(g.id);if(!shotCache[gid])shotCache[gid]=[];g.shots.forEach(s=>{if(!shotCache[gid].find(x=>x.id===s.id))shotCache[gid].push(s);})}});}
+function exportShotsCsv(team){
+  const gid=document.getElementById('sc-game-sel')?.value||'';if(!gid){showToast('Select a game first');return;}
+  const allShots=getShotsForGame(gid);
+  const shots=team==='opp'?allShots.filter(s=>s.shotTeam==='opp'):allShots.filter(s=>s.shotTeam!=='opp');
+  if(!shots.length){showToast('No '+(team==='opp'?'opposition':'home')+' shots to export');return;}
+  const g=state.games.find(g=>String(g.id)===gid)||state.currentGame;
+  const label=g?(g.date||'')+(g.round?' R'+g.round:'')+' vs '+(g.opponent||''):'game';
+  const rows=[['Game','Team','Player','#','Period','Made/Missed','Zone','X','Y'].join(',')];
+  shots.forEach(s=>{
+    const zone=typeof getZone==='function'?getZone(parseFloat(s.x),parseFloat(s.y)):'—';
+    rows.push(['"'+label.replace(/"/g,'""')+'"',team==='opp'?'Opposition':'Home','"'+(s.player_name||'').replace(/"/g,'""')+'"',s.player_num||'',s.period_label||s.period,s.made?'Made':'Missed',zone,s.x,s.y].join(','));
+  });
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='shots_'+(team==='opp'?'opp':'home')+'_'+label.replace(/[^a-zA-Z0-9]/g,'_')+'.csv';a.click();URL.revokeObjectURL(url);
+  showToast('✓ '+shots.length+' shots exported');
+}
+function clearImportedShots(teamSlot){
+  if(!confirm('Clear all '+(teamSlot==='opp'?'opposition':'home')+' shots for the selected game?'))return;
+  const selEl=teamSlot==='opp'?document.getElementById('import-game-sel-opp'):document.getElementById('import-game-sel');
+  const tgid=selEl?selEl.value:'';if(!tgid){showToast('⚠ Select a game first');return;}
+  // Remove from shotCache
+  if(shotCache[tgid]){shotCache[tgid]=shotCache[tgid].filter(s=>s.shotTeam!==(teamSlot==='opp'?'opp':'home'));if(!shotCache[tgid].length)delete shotCache[tgid];}
+  // Remove from game.shots
+  const g=state.games.find(g=>String(g.id)===tgid)||state.currentGame;
+  if(g&&g.shots){g.shots=g.shots.filter(s=>s.shotTeam!==(teamSlot==='opp'?'opp':'home'));}
+  save();renderShotChart();showToast('✓ '+(teamSlot==='opp'?'Opposition':'Home')+' shots cleared');
+}
 function importShotsFromPaste(teamSlot){
   const taId=teamSlot==='opp'?'paste-shots-opp':'paste-shots-home';
   const ta=document.getElementById(taId);if(!ta||!ta.value.trim()){showToast('Nothing to import');return;}
@@ -1632,6 +1670,7 @@ function renderShotChart(){
     return;
   }
   let allShots=getShotsForGame(gid);
+  const ecCard=document.getElementById('sc-export-card');if(ecCard)ecCard.style.display=allShots.length?'block':'none';
   const homeShots=allShots.filter(s=>s.shotTeam!=='opp');
   const oppShots=allShots.filter(s=>s.shotTeam==='opp');
   scRenderPeriodBar(allShots);
@@ -1846,7 +1885,27 @@ function openGameDetail(idx){
     const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'—',ft=s.fta>0?Math.round((s.ftm||0)/s.fta*100)+'%':'—';
     html+=`<tr><td><span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">${p.num}</span> ${p.name}</td><td style="font-family:'DM Mono',monospace;font-size:11px;">${fmtMins(m)}</td><td style="font-weight:600;color:${pmc};">${pms}</td><td>${s.pts||0}</td><td>${s.ftm||0}</td><td>${s.fta||0}</td><td style="color:var(--muted);">${ft}</td><td>${s.fgm}</td><td>${s.fga}</td><td style="color:var(--muted);">${fg}</td><td>${s.ast}</td><td>${(s.oreb||0)+(s.dreb||0)}</td><td>${s.stl}</td><td>${s.blk}</td><td style="color:var(--red);">${s.tov}</td><td style="color:var(--amber);">${s.foul||0}</td></tr>`;
   });
+  // Team totals row in game detail
+  let dTpts=0,dTftm=0,dTfta=0,dTfgm=0,dTfga=0,dTast=0,dToreb=0,dTdreb=0,dTstl=0,dTblk=0,dTtov=0,dTfoul=0;
+  sorted.forEach(p=>{const s=g.summary&&g.summary.stats?g.summary.stats[p.id]||emptyStats():emptyStats();dTpts+=s.pts||0;dTftm+=s.ftm||0;dTfta+=s.fta||0;dTfgm+=s.fgm||0;dTfga+=s.fga||0;dTast+=s.ast||0;dToreb+=s.oreb||0;dTdreb+=s.dreb||0;dTstl+=s.stl||0;dTblk+=s.blk||0;dTtov+=s.tov||0;dTfoul+=s.foul||0;});
+  const dTfg=dTfga>0?Math.round(dTfgm/dTfga*100)+'%':'—',dTft=dTfta>0?Math.round(dTftm/dTfta*100)+'%':'—';
+  const dTMins=sorted.reduce((a,p)=>a+(g.summary?g.summary.minutes[p.id]||0:0),0);
+  html+=`<tr style="border-top:2px solid var(--border2);background:var(--surface2);font-weight:700;"><td style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Totals</td><td style="font-family:'DM Mono',monospace;font-size:11px;">${fmtMins(dTMins)}</td><td>—</td><td style="font-weight:700;">${dTpts}</td><td>${dTftm}</td><td>${dTfta}</td><td style="color:var(--muted);">${dTft}</td><td style="color:#2563eb;">${dTfgm}</td><td>${dTfga}</td><td style="color:var(--muted);">${dTfg}</td><td>${dTast}</td><td>${dToreb+dTdreb}</td><td>${dTstl}</td><td>${dTblk}</td><td style="color:var(--red);">${dTtov}</td><td style="color:var(--amber);">${dTfoul}</td></tr>`;
   html+=`</tbody></table></div></div>`;
+  // Opp stats with totals
+  if(g.oppSummary&&g.oppRoster&&g.oppRoster.length){
+    html+=`<div class="card" style="padding:10px 0;margin-bottom:10px;border-color:rgba(220,38,38,0.2);"><div class="sec-label" style="padding:0 14px 8px;color:var(--red);">Opposition stats</div><div style="overflow-x:auto;"><table class="rtbl"><thead><tr><th>Player</th><th>MIN</th><th>PTS</th><th>FGM</th><th>FGA</th><th>FG%</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead><tbody>`;
+    let oTpts=0,oTfgm=0,oTfga=0,oTast=0,oToreb=0,oTdreb=0,oTstl=0,oTblk=0,oTtov=0,oTfoul=0,oTMins=0;
+    g.oppRoster.forEach(p=>{
+      const m=g.oppSummary.minutes[p.id]||0,s=g.oppSummary.stats[p.id]||emptyOppPlayerStats();
+      const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'—';
+      oTpts+=s.pts||0;oTfgm+=s.fgm||0;oTfga+=s.fga||0;oTast+=s.ast||0;oToreb+=s.oreb||0;oTdreb+=s.dreb||0;oTstl+=s.stl||0;oTblk+=s.blk||0;oTtov+=s.tov||0;oTfoul+=s.foul||0;oTMins+=m;
+      html+=`<tr><td style="color:var(--red);"><span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">${p.num}</span> ${p.name}</td><td style="font-family:'DM Mono',monospace;font-size:11px;">${fmtMins(m)}</td><td>${s.pts||0}</td><td>${s.fgm||0}</td><td>${s.fga||0}</td><td style="color:var(--muted);">${fg}</td><td>${s.ast||0}</td><td>${s.oreb||0}</td><td>${s.dreb||0}</td><td>${s.stl||0}</td><td>${s.blk||0}</td><td style="color:var(--red);">${s.tov||0}</td><td style="color:var(--amber);">${s.foul||0}</td></tr>`;
+    });
+    const oTfg=oTfga>0?Math.round(oTfgm/oTfga*100)+'%':'—';
+    html+=`<tr style="border-top:2px solid var(--border2);background:var(--surface2);font-weight:700;"><td style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Totals</td><td style="font-family:'DM Mono',monospace;font-size:11px;">${fmtMins(oTMins)}</td><td style="font-weight:700;">${oTpts}</td><td>${oTfgm}</td><td>${oTfga}</td><td style="color:var(--muted);">${oTfg}</td><td>${oTast}</td><td>${oToreb}</td><td>${oTdreb}</td><td>${oTstl}</td><td>${oTblk}</td><td style="color:var(--red);">${oTtov}</td><td style="color:var(--amber);">${oTfoul}</td></tr>`;
+    html+=`</tbody></table></div></div>`;
+  }
   if(g.timeline&&g.timeline.length){
     const isDom=g.gameType==='domestic';const opp=g.opponent||'Opponent';
     const pk=isDom?['Q1','Q2']:['Q1','Q2','Q3','Q4'];const pd=isDom?{Q1:'H1',Q2:'H2'}:{Q1:'Q1',Q2:'Q2',Q3:'Q3',Q4:'Q4'};
