@@ -608,7 +608,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
   <!-- Game selector + period/player filters shared -->
   <div class="card">
     <div class="sec-label" style="margin-bottom:6px;">Shot Chart</div>
-    <div class="field" style="margin-bottom:8px;"><select id="sc-game-sel" onchange="scResetPeriod();renderShotChart()"><option value="all">All games</option></select></div>
+    <div class="field" style="margin-bottom:8px;"><select id="sc-game-sel" onchange="scResetPeriod();renderShotChart()"><option value="">— Select a game —</option></select></div>
     <div id="sc-period-bar" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;"></div>
     <div style="display:flex;gap:6px;">
       <button class="btn sv-btn-active" id="sc-filter-all" onclick="setShotFilter('all')" style="flex:1;font-size:12px;">All</button>
@@ -1536,7 +1536,7 @@ function setShotFilter(f){
   renderShotChart();
 }
 function populateScGameSel(){
-  const sel=document.getElementById('sc-game-sel');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="all">All games</option>';
+  const sel=document.getElementById('sc-game-sel');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">— Select a game —</option>';
   if(state.currentGame){const o=document.createElement('option');o.value=String(state.currentGame.id);o.textContent='Current — vs '+(state.currentGame.opponent||'?');sel.appendChild(o);}
   state.games.forEach(g=>{const sh=getShotsForGame(String(g.id));const o=document.createElement('option');o.value=String(g.id);o.textContent=(g.date||'')+(g.round?' R'+g.round:'')+' vs '+(g.opponent||'?')+(sh.length?' ('+sh.length+')':'');sel.appendChild(o);});
   if(cur)sel.value=cur;
@@ -1571,16 +1571,28 @@ function importShotsFromPaste(teamSlot){
       if(state.currentGame&&String(state.currentGame.id)===tgid){if(!state.currentGame.shots)state.currentGame.shots=[];if(!state.currentGame.shots.find(x=>x.id===shot.id))state.currentGame.shots.push(shot);}
     });
     save();ta.value='';showToast('✓ '+imp+' '+(detectedTeam==='opp'?'opp':'home')+' shots imported');populateImportGameSel();
-    const scSel=document.getElementById('sc-game-sel');if(scSel){scSel.value=tgid;renderShotChart();}
+    const scSel=document.getElementById('sc-game-sel');if(scSel&&tgid){scSel.value=tgid;renderShotChart();}
   }catch(e){showToast('⚠ Invalid JSON');}
 }
 const SC_ZONES=[{id:'paint',label:'Paint',x1:88,y1:3,x2:212,y2:95},{id:'corner3l',label:'Corner 3 Left',x1:3,y1:3,x2:28,y2:62},{id:'corner3r',label:'Corner 3 Right',x1:272,y1:3,x2:297,y2:62},{id:'midl',label:'Mid-range Left',x1:3,y1:62,x2:88,y2:130},{id:'midr',label:'Mid-range Right',x1:212,y1:62,x2:297,y2:130},{id:'topkey',label:'Top of key / 3pt',x1:88,y1:95,x2:212,y2:130},{id:'other',label:'Backcourt',x1:3,y1:130,x2:297,y2:162}];
 function getZone(x,y){for(const z of SC_ZONES){if(x>=z.x1&&x<=z.x2&&y>=z.y1&&y<=z.y2)return z.id;}return'other';}
 function renderShotChart(){
-  populateScGameSel();const gid=document.getElementById('sc-game-sel')?.value||'all';
-  let allShots=[];
-  if(gid==='all'){const seen=new Set();[...Object.values(shotCache).flat(),...state.games.flatMap(g=>g.shots||[])].forEach(s=>{if(!seen.has(s.id)){seen.add(s.id);allShots.push(s);}});}
-  else allShots=getShotsForGame(gid);
+  populateScGameSel();const gid=document.getElementById('sc-game-sel')?.value||'';
+  // Empty state — no game selected
+  const homeDotsEl=document.getElementById('shot-dots');
+  const oppDotsEl=document.getElementById('shot-dots-opp');
+  if(!gid){
+    if(homeDotsEl)homeDotsEl.innerHTML='';if(oppDotsEl)oppDotsEl.innerHTML='';
+    const sr=document.getElementById('sc-stats-row');if(sr)sr.innerHTML='<div style="font-size:12px;color:var(--muted);">Select a game above to view shots</div>';
+    const osr=document.getElementById('sc-opp-stats-row');if(osr)osr.innerHTML='';
+    const pp=document.getElementById('sc-player-pills');if(pp)pp.innerHTML='';
+    const op=document.getElementById('sc-opp-player-pills');if(op)op.innerHTML='';
+    const pb=document.getElementById('sc-period-bar');if(pb)pb.innerHTML='';
+    renderZoneBreakdown([],'sc-zone-body','sc-zone-card');
+    renderZoneBreakdown([],'sc-opp-zone-body','sc-opp-zone-card');
+    return;
+  }
+  let allShots=getShotsForGame(gid);
   const homeShots=allShots.filter(s=>s.shotTeam!=='opp');
   const oppShots=allShots.filter(s=>s.shotTeam==='opp');
   scRenderPeriodBar(allShots);
@@ -1616,7 +1628,7 @@ function renderShotChart(){
     const oppPlayers=Object.values(oppPlayerMap).sort((a,b)=>String(a.num).localeCompare(String(b.num)));
     const mkR=a=>a?'background:var(--red);color:#fff;border:1px solid var(--red);':'';
     oppPills.innerHTML=`<button class="bench-pill" onclick="scSelectOppPlayer('all')" style="${mkR(scSelectedOppPlayer==='all')}font-size:11px;padding:5px 10px;">All players</button>`;
-    oppPlayers.forEach(p=>{const a=String(scSelectedOppPlayer)===String(p.id);oppPills.innerHTML+=`<button class="bench-pill" onclick="scSelectOppPlayer('${p.id}')" style="${mkR(a)}font-size:11px;padding:5px 10px;">${p.num} ${p.name.split(' ')[0]}</button>`;});
+    oppPlayers.forEach(p=>{const a=String(scSelectedOppPlayer)===String(p.id);const dispNum=p.num||'?';const dispName=p.name?p.name.split(' ')[0]:'';oppPills.innerHTML+=`<button class="bench-pill" onclick="scSelectOppPlayer('${p.id}')" style="${mkR(a)}font-size:11px;padding:5px 10px;">${dispNum}${dispName&&dispName!==dispNum?' '+dispName:''}</button>`;});
   }
   if(scSelectedOppPlayer!=='all')fOpp=fOpp.filter(s=>String(s.player_id)===String(scSelectedOppPlayer));
   const omade=fOpp.filter(s=>s.made).length,ototal=fOpp.length,opct=ototal>0?Math.round(omade/ototal*100)+'%':'--';
@@ -2004,6 +2016,7 @@ function openGameReport(idx){
 <h2>Player Performance — sorted by rating</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;">Player</th><th>Min</th><th>+/−</th><th>PTS</th><th>FT</th><th>FT%</th><th>FG</th><th>FG%</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th><th style="min-width:90px;">Rating</th></tr></thead><tbody>${sRows}</tbody></table></div>
 <div class="note">${note}</div>
 ${advHtml}${qHtml}${scHtml}${oppStatsHtml}${tlHtml?`<h2>Game Timeline</h2>${tlHtml}`:''}
+${g.editNotes?`<div style="margin-top:24px;padding:14px 16px;background:#fffbf0;border-left:3px solid #d97706;border-radius:4px;"><div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">⚠ Stat corrections</div><div style="font-size:12px;color:#78350f;line-height:1.65;">${g.editNotes.replace(/\n/g,'<br>')}</div><div style="font-size:10px;color:#b45309;margin-top:6px;">Stats in this report have been manually reviewed and corrected after the game.</div></div>`:''}
 <p style="font-size:10px;color:#bbb;margin-top:24px;text-align:center;">CourtTrack · ${homeTeam.trim()} · ${new Date().toLocaleDateString('en-AU')}</p>
 <div style="margin-top:40px;border-top:2px solid #e8e8e8;padding-top:24px;">
 <h2>Glossary</h2>
@@ -2056,7 +2069,7 @@ function openEditModal(idx){
   <div><div class="field-label">Venue</div><input type="text" id="edit-venue" value="${g.venue||''}"/></div></div>
   <div style="overflow-x:auto;"><table class="edit-tbl"><thead><tr><th>Player</th><th>MIN</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FGM</th><th>FGA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead><tbody>`;
   sorted.forEach(p=>{const mins=g.summary?Math.round(g.summary.minutes[p.id]||0):0,s=g.summary&&g.summary.stats?g.summary.stats[p.id]||emptyStats():emptyStats();html+=`<tr><td>${p.num} ${p.name}</td><td><input class="edit-input" data-pid="${p.id}" data-field="mins" value="${mins}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="pts" value="${s.pts||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="ftm" value="${s.ftm||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="fta" value="${s.fta||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="fgm" value="${s.fgm}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="fga" value="${s.fga}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="ast" value="${s.ast}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="oreb" value="${s.oreb||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="dreb" value="${s.dreb||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="stl" value="${s.stl}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="blk" value="${s.blk}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="tov" value="${s.tov}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="foul" value="${s.foul||0}"/></td></tr>`;});
-  html+=`</tbody></table></div><div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div><div class="field-label" style="margin-bottom:4px;">${state.config.clubName||'Home'} score</div><input type="text" id="edit-score-home" value="${g.scoreHome||0}"/></div><div><div class="field-label" style="margin-bottom:4px;">${g.opponent||'Opp'} score</div><input type="text" id="edit-score-away" value="${g.scoreAway||0}"/></div></div>`;
+  html+=`</tbody></table></div><div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div><div class="field-label" style="margin-bottom:4px;">${state.config.clubName||'Home'} score</div><input type="text" id="edit-score-home" value="${g.scoreHome||0}"/></div><div><div class="field-label" style="margin-bottom:4px;">${g.opponent||'Opp'} score</div><input type="text" id="edit-score-away" value="${g.scoreAway||0}"/></div></div><div style="margin-top:12px;"><div class="field-label" style="margin-bottom:4px;">Stat correction notes <span style="font-weight:400;color:var(--muted);">(appears in report)</span></div><textarea id="edit-notes" placeholder="e.g. Q3 — Eva's 2 steals moved to Zoe, wrong player selected live. FT corrected for Harper." style="width:100%;height:72px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;resize:none;outline:none;">${g.editNotes||''}</textarea></div>`;
   document.getElementById('edit-modal-body').innerHTML=html;document.getElementById('edit-modal').classList.add('visible');
 }
 function saveEditModal(){
@@ -2066,6 +2079,7 @@ function saveEditModal(){
   document.querySelectorAll('#edit-modal-body .edit-input').forEach(inp=>{const pid=parseInt(inp.dataset.pid),field=inp.dataset.field,val=parseInt(inp.value)||0;if(field==='mins')g.summary.minutes[pid]=val;else{if(!g.summary.stats[pid])g.summary.stats[pid]=emptyStats();g.summary.stats[pid][field]=val;}});
   const sh=document.getElementById('edit-score-home'),sa=document.getElementById('edit-score-away');
   if(sh)g.scoreHome=parseInt(sh.value)||0;if(sa)g.scoreAway=parseInt(sa.value)||0;
+  const en=document.getElementById('edit-notes');if(en)g.editNotes=en.value.trim();
   save();closeEditModal();renderSeason();
 }
 function closeEditModal(){document.getElementById('edit-modal').classList.remove('visible');editingGameIdx=null;}
