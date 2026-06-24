@@ -116,12 +116,20 @@ select:focus,input:focus{border-color:var(--accent);}
       <button id="team-btn-opp" onclick="setTeamMode('opp')" style="padding:12px 8px;border-radius:var(--rs);border:2px solid var(--border2);background:var(--surface2);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">🔴 Opposition</button>
     </div>
     <div class="field-label">Game format</div>
-    <select id="format-sel">
-      <option value="rep4x10">Rep — 4 × 10 min quarters</option>
-      <option value="dom2x20">Domestic — 2 × 20 min halves</option>
-      <option value="dom2x18">Domestic — 2 × 18 min halves</option>
-      <option value="dom2x15">Domestic — 2 × 15 min halves</option>
-    </select>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <button id="fmt-btn-quarters" onclick="setFormatType('quarters')" style="padding:12px 8px;border-radius:var(--rs);border:2px solid var(--accent);background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:center;">
+        <div>4 × Quarters</div><div style="font-size:11px;opacity:0.85;margin-top:2px;">Q1 Q2 Q3 Q4</div>
+      </button>
+      <button id="fmt-btn-halves" onclick="setFormatType('halves')" style="padding:12px 8px;border-radius:var(--rs);border:2px solid var(--border2);background:var(--surface2);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:center;">
+        <div>2 × Halves</div><div style="font-size:11px;opacity:0.85;margin-top:2px;">H1 H2</div>
+      </button>
+    </div>
+    <div class="field-label">Competition type</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
+      <button id="comp-btn-vjbl" onclick="setCompType('vjbl')" style="padding:10px 4px;border-radius:var(--rs);border:2px solid var(--accent);background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;text-align:center;">VJBL</button>
+      <button id="comp-btn-domestic" onclick="setCompType('domestic')" style="padding:10px 4px;border-radius:var(--rs);border:2px solid var(--border2);background:var(--surface2);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;text-align:center;">Domestic</button>
+      <button id="comp-btn-tournament" onclick="setCompType('tournament')" style="padding:10px 4px;border-radius:var(--rs);border:2px solid var(--border2);background:var(--surface2);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;text-align:center;">Tournament</button>
+    </div>
     <div class="field-label">Game label (optional)</div>
     <input type="text" id="game-label-input" placeholder="e.g. vs Heidelberg R11"/>
     <div class="field-label" id="player-list-label" style="margin-top:4px;">Players — Our Team</div>
@@ -250,12 +258,24 @@ select:focus,input:focus{border-color:var(--accent);}
 const SK = 'courttrack_shots_session';
 const MAIN_SK = 'courttrack_v1';
 
-const FORMAT_PERIODS = {
-  'rep4x10':{count:4,label:'Q',name:'Rep 4×10'},
-  'dom2x20':{count:2,label:'H',name:'Dom 2×20'},
-  'dom2x18':{count:2,label:'H',name:'Dom 2×18'},
-  'dom2x15':{count:2,label:'H',name:'Dom 2×15'},
-};
+let currentFormatType='quarters';  // 'quarters' or 'halves'
+let currentCompType='vjbl';           // 'vjbl', 'domestic', 'tournament'
+
+function setFormatType(type){
+  currentFormatType=type;
+  const qBtn=document.getElementById('fmt-btn-quarters');
+  const hBtn=document.getElementById('fmt-btn-halves');
+  if(qBtn){qBtn.style.border='2px solid '+(type==='quarters'?'var(--accent)':'var(--border2)');qBtn.style.background=type==='quarters'?'var(--accent)':'var(--surface2)';qBtn.style.color=type==='quarters'?'#fff':'var(--muted)';}
+  if(hBtn){hBtn.style.border='2px solid '+(type==='halves'?'var(--accent)':'var(--border2)');hBtn.style.background=type==='halves'?'var(--accent)':'var(--surface2)';hBtn.style.color=type==='halves'?'#fff':'var(--muted)';}
+}
+
+function setCompType(type){
+  currentCompType=type;
+  ['vjbl','domestic','tournament'].forEach(t=>{
+    const btn=document.getElementById('comp-btn-'+t);
+    if(btn){btn.style.border='2px solid '+(t===type?'var(--accent)':'var(--border2)');btn.style.background=t===type?'var(--accent)':'var(--surface2)';btn.style.color=t===type?'#fff':'var(--muted)';}
+  });
+}
 
 // Try to load squad from main tracker
 function getSquadFromMainApp(mode){
@@ -332,6 +352,8 @@ function load(){
     if(d.gameLabel)gameLabel=d.gameLabel;
     if(d.periodCount)periodCount=d.periodCount;
     if(d.periodLabel)periodLabel=d.periodLabel;
+    if(d.formatType){currentFormatType=d.formatType;setTimeout(()=>setFormatType(d.formatType),50);}
+    if(d.compType){currentCompType=d.compType;setTimeout(()=>setCompType(d.compType),50);}
     if(d.currentPeriod)currentPeriod=d.currentPeriod;
     if(d.squad)squad=d.squad;
     if(d.teamMode)teamMode=d.teamMode;
@@ -346,14 +368,14 @@ function load(){
 }
 
 function save(){
-  try{localStorage.setItem(SK,JSON.stringify({shots,gameLabel,periodCount,periodLabel,currentPeriod,squad,teamMode}));}catch(e){}
+  try{localStorage.setItem(SK,JSON.stringify({shots,gameLabel,periodCount,periodLabel,currentPeriod,squad,teamMode,formatType:currentFormatType,compType:currentCompType}));}catch(e){}
 }
 
 function startSession(){
-  const fmt=document.getElementById('format-sel').value;
-  const f=FORMAT_PERIODS[fmt];
-  periodCount=f.count;periodLabel=f.label;
-  gameLabel=document.getElementById('game-label-input').value.trim()||f.name;
+  periodCount=currentFormatType==='halves'?2:4;
+  periodLabel=currentFormatType==='halves'?'H':'Q';
+  const fmtName=(currentFormatType==='halves'?'2×Halves':'4×Quarters')+' '+currentCompType.toUpperCase();
+  gameLabel=document.getElementById('game-label-input').value.trim()||fmtName;
   currentPeriod=1;shots=[];
   // Use setup players or fallback to main app squad based on teamMode
   squad=setupPlayers.length?setupPlayers:(getSquadFromMainApp(teamMode)||[]);
@@ -416,7 +438,7 @@ function handleTap(clientX,clientY){
   const rect=courtSvg.getBoundingClientRect();
   const x=Math.round(((clientX-rect.left)/rect.width)*300*10)/10;
   const y=Math.round(((clientY-rect.top)/rect.height)*165*10)/10;
-  const shot={id:Date.now()+'_'+Math.random().toString(36).slice(2,7),game_id:'shots_'+gameLabel.replace(/\s+/g,'_'),player_id:selectedPlayer.id,player_name:selectedPlayer.name,player_num:selectedPlayer.num,x,y,made:selectedMade,period:currentPeriod,period_label:periodLabel+currentPeriod,ts:new Date().toISOString()};
+  const shot={id:Date.now()+'_'+Math.random().toString(36).slice(2,7),game_id:'shots_'+gameLabel.replace(/\s+/g,'_'),player_id:selectedPlayer.id,player_name:selectedPlayer.name,player_num:selectedPlayer.num,x,y,made:selectedMade,period:currentPeriod,period_label:periodLabel+currentPeriod,ts:new Date().toISOString(),compType:currentCompType};
   shots.unshift(shot);save();addDotToChart(shot);renderLog();toast((selectedMade?'● Made':'✕ Missed')+' — '+selectedPlayer.name);
 }
 courtSvg.addEventListener('click',e=>{if(!e.touches)handleTap(e.clientX,e.clientY);});
