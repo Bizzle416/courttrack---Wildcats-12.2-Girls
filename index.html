@@ -2119,8 +2119,40 @@ async function pullFromCloud(){
 }
 function exportCSV(){
   const games=state.games;if(!games.length){showToast('No games to export');return;}
-  const sorted=[...state.players].sort((a,b)=>a.id-b.id);const rows=[['Date','Round','Opposition','Venue','Game Type','Result','Home Score','Opp Score','Player','#','MIN','PTS','FTM','FTA','FT%','FGM','FGA','FG%','3PM','3PA','3P%','AST','OREB','DREB','STL','BLK','TO','FL'].join(',')];
-  games.forEach(g=>{const diff=(g.scoreHome||0)-(g.scoreAway||0),r=diff>0?'W':diff<0?'L':'D';sorted.forEach(p=>{const m=g.summary?g.summary.minutes[p.id]||0:0,s=g.summary&&g.summary.stats?g.summary.stats[p.id]||emptyStats():emptyStats();const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'',ft=s.fta>0?Math.round((s.ftm||0)/s.fta*100)+'%':'';const fg3=s.fga3>0?Math.round((s.fgm3||0)/s.fga3*100)+'%':'';rows.push([g.date||'',g.round?'R'+g.round:'','"'+(g.opponent||'').replace(/"/g,'""')+'"','"'+(g.venue||'').replace(/"/g,'""')+'"',g.gameType==='tournament'?'Tournament':g.gameType==='domestic'?'Domestic':'Rep',r,g.scoreHome||0,g.scoreAway||0,'"'+p.name.replace(/"/g,'""')+'"',p.num,(Math.round(m*10)/10).toFixed(1),s.pts||0,s.ftm||0,s.fta||0,ft,s.fgm,s.fga,fg,s.fgm3||0,s.fga3||0,fg3,s.ast,s.oreb||0,s.dreb||0,s.stl,s.blk,s.tov,s.foul||0].join(','));});});
+  const sorted=[...state.players].sort((a,b)=>a.id-b.id);
+  const rows=[['Date','Round','Opposition','Venue','Game Type','Result','Home Score','Opp Score','Player','#','GP','MIN','+/-','Rating','PTS','FTM','FTA','FT%','FGM','FGA','FG%','3PM','3PA','3P%','AST','OREB','DREB','STL','BLK','TO','FL'].join(',')];
+  games.forEach(g=>{
+    const diff=(g.scoreHome||0)-(g.scoreAway||0),r2=diff>0?'W':diff<0?'L':'D';
+    const pmMap=computePlusMinus(g);
+    const pd2=sorted.map(p=>{const m2=g.summary?g.summary.minutes[p.id]||0:0,s2=g.summary&&g.summary.stats?g.summary.stats[p.id]||emptyStats():emptyStats(),pm2=pmMap[p.id]||0;return{id:p.id,mins:m2,s:s2,pm:pm2,raw:computeRating(s2,m2,pm2)};});
+    const raws=pd2.map(p=>p.raw).filter(v=>v!==null);
+    const mn=raws.length?Math.min(...raws):0,mx=raws.length?Math.max(...raws):1,span=mx-mn||1;
+    const ratingMap={};pd2.forEach(p=>{ratingMap[p.id]=p.raw!==null?Math.round((1+9*(p.raw-mn)/span)*10)/10:null;});
+    sorted.forEach(p=>{
+      const m=g.summary?g.summary.minutes[p.id]||0:0;
+      const s=g.summary&&g.summary.stats?g.summary.stats[p.id]||emptyStats():emptyStats();
+      const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'';
+      const ft=s.fta>0?Math.round((s.ftm||0)/s.fta*100)+'%':'';
+      const fg3=s.fga3>0?Math.round((s.fgm3||0)/s.fga3*100)+'%':'';
+      const mins=Math.floor(m)+':'+String(Math.floor((m-Math.floor(m))*60)).padStart(2,'0');
+      const gp=m>0.5?1:0;
+      const pm=pmMap[p.id]||0;
+      const rating=ratingMap[p.id]!==null?ratingMap[p.id].toFixed(1):'DNP';
+      rows.push([
+        g.date||'',g.round?'R'+g.round:'',
+        '"'+(g.opponent||'').replace(/"/g,'""')+'"',
+        '"'+(g.venue||'').replace(/"/g,'""')+'"',
+        g.gameType==='tournament'?'Tournament':g.gameType==='domestic'?'Domestic':'Rep',
+        r2,g.scoreHome||0,g.scoreAway||0,
+        '"'+p.name.replace(/"/g,'""')+'"',p.num,
+        gp,mins,pm,rating,
+        s.pts||0,s.ftm||0,s.fta||0,ft,
+        s.fgm,s.fga,fg,
+        s.fgm3||0,s.fga3||0,fg3,
+        s.ast,s.oreb||0,s.dreb||0,s.stl,s.blk,s.tov,s.foul||0
+      ].join(','));
+    });
+  });
   const csv=rows.join('\n'),blob=new Blob([csv],{type:'text/csv'}),url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='courttrack_analytics_'+new Date().toISOString().split('T')[0]+'.csv';a.click();URL.revokeObjectURL(url);showToast('✓ CSV exported');
 }
 
