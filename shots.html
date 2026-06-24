@@ -161,13 +161,7 @@ select:focus,input:focus{border-color:var(--accent);}
             <div class="type-label">Missed</div>
           </div>
         </div>
-        <div class="confirm-bar" id="confirm-bar" style="margin-top:8px;">
-          <div class="confirm-info" id="confirm-info"></div>
-          <div class="confirm-btns">
-            <button class="btn" style="font-size:12px;padding:9px 8px;" onclick="cancelShot()">Cancel</button>
-            <button class="btn btn-primary" style="font-size:12px;padding:9px 8px;" onclick="confirmShot()">✓ Log shot</button>
-          </div>
-        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted);text-align:center;">Tap the court to log</div>
       </div>
     </div>
 
@@ -209,6 +203,7 @@ select:focus,input:focus{border-color:var(--accent);}
         <div class="sec-label" style="margin-bottom:0;">Shot log</div>
         <div id="log-stats" style="font-size:11px;color:var(--muted);"></div>
       </div>
+      <button onclick="undoLastShot()" style="width:100%;margin-bottom:8px;padding:11px;border-radius:var(--rs);border:1px solid rgba(217,119,6,0.35);background:var(--amber-bg);color:var(--amber);font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">&#8629; Undo last shot</button>
       <div id="shot-log"><div class="log-empty">No shots yet</div></div>
     </div>
 
@@ -283,7 +278,7 @@ let currentPeriod=1;
 let periodCount=4;
 let periodLabel='Q';
 let gameLabel='';
-let pendingX=null,pendingY=null;
+
 let setupPlayers=[];  // players added in setup screen before session starts
 let teamMode='home';  // 'home' or 'opp'
 
@@ -415,26 +410,16 @@ const courtSvg=document.getElementById('court-svg');
 function handleTap(clientX,clientY){
   if(!selectedPlayer||selectedMade===null){toast('Select player + result first');return;}
   const rect=courtSvg.getBoundingClientRect();
-  pendingX=Math.round(((clientX-rect.left)/rect.width)*300*10)/10;
-  pendingY=Math.round(((clientY-rect.top)/rect.height)*165*10)/10;
-  const pc=document.getElementById('pending-circle');
-  pc.setAttribute('cx',pendingX);pc.setAttribute('cy',pendingY);pc.setAttribute('fill',selectedMade?'#16a34a':'#dc2626');
-  document.getElementById('confirm-info').textContent=(selectedMade?'● Made':'✕ Missed')+' — '+selectedPlayer.name+' — '+periodLabel+currentPeriod;
-  document.getElementById('confirm-bar').classList.add('show');
+  const x=Math.round(((clientX-rect.left)/rect.width)*300*10)/10;
+  const y=Math.round(((clientY-rect.top)/rect.height)*165*10)/10;
+  const shot={id:Date.now()+'_'+Math.random().toString(36).slice(2,7),game_id:'shots_'+gameLabel.replace(/\s+/g,'_'),player_id:selectedPlayer.id,player_name:selectedPlayer.name,player_num:selectedPlayer.num,x,y,made:selectedMade,period:currentPeriod,period_label:periodLabel+currentPeriod,ts:new Date().toISOString()};
+  shots.unshift(shot);save();addDotToChart(shot);renderLog();toast((selectedMade?'● Made':'✕ Missed')+' — '+selectedPlayer.name);
 }
 courtSvg.addEventListener('click',e=>{if(!e.touches)handleTap(e.clientX,e.clientY);});
 courtSvg.addEventListener('touchend',e=>{e.preventDefault();const t=e.changedTouches[0];handleTap(t.clientX,t.clientY);},{passive:false});
 
-function cancelShot(){
-  pendingX=null;pendingY=null;
-  document.getElementById('pending-circle').setAttribute('cx','-50');document.getElementById('pending-circle').setAttribute('cy','-50');
-  document.getElementById('confirm-bar').classList.remove('show');
-}
-function confirmShot(){
-  if(pendingX===null||!selectedPlayer||selectedMade===null)return;
-  const shot={id:Date.now()+'_'+Math.random().toString(36).slice(2,7),game_id:'shots_'+gameLabel.replace(/\s+/g,'_'),player_id:selectedPlayer.id,player_name:selectedPlayer.name,player_num:selectedPlayer.num,x:pendingX,y:pendingY,made:selectedMade,period:currentPeriod,period_label:periodLabel+currentPeriod,ts:new Date().toISOString()};
-  shots.unshift(shot);save();addDotToChart(shot);renderLog();cancelShot();toast((selectedMade?'● Made':'✕ Missed')+' — '+selectedPlayer.name);
-}
+function cancelShot(){}
+
 function addDotToChart(shot){
   const g=document.getElementById('shot-dots'),grp=document.createElementNS('http://www.w3.org/2000/svg','g');
   if(shot.made){const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',shot.x);c.setAttribute('cy',shot.y);c.setAttribute('r','4');c.setAttribute('fill','#16a34a');c.setAttribute('opacity','0.9');c.setAttribute('stroke','white');c.setAttribute('stroke-width','1');grp.appendChild(c);}
@@ -457,6 +442,7 @@ function renderLog(){
   }).join('');
 }
 function undoShot(id){shots=shots.filter(s=>s.id!==id);save();redrawDotsForPeriod();renderLog();toast('Shot removed');}
+function undoLastShot(){if(!shots.length){toast('Nothing to undo');return;}shots.shift();save();redrawDotsForPeriod();renderLog();toast('Last shot removed');}
 
 // ── EXPORT ────────────────────────────────────────────
 async function exportShots(){
