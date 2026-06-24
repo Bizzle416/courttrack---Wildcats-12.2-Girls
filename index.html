@@ -285,15 +285,27 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
 
   <!-- PATH: JOIN EXISTING TEAM -->
   <div id="ob-path-join" style="display:none;">
-    <div class="onboard-section">
-      <div class="onboard-section-title">Connect to your team</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6;">Enter the Supabase credentials your team admin shared with you. Your squad and all season data will load automatically.</div>
-      <div class="field"><div class="field-label">Supabase project URL</div><input type="text" id="ob-join-url" placeholder="https://xxxx.supabase.co"/></div>
-      <div class="field"><div class="field-label">Supabase anon key</div><input type="text" id="ob-join-key" placeholder="eyJhbGci..."/></div>
+    <!-- Auto-connect card — shown when credentials arrive via URL -->
+    <div id="ob-auto-connect" style="display:none;">
+      <div class="onboard-section" style="text-align:center;padding:20px 0;">
+        <div style="font-size:40px;margin-bottom:8px;">🔗</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:6px;" id="ob-auto-team-name">Connecting to your team...</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Tap below to load your squad and season data.</div>
+        <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="joinExistingTeam()">🏀 Connect &amp; load →</button>
+      </div>
     </div>
-    <div id="ob-join-status" style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0;min-height:24px;"></div>
-    <div class="onboard-warn" id="ob-join-warn" style="display:none;">⚠ Enter both credentials to continue.</div>
-    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="joinExistingTeam()">🔗 Connect &amp; Load team →</button>
+    <!-- Manual entry — shown when no URL credentials -->
+    <div id="ob-manual-creds">
+      <div class="onboard-section">
+        <div class="onboard-section-title">Connect to your team</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6;">Enter the Supabase credentials your team admin shared with you. Your squad and all season data will load automatically.</div>
+        <div class="field"><div class="field-label">Supabase project URL</div><input type="text" id="ob-join-url" placeholder="https://xxxx.supabase.co"/></div>
+        <div class="field"><div class="field-label">Supabase anon key</div><input type="text" id="ob-join-key" placeholder="eyJhbGci..."/></div>
+      </div>
+      <div id="ob-join-status" style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0;min-height:24px;"></div>
+      <div class="onboard-warn" id="ob-join-warn" style="display:none;">⚠ Enter both credentials to continue.</div>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="joinExistingTeam()">🔗 Connect &amp; Load team →</button>
+    </div>
     <div style="text-align:center;margin-top:12px;"><span style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;" onclick="showObPath('chooser')">← Back</span></div>
   </div>
 
@@ -796,6 +808,15 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
 
 <!-- DATA -->
 <div id="screen-data" class="screen">
+  <div class="card" style="background:var(--accent-bg);border-color:rgba(59,130,246,0.25);">
+    <div class="sec-label" style="color:var(--accent);">🔗 Team join link</div>
+    <div class="backup-info">Share this link with anyone on your team. They open it, tap Connect, and load everything automatically — no credentials to type.</div>
+    <button class="btn btn-primary" style="width:100%;margin-bottom:6px;" onclick="generateJoinLink()">Generate &amp; copy team link</button>
+    <div id="join-link-display" style="display:none;margin-top:8px;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Copy this link and share it:</div>
+      <div id="join-link-text" style="font-size:11px;font-family:'DM Mono',monospace;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);padding:8px 10px;word-break:break-all;color:var(--text);"></div>
+    </div>
+  </div>
   <div class="card">
     <div class="sec-label">Cloud sync</div>
     <div class="backup-info">Sync games to the cloud so any device can access the full season. Configure credentials in Squad → Cloud credentials.</div>
@@ -952,12 +973,52 @@ function load(){
   }else{showOnboarding();}
 }
 
+function generateJoinLink(){
+  if(!sbOk()){showToast('⚠ Configure Supabase credentials in Squad tab first');return;}
+  const payload=JSON.stringify({u:state.config.sbUrl,k:state.config.sbKey});
+  const encoded=btoa(payload);
+  const link=window.location.origin+window.location.pathname+'#join='+encoded;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(link).then(()=>{
+      showToast('✓ Team link copied — share it with your team');
+      document.getElementById('join-link-display').style.display='block';
+      document.getElementById('join-link-text').textContent=link;
+    }).catch(()=>fallbackCopyLink(link));
+  }else{fallbackCopyLink(link);}
+}
+function fallbackCopyLink(text){
+  const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');showToast('✓ Team link copied');}catch(e){showToast('⚠ Copy failed — select the link manually');}
+  document.body.removeChild(ta);
+  document.getElementById('join-link-display').style.display='block';
+  document.getElementById('join-link-text').textContent=text;
+}
+function checkJoinHash(){
+  const hash=window.location.hash;
+  if(!hash.startsWith('#join='))return false;
+  try{
+    const payload=JSON.parse(atob(hash.slice(6)));
+    if(!payload.u||!payload.k)return false;
+    const urlEl=document.getElementById('ob-join-url');
+    const keyEl=document.getElementById('ob-join-key');
+    if(urlEl)urlEl.value=payload.u;
+    if(keyEl)keyEl.value=payload.k;
+    document.getElementById('ob-auto-connect').style.display='block';
+    document.getElementById('ob-manual-creds').style.display='none';
+    history.replaceState(null,'',window.location.pathname);
+    return true;
+  }catch(e){return false;}
+}
 // ── ONBOARDING ────────────────────────────────────────
 let obPlayers=[];
 function showOnboarding(){
   document.getElementById('onboard-overlay').classList.remove('hidden');
   document.getElementById('app-shell').style.display='none';
-  showObPath('chooser');renderObPlayerList();applyTheme();
+  applyTheme();renderObPlayerList();
+  // Check if a join link was used — if so skip chooser and go straight to join path
+  const hasHash=checkJoinHash();
+  if(hasHash){showObPath('join');}else{showObPath('chooser');}
 }
 function showObPath(path){
   document.getElementById('ob-path-chooser').style.display=path==='chooser'?'block':'none';
