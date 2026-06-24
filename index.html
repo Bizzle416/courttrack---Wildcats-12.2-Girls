@@ -1116,12 +1116,13 @@ function renderRosterTable(){
 // ── TIMELINE RENDER ───────────────────────────────────
 function populateTlSelector(){
   const sel=document.getElementById('tl-game-sel');sel.innerHTML='';
+  const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='— Select a game —';sel.appendChild(placeholder);
   if(state.currentGame){const o=document.createElement('option');o.value='live';o.textContent='Current — '+[state.currentGame.date,'vs '+state.currentGame.opponent].filter(Boolean).join(' ');sel.appendChild(o);}
   state.games.forEach((g,i)=>{const o=document.createElement('option');o.value=i;o.textContent=[g.date,g.time,'vs '+g.opponent].filter(Boolean).join(' ');sel.appendChild(o);});
-  if(!state.currentGame&&state.games.length>0)sel.value='0';
 }
 function renderTimeline(){
-  const sel=document.getElementById('tl-game-sel'),val=sel?sel.value:'live';
+  const sel=document.getElementById('tl-game-sel'),val=sel?sel.value:'';
+  if(!val){const info=document.getElementById('tl-game-info'),content=document.getElementById('tl-content');if(info)info.textContent='';if(content)content.innerHTML='<div class="tl-empty">Select a game above to view the timeline</div>';return;}
   const src=val==='live'?state.currentGame:state.games[parseInt(val)];
   const info=document.getElementById('tl-game-info'),content=document.getElementById('tl-content');
   if(!src){info.textContent='No game selected';content.innerHTML='<div class="tl-empty">No game data</div>';return;}
