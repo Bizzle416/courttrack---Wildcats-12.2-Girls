@@ -605,18 +605,24 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
 
 <!-- SHOT CHART -->
 <div id="screen-shots" class="screen">
+  <!-- Game selector + period/player filters shared -->
   <div class="card">
     <div class="sec-label" style="margin-bottom:6px;">Shot Chart</div>
     <div class="field" style="margin-bottom:8px;"><select id="sc-game-sel" onchange="scResetPeriod();renderShotChart()"><option value="all">All games</option></select></div>
     <div id="sc-period-bar" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;"></div>
-    <div id="sc-player-pills" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;"></div>
     <div style="display:flex;gap:6px;">
       <button class="btn sv-btn-active" id="sc-filter-all" onclick="setShotFilter('all')" style="flex:1;font-size:12px;">All</button>
       <button class="btn" id="sc-filter-made" onclick="setShotFilter('made')" style="flex:1;font-size:12px;">✓ Made</button>
       <button class="btn" id="sc-filter-missed" onclick="setShotFilter('missed')" style="flex:1;font-size:12px;">✕ Missed</button>
     </div>
   </div>
+
+  <!-- HOME SHOT CHART -->
   <div class="card" style="padding:10px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="sec-label" style="margin-bottom:0;color:var(--accent);">🏠 Home shots</div>
+      <div id="sc-player-pills" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+    </div>
     <div id="sc-stats-row" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;"></div>
     <div style="width:100%;max-width:500px;margin:0 auto;">
       <svg id="shot-chart-svg" viewBox="0 0 300 165" style="width:100%;display:block;border-radius:8px;" xmlns="http://www.w3.org/2000/svg">
@@ -628,10 +634,8 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
         <line x1="88" y1="95" x2="212" y2="95" stroke="#60a5fa" stroke-width="1.2"/>
         <path d="M 118,95 A 32,32 0 0 1 182,95" fill="none" stroke="#60a5fa" stroke-width="1.2"/>
         <path d="M 118,95 A 32,32 0 0 0 182,95" fill="none" stroke="#60a5fa" stroke-width="1.2" stroke-dasharray="3,2"/>
-        <rect x="84" y="25" width="4" height="12" fill="#60a5fa"/>
-        <rect x="212" y="25" width="4" height="12" fill="#60a5fa"/>
-        <rect x="84" y="68" width="4" height="12" fill="#60a5fa"/>
-        <rect x="212" y="68" width="4" height="12" fill="#60a5fa"/>
+        <rect x="84" y="25" width="4" height="12" fill="#60a5fa"/><rect x="212" y="25" width="4" height="12" fill="#60a5fa"/>
+        <rect x="84" y="68" width="4" height="12" fill="#60a5fa"/><rect x="212" y="68" width="4" height="12" fill="#60a5fa"/>
         <line x1="28" y1="3" x2="28" y2="62" stroke="#60a5fa" stroke-width="1.2"/>
         <line x1="272" y1="3" x2="272" y2="62" stroke="#60a5fa" stroke-width="1.2"/>
         <path d="M 28,62 A 130,130 0 0 0 272,62" fill="none" stroke="#60a5fa" stroke-width="1.2"/>
@@ -651,28 +655,72 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
     </div>
   </div>
   <div class="card" id="sc-zone-card" style="display:none;">
-    <div class="sec-label">Zone breakdown</div>
-    <div class="tbl-wrap">
-      <table class="stbl"><thead><tr><th style="text-align:left;">Zone</th><th>FGM</th><th>FGA</th><th>FG%</th></tr></thead><tbody id="sc-zone-body"></tbody></table>
-    </div>
+    <div class="sec-label">Home — Zone breakdown</div>
+    <div class="tbl-wrap"><table class="stbl"><thead><tr><th style="text-align:left;">Zone</th><th>FGM</th><th>FGA</th><th>FG%</th></tr></thead><tbody id="sc-zone-body"></tbody></table></div>
   </div>
+
+  <!-- HOME IMPORT -->
   <div class="card" style="background:var(--accent-bg);border-color:rgba(59,130,246,0.25);">
-    <div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:4px;">📋 Import from Shot Logger</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Copy shot data from <strong>shots.html</strong> and paste into the matching slot. Home and opposition shots are stored separately.</div>
-    <div style="margin-bottom:10px;">
+    <div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:4px;">📋 Import Home Shots</div>
+    <div style="margin-bottom:8px;">
       <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Attach to game:</div>
       <select id="import-game-sel" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;outline:none;-webkit-appearance:none;"><option value="">— Select game —</option></select>
     </div>
-    <div style="border:1px solid rgba(59,130,246,0.2);border-radius:var(--rs);padding:10px;margin-bottom:8px;background:var(--surface);">
-      <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🏠 Home shots</div>
-      <textarea id="paste-shots-home" placeholder="Paste home team shot data here..." style="width:100%;height:70px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px;resize:none;outline:none;"></textarea>
-      <button class="btn btn-primary" style="margin-top:6px;width:100%;" onclick="importShotsFromPaste('home')">⬆ Import home shots</button>
+    <textarea id="paste-shots-home" placeholder="Paste home team shot data here..." style="width:100%;height:70px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px;resize:none;outline:none;"></textarea>
+    <button class="btn btn-primary" style="margin-top:6px;width:100%;" onclick="importShotsFromPaste('home')">⬆ Import home shots</button>
+  </div>
+
+  <!-- OPP SHOT CHART -->
+  <div class="card" style="padding:10px;border-color:rgba(220,38,38,0.25);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="sec-label" style="margin-bottom:0;color:var(--red);">🔴 Opposition shots</div>
+      <div id="sc-opp-player-pills" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
     </div>
-    <div style="border:1px solid rgba(220,38,38,0.2);border-radius:var(--rs);padding:10px;background:var(--surface);">
-      <div style="font-size:11px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🔴 Opposition shots</div>
-      <textarea id="paste-shots-opp" placeholder="Paste opposition shot data here..." style="width:100%;height:70px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px;resize:none;outline:none;"></textarea>
-      <button class="btn btn-red" style="margin-top:6px;width:100%;background:var(--red-bg);padding:10px;" onclick="importShotsFromPaste('opp')">⬆ Import opposition shots</button>
+    <div id="sc-opp-stats-row" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;"></div>
+    <div style="width:100%;max-width:500px;margin:0 auto;">
+      <svg id="shot-chart-opp-svg" viewBox="0 0 300 165" style="width:100%;display:block;border-radius:8px;" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="300" height="165" fill="#fee2e2"/>
+        <rect x="3" y="3" width="294" height="159" rx="2" fill="#fff1f2" stroke="#fca5a5" stroke-width="1.5"/>
+        <rect x="88" y="3" width="124" height="92" fill="#fecaca" stroke="#f87171" stroke-width="1.2"/>
+        <line x1="120" y1="5" x2="180" y2="5" stroke="#b91c1c" stroke-width="4"/>
+        <circle cx="150" cy="16" r="5" fill="none" stroke="#b91c1c" stroke-width="2"/>
+        <line x1="88" y1="95" x2="212" y2="95" stroke="#f87171" stroke-width="1.2"/>
+        <path d="M 118,95 A 32,32 0 0 1 182,95" fill="none" stroke="#f87171" stroke-width="1.2"/>
+        <path d="M 118,95 A 32,32 0 0 0 182,95" fill="none" stroke="#f87171" stroke-width="1.2" stroke-dasharray="3,2"/>
+        <rect x="84" y="25" width="4" height="12" fill="#f87171"/><rect x="212" y="25" width="4" height="12" fill="#f87171"/>
+        <rect x="84" y="68" width="4" height="12" fill="#f87171"/><rect x="212" y="68" width="4" height="12" fill="#f87171"/>
+        <line x1="28" y1="3" x2="28" y2="62" stroke="#f87171" stroke-width="1.2"/>
+        <line x1="272" y1="3" x2="272" y2="62" stroke="#f87171" stroke-width="1.2"/>
+        <path d="M 28,62 A 130,130 0 0 0 272,62" fill="none" stroke="#f87171" stroke-width="1.2"/>
+        <line x1="3" y1="159" x2="297" y2="159" stroke="#fca5a5" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="150" y="62" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.7">Paint</text>
+        <text x="15" y="34" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">3L</text>
+        <text x="285" y="34" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">3R</text>
+        <text x="50" y="82" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">Mid-L</text>
+        <text x="250" y="82" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">Mid-R</text>
+        <text x="150" y="125" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">Top key</text>
+        <g id="shot-dots-opp"></g>
+      </svg>
     </div>
+    <div style="display:flex;gap:16px;justify-content:center;margin-top:8px;">
+      <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"><span style="color:#b91c1c;font-size:14px;">●</span> Made</span>
+      <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"><span style="color:#7f1d1d;font-weight:700;font-size:13px;">✕</span> Missed</span>
+    </div>
+  </div>
+  <div class="card" id="sc-opp-zone-card" style="display:none;border-color:rgba(220,38,38,0.2);">
+    <div class="sec-label" style="color:var(--red);">Opposition — Zone breakdown</div>
+    <div class="tbl-wrap"><table class="stbl"><thead><tr><th style="text-align:left;">Zone</th><th>FGM</th><th>FGA</th><th>FG%</th></tr></thead><tbody id="sc-opp-zone-body"></tbody></table></div>
+  </div>
+
+  <!-- OPP IMPORT -->
+  <div class="card" style="background:var(--red-bg);border-color:rgba(220,38,38,0.25);">
+    <div style="font-size:12px;color:var(--red);font-weight:600;margin-bottom:4px;">📋 Import Opposition Shots</div>
+    <div style="margin-bottom:8px;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Attach to game:</div>
+      <select id="import-game-sel-opp" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;outline:none;-webkit-appearance:none;"><option value="">— Select game —</option></select>
+    </div>
+    <textarea id="paste-shots-opp" placeholder="Paste opposition shot data here..." style="width:100%;height:70px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px;resize:none;outline:none;"></textarea>
+    <button class="btn btn-red" style="margin-top:6px;width:100%;background:var(--red-bg);padding:10px;" onclick="importShotsFromPaste('opp')">⬆ Import opposition shots</button>
   </div>
 </div>
 
@@ -1498,13 +1546,16 @@ function populateImportGameSel(){
   if(state.currentGame){const o=document.createElement('option');o.value=String(state.currentGame.id);o.textContent='Current — vs '+(state.currentGame.opponent||'?');sel.appendChild(o);}
   state.games.forEach(g=>{const o=document.createElement('option');o.value=String(g.id);o.textContent=(g.date||'')+(g.round?' R'+g.round:'')+' vs '+(g.opponent||'?');sel.appendChild(o);});
   if(cur)sel.value=cur;
+  // Mirror to opp selector
+  const selOpp=document.getElementById('import-game-sel-opp');
+  if(selOpp){selOpp.innerHTML=sel.innerHTML;selOpp.value=selOpp.options[0]?selOpp.options[0].value:'';}
 }
 function getShotsForGame(gid){if(shotCache[gid]&&shotCache[gid].length)return shotCache[gid];if(gid==='all')return[];const g=state.games.find(g=>String(g.id)===gid);return(g&&g.shots)||[];}
 function loadShotsFromGames(){state.games.forEach(g=>{if(g.shots&&g.shots.length){const gid=String(g.id);if(!shotCache[gid])shotCache[gid]=[];g.shots.forEach(s=>{if(!shotCache[gid].find(x=>x.id===s.id))shotCache[gid].push(s);})}});}
 function importShotsFromPaste(teamSlot){
   const taId=teamSlot==='opp'?'paste-shots-opp':'paste-shots-home';
   const ta=document.getElementById(taId);if(!ta||!ta.value.trim()){showToast('Nothing to import');return;}
-  const sel=document.getElementById('import-game-sel'),tgid=sel?sel.value:'';
+  const selEl=teamSlot==='opp'?document.getElementById('import-game-sel-opp'):document.getElementById('import-game-sel');const tgid=selEl?selEl.value:'';
   if(!tgid){showToast('⚠ Select a game first');return;}
   try{
     const data=JSON.parse(ta.value.trim()),shots=Array.isArray(data)?data:(data.shots||[]);
@@ -1525,44 +1576,79 @@ function importShotsFromPaste(teamSlot){
 }
 const SC_ZONES=[{id:'paint',label:'Paint',x1:88,y1:3,x2:212,y2:95},{id:'corner3l',label:'Corner 3 Left',x1:3,y1:3,x2:28,y2:62},{id:'corner3r',label:'Corner 3 Right',x1:272,y1:3,x2:297,y2:62},{id:'midl',label:'Mid-range Left',x1:3,y1:62,x2:88,y2:130},{id:'midr',label:'Mid-range Right',x1:212,y1:62,x2:297,y2:130},{id:'topkey',label:'Top of key / 3pt',x1:88,y1:95,x2:212,y2:130},{id:'other',label:'Backcourt',x1:3,y1:130,x2:297,y2:162}];
 function getZone(x,y){for(const z of SC_ZONES){if(x>=z.x1&&x<=z.x2&&y>=z.y1&&y<=z.y2)return z.id;}return'other';}
-function renderZoneBreakdown(shots){
-  const card=document.getElementById('sc-zone-card'),tbody=document.getElementById('sc-zone-body');if(!card||!tbody)return;
-  const wl=shots.filter(s=>!isNaN(parseFloat(s.x)));if(!wl.length){card.style.display='none';return;}
-  card.style.display='block';const zd={};SC_ZONES.forEach(z=>zd[z.id]={made:0,total:0,label:z.label});
-  wl.forEach(s=>{const z=getZone(parseFloat(s.x),parseFloat(s.y));if(!zd[z])return;zd[z].total++;if(s.made)zd[z].made++;});
-  tbody.innerHTML=SC_ZONES.map(z=>{const d=zd[z.id];if(!d||!d.total)return'';const pct=Math.round(d.made/d.total*100),col=pct>=50?'var(--green)':pct>=33?'var(--amber)':'var(--red)';return`<tr><td style="font-size:12px;">${d.label}</td><td>${d.made}</td><td>${d.total}</td><td style="color:${col};font-weight:600;">${pct}%</td></tr>`;}).filter(Boolean).join('');
-}
 function renderShotChart(){
   populateScGameSel();const gid=document.getElementById('sc-game-sel')?.value||'all';
-  let shots=[];
-  if(gid==='all'){const seen=new Set();[...Object.values(shotCache).flat(),...state.games.flatMap(g=>g.shots||[])].forEach(s=>{if(!seen.has(s.id)){seen.add(s.id);shots.push(s);}});}
-  else shots=getShotsForGame(gid);
-  scRenderPeriodBar(shots);
+  let allShots=[];
+  if(gid==='all'){const seen=new Set();[...Object.values(shotCache).flat(),...state.games.flatMap(g=>g.shots||[])].forEach(s=>{if(!seen.has(s.id)){seen.add(s.id);allShots.push(s);}});}
+  else allShots=getShotsForGame(gid);
+  const homeShots=allShots.filter(s=>s.shotTeam!=='opp');
+  const oppShots=allShots.filter(s=>s.shotTeam==='opp');
+  scRenderPeriodBar(allShots);
+  // Home player pills
   const pills=document.getElementById('sc-player-pills');
   if(pills){
-    const pids=[...new Set(shots.map(s=>String(s.player_id)))];const players=state.players.filter(p=>pids.includes(String(p.id)));
+    const pids=[...new Set(homeShots.map(s=>String(s.player_id)))];
+    const players=state.players.filter(p=>pids.includes(String(p.id)));
     const mkS=a=>a?'background:var(--accent);color:#fff;border:1px solid var(--accent);':'';
     pills.innerHTML=`<button class="bench-pill" onclick="scSelectPlayer('all')" style="${mkS(scSelectedPlayer==='all')}font-size:11px;padding:5px 10px;">All players</button>`;
     players.sort((a,b)=>a.id-b.id).forEach(p=>{const a=String(scSelectedPlayer)===String(p.id);pills.innerHTML+=`<button class="bench-pill" onclick="scSelectPlayer('${p.id}')" style="${mkS(a)}font-size:11px;padding:5px 10px;">${p.num} ${p.name.split(' ')[0]}</button>`;});
   }
-  let f=shots;
-  if(scSelectedPeriod!=='all')f=f.filter(s=>String(s.period)===String(scSelectedPeriod));
-  if(scSelectedPlayer!=='all')f=f.filter(s=>String(s.player_id)===String(scSelectedPlayer));
-  if(scShotFilter==='made')f=f.filter(s=>s.made);
-  if(scShotFilter==='missed')f=f.filter(s=>!s.made);
-  const made=f.filter(s=>s.made).length,total=f.length,pct=total>0?Math.round(made/total*100)+'%':'—';
+  let fHome=homeShots;
+  if(scSelectedPeriod!=='all')fHome=fHome.filter(s=>String(s.period)===String(scSelectedPeriod));
+  if(scSelectedPlayer!=='all')fHome=fHome.filter(s=>String(s.player_id)===String(scSelectedPlayer));
+  if(scShotFilter==='made')fHome=fHome.filter(s=>s.made);
+  if(scShotFilter==='missed')fHome=fHome.filter(s=>!s.made);
+  let fOpp=oppShots;
+  if(scSelectedPeriod!=='all')fOpp=fOpp.filter(s=>String(s.period)===String(scSelectedPeriod));
+  if(scShotFilter==='made')fOpp=fOpp.filter(s=>s.made);
+  if(scShotFilter==='missed')fOpp=fOpp.filter(s=>!s.made);
+  // HOME stats
+  const hmade=fHome.filter(s=>s.made).length,htotal=fHome.length,hpct=htotal>0?Math.round(hmade/htotal*100)+'%':'--';
   const sr=document.getElementById('sc-stats-row');
-  if(sr)sr.innerHTML=`<div style="background:var(--green-bg);border-radius:6px;padding:5px 10px;font-size:12px;"><strong style="color:var(--green);">${made}</strong> <span style="color:var(--muted);">made</span></div><div style="background:var(--red-bg);border-radius:6px;padding:5px 10px;font-size:12px;"><strong style="color:var(--red);">${total-made}</strong> <span style="color:var(--muted);">missed</span></div><div style="background:var(--accent-bg);border-radius:6px;padding:5px 10px;font-size:12px;"><strong style="color:var(--accent);">${pct}</strong> <span style="color:var(--muted);">FG%</span></div><div style="background:var(--surface2);border-radius:6px;padding:5px 10px;font-size:12px;"><strong style="color:var(--text);">${total}</strong> <span style="color:var(--muted);">attempts</span></div>`;
-  const dotsEl=document.getElementById('shot-dots');if(!dotsEl)return;dotsEl.innerHTML='';
-  f.forEach(s=>{
+  if(sr)sr.innerHTML=statsRowHTML(hmade,htotal,hpct,'home');
+  renderDots('shot-dots',fHome,'home');
+  renderZoneBreakdown(fHome,'sc-zone-body','sc-zone-card');
+  // OPP player pills
+  const oppPills=document.getElementById('sc-opp-player-pills');
+  if(oppPills){
+    const oppPlayerMap={};
+    oppShots.forEach(s=>{if(s.player_id&&s.player_name)oppPlayerMap[String(s.player_id)]={id:s.player_id,name:s.player_name,num:s.player_num||'?'};});
+    const oppPlayers=Object.values(oppPlayerMap).sort((a,b)=>String(a.num).localeCompare(String(b.num)));
+    const mkR=a=>a?'background:var(--red);color:#fff;border:1px solid var(--red);':'';
+    oppPills.innerHTML=`<button class="bench-pill" onclick="scSelectOppPlayer('all')" style="${mkR(scSelectedOppPlayer==='all')}font-size:11px;padding:5px 10px;">All players</button>`;
+    oppPlayers.forEach(p=>{const a=String(scSelectedOppPlayer)===String(p.id);oppPills.innerHTML+=`<button class="bench-pill" onclick="scSelectOppPlayer('${p.id}')" style="${mkR(a)}font-size:11px;padding:5px 10px;">${p.num} ${p.name.split(' ')[0]}</button>`;});
+  }
+  if(scSelectedOppPlayer!=='all')fOpp=fOpp.filter(s=>String(s.player_id)===String(scSelectedOppPlayer));
+  const omade=fOpp.filter(s=>s.made).length,ototal=fOpp.length,opct=ototal>0?Math.round(omade/ototal*100)+'%':'--';
+  const osr=document.getElementById('sc-opp-stats-row');
+  if(osr)osr.innerHTML=statsRowHTML(omade,ototal,opct,'opp');
+  renderDots('shot-dots-opp',fOpp,'opp');
+  renderZoneBreakdown(fOpp,'sc-opp-zone-body','sc-opp-zone-card');
+}
+function statsRowHTML(made,total,pct,team){
+  const mc=team==='opp'?'var(--red)':'var(--green)',bc=team==='opp'?'var(--red-bg)':'var(--green-bg)';
+  return`<div style="background:${bc};border-radius:6px;padding:5px 10px;font-size:12px;"><strong style="color:${mc};">${made}</strong> <span style="color:var(--muted);">made</span></div><div style="background:var(--red-bg);border-radius:6px;padding:5px 10px;font-size:12px;"><strong style="color:var(--red);">${total-made}</strong> <span style="color:var(--muted);">missed</span></div><div style="background:var(--accent-bg);border-radius:6px;padding:5px 10px;font-size:12px;"><strong style="color:var(--accent);">${pct}</strong> <span style="color:var(--muted);">FG%</span></div><div style="background:var(--surface2);border-radius:6px;padding:5px 10px;font-size:12px;"><strong style="color:var(--text);">${total}</strong> <span style="color:var(--muted);">attempts</span></div>`;
+}
+function renderDots(dotGroupId,shots,team){
+  const dotsEl=document.getElementById(dotGroupId);if(!dotsEl)return;dotsEl.innerHTML='';
+  const madeCol=team==='opp'?'#b91c1c':'var(--green)',missCol=team==='opp'?'#7f1d1d':'var(--red)';
+  shots.forEach(s=>{
     const x=parseFloat(s.x),y=parseFloat(s.y);if(isNaN(x)||isNaN(y))return;
     const g=document.createElementNS('http://www.w3.org/2000/svg','g');
-    if(s.made){const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('r','4');c.setAttribute('fill','var(--green)');c.setAttribute('opacity','0.9');c.setAttribute('stroke','white');c.setAttribute('stroke-width','1');g.appendChild(c);}
-    else{const sz=3.5;[['M'+(x-sz)+','+(y-sz)+'L'+(x+sz)+','+(y+sz)],['M'+(x+sz)+','+(y-sz)+'L'+(x-sz)+','+(y+sz)]].forEach(d=>{const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',d);p.setAttribute('stroke','var(--red)');p.setAttribute('stroke-width','2');p.setAttribute('stroke-linecap','round');p.setAttribute('opacity','0.9');g.appendChild(p);});}
-    const t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=(s.player_name||'?')+' — '+(s.made?'Made':'Missed');g.appendChild(t);dotsEl.appendChild(g);
+    if(s.made){const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('r','4');c.setAttribute('fill',madeCol);c.setAttribute('opacity','0.9');c.setAttribute('stroke','white');c.setAttribute('stroke-width','1');g.appendChild(c);}
+    else{const sz=3.5;[['M'+(x-sz)+','+(y-sz)+'L'+(x+sz)+','+(y+sz)],['M'+(x+sz)+','+(y-sz)+'L'+(x-sz)+','+(y+sz)]].forEach(d=>{const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',d);p.setAttribute('stroke',missCol);p.setAttribute('stroke-width','2');p.setAttribute('stroke-linecap','round');p.setAttribute('opacity','0.9');g.appendChild(p);});}
+    const t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=(s.player_name||'?')+' -- '+(s.made?'Made':'Missed');g.appendChild(t);dotsEl.appendChild(g);
   });
-  renderZoneBreakdown(f);
 }
+function renderZoneBreakdown(shots,bodyId,cardId){
+  const card=document.getElementById(cardId||'sc-zone-card'),tbody=document.getElementById(bodyId||'sc-zone-body');if(!card||!tbody)return;
+  if(!shots.length){card.style.display='none';return;}
+  card.style.display='block';const zd={};SC_ZONES.forEach(z=>zd[z.id]={made:0,total:0,label:z.label});
+  shots.forEach(s=>{const z=getZone(parseFloat(s.x),parseFloat(s.y));if(zd[z]){zd[z].total++;if(s.made)zd[z].made++;}});
+  tbody.innerHTML=SC_ZONES.map(z=>{const d=zd[z.id];if(!d||!d.total)return'';const pct=Math.round(d.made/d.total*100),col=pct>=50?'var(--green)':pct>=33?'var(--amber)':'var(--red)';return`<tr><td style="font-size:12px;">${d.label}</td><td>${d.made}</td><td>${d.total}</td><td style="color:${col};font-weight:600;">${pct}%</td></tr>`;}).filter(Boolean).join('');
+}
+let scSelectedOppPlayer='all';
+function scSelectOppPlayer(pid){scSelectedOppPlayer=pid;renderShotChart();}
 function scSelectPlayer(pid){scSelectedPlayer=pid;renderShotChart();}
 
 // ── SEASON ────────────────────────────────────────────
