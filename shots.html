@@ -161,7 +161,7 @@ select:focus,input:focus{border-color:var(--accent);}
             <div class="type-label">Missed</div>
           </div>
         </div>
-        <div style="margin-top:8px;font-size:11px;color:var(--muted);text-align:center;">Tap the court to log</div>
+        <button onclick="undoLastShot()" style="margin-top:10px;width:100%;padding:10px;border-radius:var(--rs);border:1px solid rgba(217,119,6,0.35);background:var(--amber-bg);color:var(--amber);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">&#8629; Undo last</button>
       </div>
     </div>
 
@@ -203,14 +203,13 @@ select:focus,input:focus{border-color:var(--accent);}
         <div class="sec-label" style="margin-bottom:0;">Shot log</div>
         <div id="log-stats" style="font-size:11px;color:var(--muted);"></div>
       </div>
-      <button onclick="undoLastShot()" style="width:100%;margin-bottom:8px;padding:11px;border-radius:var(--rs);border:1px solid rgba(217,119,6,0.35);background:var(--amber-bg);color:var(--amber);font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">&#8629; Undo last shot</button>
       <div id="shot-log"><div class="log-empty">No shots yet</div></div>
     </div>
 
     <div class="card" id="end-game-card">
       <div class="sec-label" style="margin-bottom:6px;">Finished logging?</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.55;">Tap End Game to lock the court and export your shots.</div>
-      <button class="btn btn-primary" onclick="endGame()">🏁 End Game</button>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.55;">Tap End &amp; Copy to lock the court and copy shots to clipboard.</div>
+      <button class="btn btn-primary" onclick="endGame()">🏁 End &amp; Copy</button>
     </div>
 
     <div class="card export-card" id="export-card" style="display:none;">
@@ -218,16 +217,21 @@ select:focus,input:focus{border-color:var(--accent);}
         <div class="sec-label" style="margin-bottom:0;color:var(--green);">Export &amp; merge</div>
         <div style="font-size:11px;color:var(--muted);" id="export-summary"></div>
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.55;">Tap Copy, then paste into the <strong>Shot Chart</strong> tab on the main tracker — use the <strong id="export-slot-label">Home shots</strong> import slot.</div>
-      <textarea id="copy-json" readonly placeholder="Tap Copy to generate..." style="width:100%;height:80px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:10px;padding:8px;resize:none;outline:none;-webkit-user-select:all;user-select:all;margin-bottom:8px;"></textarea>
-      <button class="btn btn-green" onclick="exportShots()">📋 Copy shots to clipboard</button>
-      <div style="margin-top:8px;font-size:11px;color:var(--muted);" id="export-note"></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.55;">Paste into <strong>Shot Chart</strong> tab → <strong id="export-slot-label">Home shots</strong> slot.</div>
+      <textarea id="copy-json" readonly placeholder="Tap Copy to generate..." style="width:100%;height:70px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:10px;padding:8px;resize:none;outline:none;-webkit-user-select:all;user-select:all;margin-bottom:8px;"></textarea>
+      <button class="btn btn-green" style="margin-bottom:8px;" onclick="exportShots()">📋 Copy to clipboard</button>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;" id="export-note"></div>
+      <!-- Switch to opp button — only shown after home team export -->
+      <div id="switch-to-opp-wrap" style="display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:4px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Home shots done. Ready to log opposition?</div>
+        <button class="btn btn-red" onclick="switchToOpp()">🔴 Switch to Opposition shots</button>
+      </div>
     </div>
 
     <div class="card">
       <div class="g2" style="margin-bottom:8px;">
         <button class="btn btn-primary" onclick="newGame()">🏀 New Game</button>
-        <button class="btn btn-red" onclick="clearSession()">🗑 Reset all shots</button>
+        <button class="btn btn-red" onclick="clearSession()">🗑 Reset all</button>
       </div>
       <div style="font-size:11px;color:var(--muted);text-align:center;">New Game keeps shot history · Reset clears everything</div>
     </div>
@@ -459,13 +463,17 @@ function endGame(){
   if(!shots.length){toast('No shots logged yet');return;}
   const svg=document.getElementById('court-svg');if(svg)svg.style.pointerEvents='none';
   document.getElementById('end-game-card').style.display='none';document.getElementById('export-card').style.display='block';
-  document.getElementById('header-sub').textContent=gameLabel+' — Game ended';
-  const made=shots.filter(s=>s.made).length,pct=Math.round(made/shots.length*100);
+  document.getElementById('header-sub').textContent=gameLabel+' — '+(teamMode==='opp'?'Opp':'Home')+' done';
+  const made=shots.filter(s=>s.made).length,pct=shots.length?Math.round(made/shots.length*100):0;
   const sumEl=document.getElementById('export-summary');if(sumEl)sumEl.textContent=shots.length+' shots · '+made+' made · '+pct+'%';
-  exportShots();document.getElementById('export-card').scrollIntoView({behavior:'smooth',block:'start'});toast('Game ended — ready to export');
+  // Show switch-to-opp only if we just finished home team
+  const sw=document.getElementById('switch-to-opp-wrap');
+  if(sw)sw.style.display=teamMode==='home'?'block':'none';
+  exportShots();document.getElementById('export-card').scrollIntoView({behavior:'smooth',block:'start'});
+  toast((teamMode==='home'?'Home':'Opp')+' shots done — copied to clipboard');
 }
 function newGame(){
-  selectedPlayer=null;selectedMade=null;currentPeriod=1;pendingX=null;pendingY=null;cancelShot();
+  selectedPlayer=null;selectedMade=null;currentPeriod=1;cancelShot();
   const svg=document.getElementById('court-svg');if(svg)svg.style.pointerEvents='';
   document.getElementById('btn-made').classList.remove('active');document.getElementById('btn-missed').classList.remove('active');
   document.getElementById('end-game-card').style.display='block';document.getElementById('export-card').style.display='none';
@@ -479,7 +487,7 @@ function newGame(){
 }
 function clearSession(){
   if(!confirm('Clear all shots and start over?'))return;
-  shots=[];pendingX=null;pendingY=null;selectedPlayer=null;selectedMade=null;gameLabel='';periodCount=4;periodLabel='Q';currentPeriod=1;squad=[];
+  shots=[];selectedPlayer=null;selectedMade=null;gameLabel='';periodCount=4;periodLabel='Q';currentPeriod=1;squad=[];
   save();document.getElementById('shot-dots').innerHTML='';cancelShot();renderLog();
   const svg=document.getElementById('court-svg');if(svg)svg.style.pointerEvents='';
   document.getElementById('btn-made').classList.remove('active');document.getElementById('btn-missed').classList.remove('active');
@@ -487,6 +495,44 @@ function clearSession(){
   document.getElementById('logger-screen').style.display='none';document.getElementById('setup-screen').style.display='block';
   document.getElementById('header-sub').textContent='Not connected';document.getElementById('shot-counter').textContent='0 shots';
   const mainSquad=getSquadFromMainApp();if(mainSquad&&mainSquad.length){setupPlayers=mainSquad.map(p=>({...p}));renderSetupPlayerList();}
+}
+
+// ── SWITCH TO OPP ─────────────────────────────────────
+function switchToOpp(){
+  // Keep game label and format, clear shots and court, switch to opp roster
+  const prevGameLabel=gameLabel;
+  const prevPeriodCount=periodCount;
+  const prevPeriodLabel=periodLabel;
+  shots=[];selectedPlayer=null;selectedMade=null;currentPeriod=1;
+  teamMode='opp';
+  // Load opp roster from main app if available
+  const oppSquad=getSquadFromMainApp('opp');
+  squad=oppSquad&&oppSquad.length?oppSquad.map(p=>({...p})):[];
+  gameLabel=prevGameLabel;periodCount=prevPeriodCount;periodLabel=prevPeriodLabel;
+  // Reset court and UI
+  document.getElementById('shot-dots').innerHTML='';
+  document.getElementById('btn-made').classList.remove('active');
+  document.getElementById('btn-missed').classList.remove('active');
+  document.getElementById('export-card').style.display='none';
+  document.getElementById('end-game-card').style.display='block';
+  const svg=document.getElementById('court-svg');if(svg)svg.style.pointerEvents='';
+  document.getElementById('header-sub').textContent='🔴 Opp — '+gameLabel;
+  document.getElementById('shot-counter').textContent='0 shots';
+  // Update export slot label
+  const sl=document.getElementById('export-slot-label');if(sl)sl.textContent='Opposition shots';
+  save();
+  if(!squad.length){
+    // No opp roster found - show a quick add prompt
+    toast('No opp roster found — add players in setup');
+    // Go back to setup in opp mode
+    document.getElementById('logger-screen').style.display='none';
+    document.getElementById('setup-screen').style.display='block';
+    setTeamMode('opp');
+    return;
+  }
+  renderPeriodBar();renderPlayerGrid();renderLog();updateHint();
+  document.getElementById('logger-screen').scrollTo(0,0);
+  toast('🔴 Switched to Opposition — court cleared');
 }
 
 // ── TOAST ─────────────────────────────────────────────
