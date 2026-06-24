@@ -1134,7 +1134,8 @@ function renderRosterTable(){
     tr.appendChild(pd);
     const fgp=s&&s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'—',ftp=s&&s.fta>0?Math.round(s.ftm/s.fta*100)+'%':'—';
     const vals=s?[s.ftm||0,s.fta||0,ftp,s.fgm,s.fga,fgp,s.fgm3||0,s.fga3||0,s.ast,s.oreb||0,s.dreb||0,s.stl,s.blk,s.tov,s.foul||0]:['—','—','—','—','—','—','—','—','—','—','—','—','—','—','—'];
-    vals.forEach((v,i)=>{const td=document.createElement('td');if(i===3)td.className='fgm-val';if(i===10)td.className='tov-val';if(i===11)td.style.color='var(--amber)';td.textContent=v;tr.appendChild(td);});
+    // indices: 0=ftm,1=fta,2=ft%,3=fgm,4=fga,5=fg%,6=fgm3,7=fga3,8=ast,9=oreb,10=dreb,11=stl,12=blk,13=tov,14=foul
+    vals.forEach((v,i)=>{const td=document.createElement('td');if(i===3)td.className='fgm-val';if(i===13)td.className='tov-val';if(i===14)td.style.color='var(--amber)';td.textContent=v;tr.appendChild(td);});
     tbody.appendChild(tr);
     if(s){tMins+=mins;tFtm+=s.ftm||0;tFta+=s.fta||0;tFgm+=s.fgm;tFga+=s.fga;tFgm3+=s.fgm3||0;tFga3+=s.fga3||0;tAst+=s.ast;tReb+=(s.oreb||0)+(s.dreb||0);tStl+=s.stl;tBlk+=s.blk;tTov+=s.tov;tFoul+=s.foul||0;}
   });
@@ -1145,7 +1146,9 @@ function renderRosterTable(){
     const tp=document.createElement('td');tp.textContent='—';tp.className='pm-zero';ttr.appendChild(tp);
     const tftp=tFta>0?Math.round(tFtm/tFta*100)+'%':'—',tfgp=tFga>0?Math.round(tFgm/tFga*100)+'%':'—';
     const tfgp3=tFga3>0?Math.round(tFgm3/tFga3*100)+'%':'—';
-    [tFtm,tFta,tftp,tFgm,tFga,tfgp,tFgm3,tFga3,tAst,tReb,tStl,tBlk,tTov,tFoul].forEach((v,i)=>{const td=document.createElement('td');td.style.fontWeight='700';if(i===3)td.style.color='#2563eb';if(i===12)td.style.color='var(--red)';if(i===13)td.style.color='var(--amber)';td.textContent=v;ttr.appendChild(td);});
+    let tOreb=0,tDreb=0;sorted.forEach(p=>{const s=cg.stats?cg.stats[p.id]:null;if(s){tOreb+=s.oreb||0;tDreb+=s.dreb||0;}});
+    // indices: 0=ftm,1=fta,2=ft%,3=fgm,4=fga,5=fg%,6=fgm3,7=fga3,8=ast,9=oreb,10=dreb,11=stl,12=blk,13=tov,14=foul
+    [tFtm,tFta,tftp,tFgm,tFga,tfgp,tFgm3,tFga3,tAst,tOreb,tDreb,tStl,tBlk,tTov,tFoul].forEach((v,i)=>{const td=document.createElement('td');td.style.fontWeight='700';if(i===3)td.style.color='#2563eb';if(i===13)td.style.color='var(--red)';if(i===14)td.style.color='var(--amber)';td.textContent=v;ttr.appendChild(td);});
     tbody.appendChild(ttr);
   }
 }
