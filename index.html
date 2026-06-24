@@ -846,6 +846,8 @@ function sbUrl(){return(state.config&&state.config.sbUrl)||'';}
 function sbKey(){return(state.config&&state.config.sbKey)||'';}
 function sbOk(){return !!(sbUrl()&&sbKey());}
 function teamId(){
+  // Use explicitly stored team key if available (set during join flow)
+  if(state.config&&state.config._teamKey)return state.config._teamKey;
   // Check for legacy key first so existing data is found
   const c=(state.config&&state.config.clubName)||'team';
   const t=(state.config&&state.config.teamName)||'squad';
@@ -870,6 +872,26 @@ async function sbLoadGames(){
   const rows=await sbFetch('games?team=eq.'+teamId()+'&order=game_id.desc&select=*');
   if(!rows)return[];
   return rows.map(r=>typeof r.data==='string'?JSON.parse(r.data):r.data);
+}
+async function sbLoadGamesForKey(url,key){
+  // Used during join flow when state.config not yet set
+  // Fetches all rows for this Supabase project, returns most recent team's games
+  const res=await fetch(url+'/rest/v1/games?order=game_id.desc&select=*',{
+    headers:{'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json'}
+  });
+  if(!res.ok)return[];
+  const text=await res.text();
+  if(!text)return[];
+  const rows=JSON.parse(text);
+  if(!rows.length)return[];
+  // Group by team, pick the team with most games
+  const byTeam={};
+  rows.forEach(r=>{if(!byTeam[r.team])byTeam[r.team]=[];byTeam[r.team].push(r);});
+  const bestTeam=Object.entries(byTeam).sort((a,b)=>b[1].length-a[1].length)[0];
+  if(!bestTeam)return[];
+  // Store the team key so future syncs use the right one
+  window._joinedTeamKey=bestTeam[0];
+  return bestTeam[1].map(r=>typeof r.data==='string'?JSON.parse(r.data):r.data);
 }
 
 // ── STATE ─────────────────────────────────────────────
@@ -954,7 +976,7 @@ async function joinExistingTeam(){
   state.config=state.config||{};
   state.config.sbUrl=url;state.config.sbKey=key;
   try{
-    const games=await sbLoadGames();
+    const games=await sbLoadGamesForKey(url,key);
     if(!games||!games.length){status.textContent='';warn.style.display='block';document.getElementById('ob-join-warn').textContent='⚠ No team data found. Check your credentials or set up as a new team.';return;}
     // Reconstruct squad from the most recent game with a player list
     const squadGame=games.find(g=>g.summary&&g.summary.stats&&Object.keys(g.summary.stats).length>0)||games[0];
@@ -989,7 +1011,7 @@ async function joinExistingTeam(){
     const teamName=squadGame.team||'';
     state.config={
       clubName:'',teamName:'',season:squadGame.date?squadGame.date.split('/')[2]||'':new Date().getFullYear()+'',
-      sbUrl:url,sbKey:key
+      sbUrl:url,sbKey:key,_teamKey:window._joinedTeamKey||''
     };
     state.players=players.length>=1?players:[{id:1,num:'#1',name:'Player 1'}];
     state.games=games;
