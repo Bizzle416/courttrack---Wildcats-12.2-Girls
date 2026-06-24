@@ -409,8 +409,6 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
       <div class="card action-card">
         <div class="sec-label">Action</div>
         <div id="action-no-player" class="no-player-msg" style="padding:12px 0;font-size:12px;">← Select a player</div>
-        <button class="action-btn undo-btn" id="undo-btn-always" onclick="undoAction()" style="width:100%;flex-direction:row;gap:6px;padding:11px 6px;font-size:13px;font-weight:700;margin-bottom:6px;">&#8629; Undo last</button>
-        <div class="last-action-bar" id="last-action-always" style="font-size:13px;font-weight:500;padding:8px 10px;min-height:36px;margin-bottom:6px;">&#8212;</div>
         <div id="action-panel" style="display:none;">
           <div class="spb-bar">
             <div class="spb-name" id="spb-name"></div>
@@ -430,10 +428,12 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
             <button class="action-btn" onclick="logAction('blk')">BLK<div class="abl">Block</div></button>
             <button class="action-btn tov" onclick="logAction('tov')">TO<div class="abl">Turnover</div></button>
             <button class="action-btn foul-btn" onclick="logAction('foul')" style="grid-column:1/-1;">FOUL<div class="abl">Personal foul</div></button>
-
-        </div>
-      </div>
-    </div>
+          </div><!-- /action-grid-v -->
+        </div><!-- /action-panel -->
+        <button class="action-btn undo-btn" id="undo-btn-always" onclick="undoAction()" style="width:100%;flex-direction:row;gap:6px;padding:11px 6px;font-size:13px;font-weight:700;margin-top:6px;">&#8629; Undo last</button>
+        <div class="last-action-bar" id="last-action-always" style="font-size:13px;font-weight:500;padding:8px 10px;min-height:36px;margin-top:4px;">&#8212;</div>
+      </div><!-- /action-card -->
+    </div><!-- /court-action-row -->
     <div class="scores-row">
       <div class="score-side">
         <div style="display:flex;align-items:center;margin-bottom:4px;">
@@ -464,10 +464,10 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
         </div>
       </div>
     </div><!-- /scores-row -->
-    <div class="card" style="padding:10px 0;">
+    <div class="card" style="padding:10px 0;width:100%;max-width:100%;overflow-x:auto;">
       <div class="sec-label" style="padding:0 14px 6px;">All players <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">— tap ● to sub on/off</span></div>
-      <div class="roster-wrap">
-        <table class="rtbl">
+      <div class="roster-wrap" style="overflow-x:auto;width:100%;">
+        <table class="rtbl" style="min-width:900px;">
           <thead><tr><th>Player</th><th>MIN</th><th>+/−</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3PA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead>
           <tbody id="roster-body"></tbody>
         </table>
@@ -491,8 +491,6 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
       <div class="card action-card">
         <div class="sec-label" style="color:var(--red);">Action</div>
         <div id="opp-action-no-player" class="no-player-msg" style="padding:12px 0;font-size:12px;">← Select a player</div>
-        <button class="action-btn undo-btn" id="opp-undo-btn-always" onclick="undoOppAction()" style="width:100%;flex-direction:row;gap:6px;padding:11px 6px;font-size:13px;font-weight:700;margin-bottom:6px;border-color:rgba(220,38,38,0.35);color:var(--red);">&#8629; Undo last</button>
-        <div class="last-action-bar" id="opp-last-action-always" style="font-size:13px;font-weight:500;padding:8px 10px;min-height:36px;margin-bottom:6px;">&#8212;</div>
         <div id="opp-action-panel" style="display:none;">
           <div class="spb-bar" style="background:var(--red-bg);border-color:rgba(220,38,38,0.3);">
             <div class="spb-name" id="opp-spb-name" style="color:var(--red);"></div>
@@ -512,10 +510,12 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
             <button class="action-btn" onclick="logOppAction('blk')">BLK<div class="abl">Block</div></button>
             <button class="action-btn tov" onclick="logOppAction('tov')">TO<div class="abl">Turnover</div></button>
             <button class="action-btn foul-btn" onclick="logOppAction('foul')" style="grid-column:1/-1;">FOUL<div class="abl">Personal foul</div></button>
-
-        </div>
-      </div>
-    </div>
+          </div><!-- /action-grid-v -->
+        </div><!-- /action-panel -->
+        <button class="action-btn undo-btn" id="opp-undo-btn-always" onclick="undoOppAction()" style="width:100%;flex-direction:row;gap:6px;padding:11px 6px;font-size:13px;font-weight:700;margin-top:6px;border-color:rgba(220,38,38,0.35);color:var(--red);">&#8629; Undo last</button>
+        <div class="last-action-bar" id="opp-last-action-always" style="font-size:13px;font-weight:500;padding:8px 10px;min-height:36px;margin-top:4px;">&#8212;</div>
+      </div><!-- /action-card -->
+    </div><!-- /court-action-row -->
     <div class="scores-row">
       <div class="score-side">
         <div class="score-side-label" id="score-opp-label2">Opponent</div>
@@ -530,16 +530,16 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
         <div style="font-size:11px;color:var(--muted);">from our team tab</div>
       </div>
     </div>
-    <div class="card" style="padding:10px 0;">
+    <div class="card" style="padding:10px 0;width:100%;max-width:100%;overflow-x:auto;">
       <div class="sec-label" style="padding:0 14px 6px;color:var(--red);">Opposition players <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">— tap ● to sub on/off</span></div>
-      <div class="roster-wrap">
-        <table class="rtbl">
+      <div class="roster-wrap" style="overflow-x:auto;width:100%;">
+        <table class="rtbl" style="min-width:900px;">
           <thead><tr><th>Player</th><th>MIN</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3PA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead>
           <tbody id="opp-roster-body"></tbody>
         </table>
       </div>
     </div>
-  </div>
+  </div><!-- /game-panel-opp -->
 
 </div><!-- /screen-game -->
 
@@ -1144,7 +1144,8 @@ function renderRosterTable(){
     const tm=document.createElement('td');tm.className='mins-cell';tm.style.fontWeight='700';tm.textContent=fmtMins(tMins);ttr.appendChild(tm);
     const tp=document.createElement('td');tp.textContent='—';tp.className='pm-zero';ttr.appendChild(tp);
     const tftp=tFta>0?Math.round(tFtm/tFta*100)+'%':'—',tfgp=tFga>0?Math.round(tFgm/tFga*100)+'%':'—';
-    [tFtm,tFta,tftp,tFgm,tFga,tfgp,tFgm3,tFga3,tAst,tReb,tStl,tBlk,tTov,tFoul].forEach((v,i)=>{const td=document.createElement('td');td.style.fontWeight='700';if(i===3)td.style.color='#2563eb';if(i===10)td.style.color='var(--red)';if(i===11)td.style.color='var(--amber)';td.textContent=v;ttr.appendChild(td);});
+    const tfgp3=tFga3>0?Math.round(tFgm3/tFga3*100)+'%':'—';
+    [tFtm,tFta,tftp,tFgm,tFga,tfgp,tFgm3,tFga3,tAst,tReb,tStl,tBlk,tTov,tFoul].forEach((v,i)=>{const td=document.createElement('td');td.style.fontWeight='700';if(i===3)td.style.color='#2563eb';if(i===12)td.style.color='var(--red)';if(i===13)td.style.color='var(--amber)';td.textContent=v;ttr.appendChild(td);});
     tbody.appendChild(ttr);
   }
 }
