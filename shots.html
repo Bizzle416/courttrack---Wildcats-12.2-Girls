@@ -426,8 +426,11 @@ function cancelShot(){}
 
 function addDotToChart(shot){
   const g=document.getElementById('shot-dots'),grp=document.createElementNS('http://www.w3.org/2000/svg','g');
-  if(shot.made){const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',shot.x);c.setAttribute('cy',shot.y);c.setAttribute('r','4');c.setAttribute('fill','#16a34a');c.setAttribute('opacity','0.9');c.setAttribute('stroke','white');c.setAttribute('stroke-width','1');grp.appendChild(c);}
-  else{const sz=3.5;[['M'+(shot.x-sz)+','+(shot.y-sz)+'L'+(shot.x+sz)+','+(shot.y+sz)],['M'+(shot.x+sz)+','+(shot.y-sz)+'L'+(shot.x-sz)+','+(shot.y+sz)]].forEach(d=>{const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',d);p.setAttribute('stroke','#dc2626');p.setAttribute('stroke-width','2');p.setAttribute('stroke-linecap','round');p.setAttribute('opacity','0.9');grp.appendChild(p);});}
+  const isOpp=teamMode==='opp';
+  const madeCol=isOpp?'#b91c1c':'#16a34a';
+  const missCol=isOpp?'#7f1d1d':'#dc2626';
+  if(shot.made){const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',shot.x);c.setAttribute('cy',shot.y);c.setAttribute('r','4');c.setAttribute('fill',madeCol);c.setAttribute('opacity','0.9');c.setAttribute('stroke','white');c.setAttribute('stroke-width','1');grp.appendChild(c);}
+  else{const sz=3.5;[['M'+(shot.x-sz)+','+(shot.y-sz)+'L'+(shot.x+sz)+','+(shot.y+sz)],['M'+(shot.x+sz)+','+(shot.y-sz)+'L'+(shot.x-sz)+','+(shot.y+sz)]].forEach(d=>{const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',d);p.setAttribute('stroke',missCol);p.setAttribute('stroke-width','2');p.setAttribute('stroke-linecap','round');p.setAttribute('opacity','0.9');grp.appendChild(p);});}
   const title=document.createElementNS('http://www.w3.org/2000/svg','title');title.textContent=shot.player_name+' '+shot.period_label;grp.appendChild(title);g.appendChild(grp);
 }
 
