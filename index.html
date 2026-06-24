@@ -297,7 +297,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
 <div class="app-header">
   <div>
     <div class="app-title" id="header-title">CourtTrack</div>
-    <div class="app-sub" id="header-sub">Rep tracker</div>
+    <div class="app-sub" id="header-sub">VJBL tracker</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀️ Light</button>
@@ -322,7 +322,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
     <div class="field">
       <div class="field-label">Game type</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-        <button class="game-type-btn active" id="gt-rep" onclick="setGameType('rep')"><div class="gt-title">Rep</div><div class="gt-sub">4 × 10 min</div></button>
+        <button class="game-type-btn active" id="gt-vjbl" onclick="setGameType('vjbl')"><div class="gt-title">VJBL</div><div class="gt-sub">4 × 10 min</div></button>
         <button class="game-type-btn" id="gt-domestic" onclick="setGameType('domestic')"><div class="gt-title">Domestic</div><div class="gt-sub">2 × 20 min</div></button>
         <button class="game-type-btn" id="gt-tournament" onclick="setGameType('tournament')"><div class="gt-title">Tournament</div><div class="gt-sub">custom</div></button>
       </div>
@@ -844,7 +844,7 @@ let actionLog=[],oppScoreLog=[],oppActionLog=[],selectedPid=null,editingGameIdx=
 let pendingStarters=new Set();
 let shotCache={};
 let scSelectedPlayer='all',scShotFilter='all',scSelectedPeriod='all';
-let currentGameType='rep',currentSeasonView='results',currentStatsView='total',currentMinsFilter='all';
+let currentGameType='vjbl',currentSeasonView='results',currentStatsView='total',currentMinsFilter='all';
 const Q_SECS_REP=600;
 
 const TL_ICONS={pts_1:'🎯',pts_2:'🏀',pts_3:'🔥',opp_pts:'⚡',opp_pts_1:'🎯',opp_pts_2:'🏀',opp_pts_3:'🔥',sub_on:'⬆️',sub_off:'⬇️',opp_sub_on:'⬆️',opp_sub_off:'⬇️',timeout:'🟢',opp_timeout:'🔴',fga:'❌',fga3:'❌',ft_miss:'✕',opp_ft_miss:'✕',ast:'👐',opp_ast:'👐',reb:'💪',oreb:'💪',dreb:'💪',opp_oreb:'💪',opp_dreb:'💪',stl:'✋',opp_stl:'✋',blk:'🚫',opp_blk:'🚫',tov:'🔄',opp_tov:'🔄',foul:'🟡',opp_foul:'🟡',opp_fga:'❌',opp_fga3:'❌',qend:'🔔',start:'🏁'};
@@ -915,7 +915,7 @@ function showApp(){
   document.getElementById('g-time').value='18:00';
   renderStarterGrid();renderOppPreRoster();
   if(state.currentGame){
-    currentGameType=state.currentGame.gameType||'rep';
+    currentGameType=state.currentGame.gameType||'vjbl';
     // Restore undo logs from persisted game state
     if(!state.currentGame.actionLog)state.currentGame.actionLog=[];
     if(!state.currentGame.oppScoreLog)state.currentGame.oppScoreLog=[];
@@ -976,7 +976,7 @@ function updateCloudSettings(){
 // ── GAME TYPE ─────────────────────────────────────────
 function setGameType(t){
   currentGameType=t;
-  ['rep','domestic','tournament'].forEach(n=>{
+  ['vjbl','domestic','tournament'].forEach(n=>{
     const b=document.getElementById('gt-'+n);
     if(b)b.classList.toggle('active',t===n);
   });
@@ -1041,7 +1041,7 @@ function render(){renderOnCourtSection();renderActionPanel();renderRosterTable()
 function renderStatus(){
   const cg=state.currentGame,badge=document.getElementById('status-badge'),meta=document.getElementById('game-meta');
   if(!cg){badge.className='badge badge-idle';badge.textContent='Idle';if(meta)meta.textContent='—';return;}
-  const mode=cg.gameType==='domestic'?'Domestic':'Rep';
+  const mode=cg.gameType==='domestic'?'Domestic':cg.gameType==='tournament'?'Tournament':'VJBL';
   const parts=[cg.date,cg.time,'vs '+cg.opponent,cg.venue].filter(Boolean);
   if(meta)meta.innerHTML=parts.join(' · ')+'<span class="game-mode-badge">'+mode+'</span>';
   if(cg.timeout){badge.className='badge badge-to';badge.textContent='Timeout';}
@@ -1789,7 +1789,7 @@ function renderSeason(){
         const diff=(g.scoreHome||0)-(g.scoreAway||0),ew=diff>0,ow=diff<0;
         const mt=diff===0?'Draw':((ew?(state.config.clubName||'Home'):(g.opponent||'Opp'))+' won by '+Math.abs(diff)+' pt'+(Math.abs(diff)===1?'':'s'));
         const rl2=g.round?'Round '+g.round:'Game';
-        const mt2=' - '+(g.gameType==='domestic'?'Domestic':g.gameType==='tournament'?'Tournament':'Rep');
+        const mt2=' - '+(g.gameType==='domestic'?'Domestic':g.gameType==='tournament'?'Tournament':'VJBL');
         const trackBtn=g.filmed!==false?'<span class="gli-edit" onclick="event.stopPropagation();reopenGameForOpp('+idx+')" style="border:1px solid rgba(220,38,38,0.35);border-radius:5px;padding:3px 8px;color:var(--red);font-weight:600;">Track opp</span>':'';
         return '<div class="round-block">'
           +'<div class="round-header"><div class="round-header-title">'+rl2+'</div>'
@@ -1852,7 +1852,7 @@ function getGameTotalMins(g){if(g.totalGameMins)return g.totalGameMins;const pc=
 function renderMinsSections(games){
   games=games||state.games;const c=document.getElementById('mins-sections');if(!c)return;
   if(!games.length){c.innerHTML='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No games yet</div>';return;}
-  const rep=games.filter(g=>g.gameType!=='domestic'),dom=games.filter(g=>g.gameType==='domestic');
+  const rep=games.filter(g=>g.gameType!=='domestic'&&g.gameType!=='tournament'),dom=games.filter(g=>g.gameType==='domestic');
   const dg={};dom.forEach(g=>{const hl=Math.round(getGameTotalMins(g)/2),k=hl+'min';if(!dg[k])dg[k]={hl,games:[]};dg[k].games.push(g);});
   function buildTable(fg,label,fs){
     if(!fg.length)return'';const sorted=[...state.players].sort((a,b)=>a.id-b.id);const tot={};state.players.forEach(p=>tot[p.id]=0);
@@ -1867,7 +1867,7 @@ function renderMinsSections(games){
     return`<div class="card" style="margin-bottom:10px;"><div class="sec-label">${label}</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px;">${fg.length} game${fg.length!==1?'s':''} · Fair share <strong style="color:var(--text);">${fs.toFixed(1)}</strong> min/game</div><div class="tbl-wrap"><table class="stbl"><thead><tr><th style="min-width:110px;">Player</th><th>Total</th><th>Avg/g</th><th>vs fair</th><th>Load</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }
   let html='';
-  if(currentMinsFilter==='all'||currentMinsFilter==='rep'){if(rep.length>0)html+=buildTable(rep,'Rep — 4 × 10 min',(4*10*5)/state.players.length);else if(currentMinsFilter==='rep')html='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No rep games</div>';}
+  if(currentMinsFilter==='all'||currentMinsFilter==='vjbl'){if(rep.length>0)html+=buildTable(rep,'VJBL — 4 × 10 min',(4*10*5)/state.players.length);else if(currentMinsFilter==='vjbl')html='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No VJBL games</div>';}
   if(currentMinsFilter==='all'||currentMinsFilter==='domestic'){const de=Object.values(dg).sort((a,b)=>b.hl-a.hl);if(de.length)de.forEach(({hl,games:gr})=>html+=buildTable(gr,`Domestic — 2 × ${hl} min halves`,(hl*2*5)/state.players.length));else if(currentMinsFilter==='domestic')html='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No domestic games</div>';}
   if(!html)html='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No games in this category</div>';
   c.innerHTML=html;
@@ -2259,7 +2259,7 @@ function exportCSV(){
         g.date||'',g.round?'R'+g.round:'',
         '"'+(g.opponent||'').replace(/"/g,'""')+'"',
         '"'+(g.venue||'').replace(/"/g,'""')+'"',
-        g.gameType==='tournament'?'Tournament':g.gameType==='domestic'?'Domestic':'Rep',
+        g.gameType==='tournament'?'Tournament':g.gameType==='domestic'?'Domestic':'VJBL',
         r2,g.scoreHome||0,g.scoreAway||0,
         '"'+p.name.replace(/"/g,'""')+'"',p.num,
         gp,mins,pm,rating,
