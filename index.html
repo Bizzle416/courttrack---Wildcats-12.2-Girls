@@ -1318,9 +1318,10 @@ function renderOppActionPanel(){
 function renderOppRosterTable(){
   const tbody=document.getElementById('opp-roster-body');if(!tbody)return;
   const cg=state.currentGame;
-  if(!cg||!cg.oppRoster||!cg.oppRoster.length){tbody.innerHTML='<tr><td colspan="16" style="color:var(--muted);padding:10px;font-size:12px;">No opposition roster — add players in Game Setup</td></tr>';return;}
+  if(!cg||!cg.oppRoster||!cg.oppRoster.length){tbody.innerHTML='<tr><td colspan="18" style="color:var(--muted);padding:10px;font-size:12px;">No opposition roster — add players in Game Setup</td></tr>';return;}
   const now=(cg&&cg.running)?Date.now():null;
   tbody.innerHTML='';
+  let tMins=0,tPts=0,tFtm=0,tFta=0,tFgm=0,tFga=0,tFgm3=0,tFga3=0,tAst=0,tOreb=0,tDreb=0,tStl=0,tBlk=0,tTov=0,tFoul=0;
   cg.oppRoster.forEach(p=>{
     const isOn=cg.oppOnCourt.includes(p.id);
     const mins=getOppPlayerMins(p.id,now);
@@ -1332,10 +1333,24 @@ function renderOppRosterTable(){
     nd.innerHTML=`<div class="pname-cell"><div class="sub-toggle${isOn?' on':''}" onclick="toggleOppPlayer(${p.id})" style="${isOn?'background:var(--red);border-color:var(--red);':''}"><div class="sub-dot"></div></div><span class="pnum-tag">${p.num}</span><span style="font-size:12px;">${p.name}</span></div>`;
     tr.appendChild(nd);
     const md=document.createElement('td');md.className='mins-cell';md.textContent=fmtMins(mins);tr.appendChild(md);
+    // indices: 0=pts,1=ftm,2=fta,3=ft%,4=fgm,5=fga,6=fg%,7=fgm3,8=fga3,9=ast,10=oreb,11=dreb,12=stl,13=blk,14=tov,15=foul
     const vals=s?[s.pts||0,s.ftm||0,s.fta||0,ftp,s.fgm,s.fga,fgp,s.fgm3||0,s.fga3||0,s.ast,s.oreb||0,s.dreb||0,s.stl,s.blk,s.tov,s.foul||0]:['—','—','—','—','—','—','—','—','—','—','—','—','—','—','—','—'];
-    vals.forEach((v,i)=>{const td=document.createElement('td');if(i===12)td.className='tov-val';if(i===13)td.style.color='var(--amber)';td.textContent=v;tr.appendChild(td);});
+    vals.forEach((v,i)=>{const td=document.createElement('td');if(i===14)td.className='tov-val';if(i===15)td.style.color='var(--amber)';td.textContent=v;tr.appendChild(td);});
     tbody.appendChild(tr);
+    if(s){tMins+=mins;tPts+=s.pts||0;tFtm+=s.ftm||0;tFta+=s.fta||0;tFgm+=s.fgm||0;tFga+=s.fga||0;tFgm3+=s.fgm3||0;tFga3+=s.fga3||0;tAst+=s.ast||0;tOreb+=s.oreb||0;tDreb+=s.dreb||0;tStl+=s.stl||0;tBlk+=s.blk||0;tTov+=s.tov||0;tFoul+=s.foul||0;}
   });
+  // Totals row
+  const ttr=document.createElement('tr');ttr.style.cssText='border-top:2px solid var(--border2);background:var(--surface2);font-weight:600;';
+  const tn=document.createElement('td');tn.innerHTML=`<div class="pname-cell" style="padding-left:2px;"><span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Team totals</span></div>`;ttr.appendChild(tn);
+  const tm=document.createElement('td');tm.className='mins-cell';tm.style.fontWeight='700';tm.textContent=fmtMins(tMins);ttr.appendChild(tm);
+  const tftp=tFta>0?Math.round(tFtm/tFta*100)+'%':'—',tfgp=tFga>0?Math.round(tFgm/tFga*100)+'%':'—';
+  [tPts,tFtm,tFta,tftp,tFgm,tFga,tfgp,tFgm3,tFga3,tAst,tOreb,tDreb,tStl,tBlk,tTov,tFoul].forEach((v,i)=>{
+    const td=document.createElement('td');td.style.fontWeight='700';
+    if(i===14)td.style.color='var(--red)';
+    if(i===15)td.style.color='var(--amber)';
+    td.textContent=v;ttr.appendChild(td);
+  });
+  tbody.appendChild(ttr);
 }
 function renderOppScores(){
   const cg=state.currentGame;
