@@ -1847,9 +1847,19 @@ function openGameReport(idx){
   function rBg2(r){return r===null?'#fff':r>=6.5?'#f0faf5':r>=4.0?'#fffbf0':'#fff8f8';}
   const sbd=[...pd].sort((a,b)=>{if(a.rating===null&&b.rating===null)return 0;if(a.rating===null)return 1;if(b.rating===null)return-1;return b.rating-a.rating;});
   let sRows='';
-  sbd.forEach(p=>{const s=p.s,m=p.mins,pm=p.pm,r=p.rating,col=r!==null?rCol2(r):'#aaa';const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'—',ft=s.fta>0?Math.round((s.ftm||0)/s.fta*100)+'%':'—';sRows+=`<tr style="background:${rBg2(r)};"><td style="text-align:left;font-weight:500;padding:7px 8px;">${p.num} ${p.name}</td><td>${Math.floor(m)}:${String(Math.floor((m-Math.floor(m))*60)).padStart(2,'0')}</td><td>${pmB(pm)}</td><td style="font-weight:600;">${s.pts||0}</td><td>${s.ftm||0}/${s.fta||0}</td><td style="color:#666;">${ft}</td><td style="color:#2563eb;">${s.fgm}/${s.fga}</td><td style="color:#666;">${fg}</td><td>${s.ast}</td><td>${(s.oreb||0)+(s.dreb||0)}</td><td>${s.stl}</td><td>${s.blk}</td><td style="color:#dc2626;">${s.tov}</td><td style="color:${s.foul>=4?'#a32d2d':'#d97706'};${s.foul>=4?'font-weight:700;':''}">${s.foul||0}</td><td>${rBar(r,col)}</td></tr>`;});
+  sbd.forEach(p=>{const s=p.s,m=p.mins,pm=p.pm,r=p.rating,col=r!==null?rCol2(r):'#aaa';const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'—',ft=s.fta>0?Math.round((s.ftm||0)/s.fta*100)+'%':'—';sRows+=`<tr style="background:${rBg2(r)};"><td style="text-align:left;font-weight:500;padding:7px 8px;">${p.num} ${p.name}</td><td>${Math.floor(m)}:${String(Math.floor((m-Math.floor(m))*60)).padStart(2,'0')}</td><td>${pmB(pm)}</td><td style="font-weight:600;">${s.pts||0}</td><td>${s.ftm||0}/${s.fta||0}</td><td style="color:#666;">${ft}</td><td style="color:#2563eb;">${s.fgm}/${s.fga}</td><td style="color:#666;">${fg}</td><td>${s.ast}</td><td>${s.oreb||0}</td><td>${s.dreb||0}</td><td>${s.stl}</td><td>${s.blk}</td><td style="color:#dc2626;">${s.tov}</td><td style="color:${s.foul>=4?'#a32d2d':'#d97706'};${s.foul>=4?'font-weight:700;':''}">${s.foul||0}</td><td>${rBar(r,col)}</td></tr>`;});
   const tpts=pd.reduce((a,p)=>a+(p.s.pts||0),0),tfgm=pd.reduce((a,p)=>a+p.s.fgm,0),tfga=pd.reduce((a,p)=>a+p.s.fga,0),tftm=pd.reduce((a,p)=>a+(p.s.ftm||0),0),tfta=pd.reduce((a,p)=>a+p.s.fta,0),tast=pd.reduce((a,p)=>a+p.s.ast,0),treb=pd.reduce((a,p)=>a+(p.s.oreb||0)+(p.s.dreb||0),0),tstl=pd.reduce((a,p)=>a+p.s.stl,0),tblk=pd.reduce((a,p)=>a+p.s.blk,0),ttov=pd.reduce((a,p)=>a+p.s.tov,0),tfoul=pd.reduce((a,p)=>a+(p.s.foul||0),0);
-  sRows+=`<tr style="background:#f5f5f7;font-weight:700;border-top:2px solid #dde;"><td style="text-align:left;padding:7px 8px;">TEAM</td><td>—</td><td>—</td><td>${tpts}</td><td>${tftm}/${tfta}</td><td style="color:#666;">${tfta>0?Math.round(tftm/tfta*100)+'%':'—'}</td><td style="color:#2563eb;">${tfgm}/${tfga}</td><td style="color:#666;">${tfga>0?Math.round(tfgm/tfga*100)+'%':'—'}</td><td>${tast}</td><td>${treb}</td><td>${tstl}</td><td>${tblk}</td><td style="color:#dc2626;">${ttov}</td><td style="color:#d97706;">${tfoul}</td><td>—</td></tr>`;
+  sRows+=const toreb=pd.reduce((a,p)=>a+(p.s.oreb||0),0),tdreb=pd.reduce((a,p)=>a+(p.s.dreb||0),0);
+  sRows+=`<tr style="background:#f5f5f7;font-weight:700;border-top:2px solid #dde;"><td style="text-align:left;padding:7px 8px;">TEAM</td><td>—</td><td>—</td><td>${tpts}</td><td>${tftm}/${tfta}</td><td style="color:#666;">${tfta>0?Math.round(tftm/tfta*100)+'%':'—'}</td><td style="color:#2563eb;">${tfgm}/${tfga}</td><td style="color:#666;">${tfga>0?Math.round(tfgm/tfga*100)+'%':'—'}</td><td>${tast}</td><td>${toreb}</td><td>${tdreb}</td><td>${tstl}</td><td>${tblk}</td><td style="color:#dc2626;">${ttov}</td><td style="color:#d97706;">${tfoul}</td><td>—</td></tr>`;
+  // Advanced stats table — home team
+  const totMins=pd.reduce((a,p)=>a+p.mins,0);
+  function per40(v,m){return m<0.5?'—':(v*40/m).toFixed(1);}
+  function di40(s,m){if(m<5)return'—';const di=(((s.stl||0)+(s.blk||0))-(s.tov||0)-(s.foul||0))*40/m;return(di>0?'+':'')+di.toFixed(1);}
+  function effi(s){const pos=(s.pts||0)+(s.ast||0)+(s.oreb||0)+(s.dreb||0)+(s.stl||0)+(s.blk||0);const neg=(s.tov||0)+(s.foul||0);const fga=s.fga||0,ftm=s.ftm||0,fgm=s.fgm||0;return pos-neg;}
+  let advRows='';
+  sbd.forEach(p=>{if(p.mins<0.5)return;const s=p.s,m=p.mins;const ts=(s.fgm3||0)>0?Math.round((s.fgm3||0)/(s.fga3||1)*100)+'%':'—';const efft=s.fga>0?Math.round(((s.fgm||0)+(s.fgm3||0)*0.5)/s.fga*100)+'%':'—';const d=di40(s,m);const dcol=d==='—'?'#999':parseFloat(d)>0?'#1a6b4a':parseFloat(d)<0?'#991b1b':'#666';advRows+=`<tr><td style="text-align:left;font-weight:500;padding:5px 7px;">${p.num} ${p.name}</td><td>${per40(s.pts||0,m)}</td><td>${ts}</td><td>${efft}</td><td>${per40(s.ast||0,m)}</td><td>${per40((s.oreb||0)+(s.dreb||0),m)}</td><td>${per40(s.stl||0,m)}</td><td style="color:${dcol};font-weight:600;">${d}</td><td>${effi(s)}</td></tr>`;});
+  const advHtml=advRows?`<h2>Advanced Stats — ${homeTeam.trim()}</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;text-align:left;">Player</th><th title="Points per 40 min">Pts/40</th><th title="3-point percentage">3P%</th><th title="Effective FG%: (FGM + 0.5×3PM) / FGA">eFG%</th><th title="Assists per 40 min">Ast/40</th><th title="Rebounds per 40 min">Reb/40</th><th title="Steals per 40 min">Stl/40</th><th title="Defensive Impact per 40: (STL+BLK-TOV-FL)×40/min">DI/40</th><th title="Efficiency: (PTS+AST+REB+STL+BLK) − (TOV+FL)">EFF</th></tr></thead><tbody>${advRows}</tbody></table></div><div style="font-size:10px;color:#bbb;margin-top:5px;">DI/40 = Defensive Impact per 40 min: (STL+BLK−TOV−FL)×40/MIN · eFG% weights 3-pointers · EFF = raw efficiency units</div>`:'';
+
   // Period scores
   let qHtml='';
   if(g.timeline&&g.timeline.length){
@@ -1878,7 +1888,14 @@ function openGameReport(idx){
   let scHtml='';
   if(gameShots.length>0){
     const pkeys=isDom?[1,2]:[1,2,3,4];
-    const pc=pkeys.map(p=>{const ps=gameShots.filter(s=>s.period===p||s.period===String(p));const m=ps.filter(s=>s.made).length,pct=ps.length?Math.round(m/ps.length*100)+'%':'—';return ps.length?`<div style="margin-bottom:20px;"><div style="font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #3b82f6;">${pl}${p} — ${m}/${ps.length} (${pct})</div><div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;align-items:start;"><div>${buildSvg(ps,'home')}</div><div>${buildZT(ps)}</div></div></div>`:'';}).join('');
+    function buildPlayerShotTable(shots,accentCol){
+      if(!shots.length)return'';
+      const byPlayer={};
+      shots.forEach(s=>{const k=s.player_id;if(!byPlayer[k])byPlayer[k]={name:s.player_name||'?',num:s.player_num||'',made:0,missed:0,shots:[]};byPlayer[k][s.made?'made':'missed']++;byPlayer[k].shots.push(s);});
+      const rows=Object.values(byPlayer).sort((a,b)=>b.made-a.made).map(p=>{const tot=p.made+p.missed,pct=tot?Math.round(p.made/tot*100)+'%':'—';const col=tot?pct.replace('%','')>=50?'#1a6b4a':parseInt(pct)>=33?'#b45309':'#991b1b':'#999';return`<tr><td style="text-align:left;padding:3px 6px;font-size:11px;">${p.num} ${p.name}</td><td style="text-align:center;padding:3px 6px;font-size:11px;color:#1a6b4a;font-weight:600;">${p.made}</td><td style="text-align:center;padding:3px 6px;font-size:11px;color:#dc2626;">${p.missed}</td><td style="text-align:center;padding:3px 6px;font-size:11px;font-weight:700;color:${col};">${pct}</td></tr>`;}).join('');
+      return`<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;"><thead><tr style="border-bottom:1px solid #e0e0e0;"><th style="text-align:left;padding:3px 6px;font-size:10px;color:#888;">Player</th><th style="text-align:center;padding:3px 6px;font-size:10px;color:#1a6b4a;">Made</th><th style="text-align:center;padding:3px 6px;font-size:10px;color:#dc2626;">Missed</th><th style="text-align:center;padding:3px 6px;font-size:10px;color:#888;">FG%</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+    const pc=pkeys.map(p=>{const ps=gameShots.filter(s=>s.period===p||s.period===String(p));const m=ps.filter(s=>s.made).length,pct=ps.length?Math.round(m/ps.length*100)+'%':'—';if(!ps.length)return'';return`<div style="margin-bottom:24px;"><div style="font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #3b82f6;">${pl}${p} — ${m}/${ps.length} (${pct})</div><div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;align-items:start;"><div>${buildSvg(ps,'home')}</div><div>${buildZT(ps)}</div></div>${buildPlayerShotTable(ps,'#3b82f6')}</div>`;}).join('');
     const am=gameShots.filter(s=>s.made).length,ap=gameShots.length?Math.round(am/gameShots.length*100)+'%':'—';
     // Home shot chart
     scHtml=`<h2>Shot Chart — ${homeTeam.trim()} — ${am}/${gameShots.length} FG (${ap})</h2><div style="margin-bottom:20px;"><div style="font-size:12px;font-weight:700;color:#555;margin-bottom:8px;">Full game</div><div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;align-items:start;"><div>${buildSvg(gameShots,'home')}</div><div>${buildZT(gameShots)}</div></div></div><div style="font-size:12px;font-weight:600;color:#555;margin-bottom:12px;">By ${isDom?'half':'quarter'}</div>${pc}`;
@@ -1886,7 +1903,7 @@ function openGameReport(idx){
     if(oppGameShots.length>0){
       const oppPKeys=isDom?[1,2]:[1,2,3,4];
       const oppAm=oppGameShots.filter(s=>s.made).length,oppAp=oppGameShots.length?Math.round(oppAm/oppGameShots.length*100)+'%':'—';
-      const oppPc=oppPKeys.map(p=>{const ps=oppGameShots.filter(s=>s.period===p||s.period===String(p));const m=ps.filter(s=>s.made).length,pct=ps.length?Math.round(m/ps.length*100)+'%':'—';return ps.length?`<div style="margin-bottom:20px;"><div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #dc2626;">${pl}${p} — ${m}/${ps.length} (${pct})</div><div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;align-items:start;"><div>${buildSvg(ps,'opp')}</div><div>${buildZT(ps)}</div></div></div>`:'';}).join('');
+      const oppPc=oppPKeys.map(p=>{const ps=oppGameShots.filter(s=>s.period===p||s.period===String(p));const m=ps.filter(s=>s.made).length,pct=ps.length?Math.round(m/ps.length*100)+'%':'—';if(!ps.length)return'';return`<div style="margin-bottom:24px;"><div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #dc2626;">${pl}${p} — ${m}/${ps.length} (${pct})</div><div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;align-items:start;"><div>${buildSvg(ps,'opp')}</div><div>${buildZT(ps)}</div></div>${buildPlayerShotTable(ps,'#dc2626')}</div>`;}).join('');
       scHtml+=`<h2 style="color:#dc2626;border-color:#dc2626;">${opp} — Shot Chart — ${oppAm}/${oppGameShots.length} FG (${oppAp})</h2><div style="margin-bottom:20px;"><div style="font-size:12px;font-weight:700;color:#555;margin-bottom:8px;">Full game</div><div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;align-items:start;"><div>${buildSvg(oppGameShots,'opp')}</div><div>${buildZT(oppGameShots)}</div></div></div><div style="font-size:12px;font-weight:600;color:#555;margin-bottom:12px;">By ${isDom?'half':'quarter'}</div>${oppPc}`;
     }
   }
@@ -1910,7 +1927,46 @@ function openGameReport(idx){
       opp_sub_on:ev=>opp+' sub on: '+ev.data.player,opp_sub_off:ev=>opp+' sub off: '+ev.data.player,
       qend:ev=>'End of '+(pd3['Q'+(ev.q||1)]||'Q'+(ev.q||1)),start:ev=>ev.data.label||'Game started'
     };
-    pk3.forEach(qk=>{if(!qs2[qk])return;const ql=pd3[qk]||qk;let rows='';qs2[qk].forEach(ev=>{const fn=el2[ev.type],desc=fn?fn(ev):ev.type;const ip=['pts_1','pts_2','pts_3'].includes(ev.type),io=['opp_pts','opp_pts_1','opp_pts_2','opp_pts_3'].includes(ev.type);const sc=(ip||io)?`<span style="font-size:10px;font-weight:700;font-family:monospace;background:${ip?'#e8f8ee':'#fce8e8'};color:${ip?'#1a6b4a':'#7a1f1f'};padding:2px 5px;border-radius:3px;">${ev.scoreHome}–${ev.scoreAway}</span>`:'';rows+=`<tr><td style="color:#888;font-family:monospace;font-size:11px;">${ev.ts}</td><td>${desc} ${sc}</td></tr>`;});tlHtml+=`<h3 style="font-size:12px;font-weight:700;color:#3b82f6;border-bottom:2px solid #3b82f6;padding-bottom:4px;margin:16px 0 8px;">${ql}</h3><table style="width:100%;border-collapse:collapse;font-size:12px;"><tbody>${rows}</tbody></table>`;});
+    // Fix 6: combine all events, sort by quarter then by timestamp (descending clock = ascending elapsed)
+    // Fix 7: convert stored timestamp (elapsed format Q1 M:SS) to countdown display (10:00 - elapsed)
+    function tsToCountdown(ts,periodSecs){
+      // ts format: "Q1 2:14" or "H1 3:05" — convert elapsed to countdown
+      try{
+        const parts=ts.split(' ');if(parts.length<2)return ts;
+        const tp=parts[1].split(':');if(tp.length<2)return ts;
+        const elapsedSecs=parseInt(tp[0])*60+parseInt(tp[1]);
+        const ps=periodSecs||600;
+        const remaining=Math.max(0,ps-elapsedSecs);
+        const rm=Math.floor(remaining/60),rs=remaining%60;
+        return parts[0]+' '+rm+':'+String(rs).padStart(2,'0');
+      }catch(e){return ts;}
+    }
+    const ps2=g.periodSecs||600;
+    const allEventsForTl=g.timeline.slice().sort((a,b)=>{
+      const qa=(a.q||1),qb=(b.q||1);
+      if(qa!==qb)return qa-qb;
+      // within quarter sort by ts (elapsed ascending)
+      try{const at=a.ts.split(' ')[1]||'0:00',bt=b.ts.split(' ')[1]||'0:00';
+        const ap2=at.split(':'),bp=bt.split(':');
+        const as2=parseInt(ap2[0])*60+parseInt(ap2[1]||0),bs=parseInt(bp[0])*60+parseInt(bp[1]||0);
+        return as2-bs;}catch(e){return 0;}
+    });
+    pk3.forEach(qk=>{
+      const qNum=parseInt(qk.replace('Q',''))||1;
+      const qEvs=allEventsForTl.filter(ev=>(ev.q||1)===qNum);
+      if(!qEvs.length)return;
+      const ql=pd3[qk]||qk;let rows='';
+      qEvs.forEach(ev=>{
+        const fn=el2[ev.type],desc=fn?fn(ev):ev.type.replace(/_/g,' ');
+        const ip=['pts_1','pts_2','pts_3'].includes(ev.type),io=['opp_pts','opp_pts_1','opp_pts_2','opp_pts_3'].includes(ev.type);
+        const sc=(ip||io)?`<span style="font-size:10px;font-weight:700;font-family:monospace;background:${ip?'#e8f8ee':'#fce8e8'};color:${ip?'#1a6b4a':'#7a1f1f'};padding:2px 5px;border-radius:3px;">${ev.scoreHome}–${ev.scoreAway}</span>`:'';
+        const isOppEv=ev.type.startsWith('opp_');
+        const rowBg=isOppEv?'background:#fff8f8;':'';
+        const countdown=tsToCountdown(ev.ts,ps2);
+        rows+=`<tr style="${rowBg}"><td style="color:#888;font-family:monospace;font-size:11px;white-space:nowrap;">${countdown}</td><td style="font-size:11px;${isOppEv?'color:#7a1f1f;':''}">${desc} ${sc}</td></tr>`;
+      });
+      tlHtml+=`<h3 style="font-size:12px;font-weight:700;color:#3b82f6;border-bottom:2px solid #3b82f6;padding-bottom:4px;margin:16px 0 8px;">${ql}</h3><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid #eee;"><th style="text-align:left;color:#888;font-size:10px;padding:3px 6px;width:60px;">Clock</th><th style="text-align:left;color:#888;font-size:10px;padding:3px 6px;">Event</th></tr></thead><tbody>${rows}</tbody></table>`;
+    });
   }
   // Opposition stats section
   const gOppRoster=g.oppRoster||[];
@@ -1923,7 +1979,19 @@ function openGameReport(idx){
       gOppRoster.forEach(p=>{const s=gOppSummaryStats[p.id]||emptyOppPlayerStats();const fg=s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'—',ft=s.fta>0?Math.round(s.ftm/s.fta*100)+'%':'—';oppRows+=`<tr><td style="text-align:left;padding:6px 7px;">${p.num} ${p.name}</td><td style="font-weight:600;">${s.pts||0}</td><td>${s.ftm||0}/${s.fta||0}</td><td style="color:#666;">${ft}</td><td style="color:#2563eb;">${s.fgm||0}/${s.fga||0}</td><td style="color:#666;">${fg}</td><td>${s.ast||0}</td><td>${s.oreb||0}</td><td>${s.dreb||0}</td><td>${s.stl||0}</td><td>${s.blk||0}</td><td style="color:#dc2626;">${s.tov||0}</td><td style="color:#d97706;">${s.foul||0}</td></tr>`;totPts+=s.pts||0;totFgm+=s.fgm||0;totFga+=s.fga||0;totFtm+=s.ftm||0;totFta+=s.fta||0;totAst+=s.ast||0;totOreb+=s.oreb||0;totDreb+=s.dreb||0;totStl+=s.stl||0;totBlk+=s.blk||0;totTov+=s.tov||0;totFoul+=s.foul||0;});
       const tfg=totFga>0?Math.round(totFgm/totFga*100)+'%':'—',tft=totFta>0?Math.round(totFtm/totFta*100)+'%':'—';
       oppRows+=`<tr style="background:#f5f5f7;font-weight:700;border-top:2px solid #dde;"><td style="text-align:left;padding:6px 7px;">TEAM</td><td>${totPts}</td><td>${totFtm}/${totFta}</td><td style="color:#666;">${tft}</td><td style="color:#2563eb;">${totFgm}/${totFga}</td><td style="color:#666;">${tfg}</td><td>${totAst}</td><td>${totOreb}</td><td>${totDreb}</td><td>${totStl}</td><td>${totBlk}</td><td style="color:#dc2626;">${totTov}</td><td style="color:#d97706;">${totFoul}</td></tr>`;
-      oppStatsHtml=`<h2>${opp} — Opposition Stats</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;text-align:left;">Player</th><th>PTS</th><th>FT</th><th>FT%</th><th>FG</th><th>FG%</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead><tbody>${oppRows}</tbody></table></div>`;
+      // Opp advanced stats
+      let oppAdvRows='';
+      gOppRoster.forEach(p=>{
+        const s=gOppSummaryStats[p.id]||emptyOppPlayerStats();
+        const m=g.oppSummary?g.oppSummary.minutes[p.id]||0:0;
+        if(m<0.5)return;
+        const ts2=(s.fga3||0)>0?Math.round((s.fgm3||0)/(s.fga3)*100)+'%':'—';
+        const efft=s.fga>0?Math.round(((s.fgm||0)+(s.fgm3||0)*0.5)/s.fga*100)+'%':'—';
+        const d=di40(s,m);const dcol=d==='—'?'#999':parseFloat(d)>0?'#1a6b4a':parseFloat(d)<0?'#991b1b':'#666';
+        oppAdvRows+=`<tr><td style="text-align:left;font-weight:500;padding:5px 7px;">${p.num} ${p.name}</td><td>${per40(s.pts||0,m)}</td><td>${ts2}</td><td>${efft}</td><td>${per40(s.ast||0,m)}</td><td>${per40((s.oreb||0)+(s.dreb||0),m)}</td><td>${per40(s.stl||0,m)}</td><td style="color:${dcol};font-weight:600;">${d}</td><td>${effi(s)}</td></tr>`;
+      });
+      const oppAdvHtml=oppAdvRows?`<h2 style="color:#dc2626;border-color:#dc2626;">${opp} — Advanced Stats</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;text-align:left;">Player</th><th>Pts/40</th><th>3P%</th><th>eFG%</th><th>Ast/40</th><th>Reb/40</th><th>Stl/40</th><th>DI/40</th><th>EFF</th></tr></thead><tbody>${oppAdvRows}</tbody></table></div>`:'';
+      oppStatsHtml+=`<h2>${opp} — Opposition Stats</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;text-align:left;">Player</th><th>PTS</th><th>FT</th><th>FT%</th><th>FG</th><th>FG%</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead><tbody>${oppRows}</tbody></table></div>`;oppStatsHtml+=oppAdvHtml;
     }
   }
   const note='Rating (1–10): Pts/40 ×1.0 · STL/40 ×1.5 · BLK/40 ×1.2 · REB/40 ×0.8 · AST/40 ×1.0 − TOV/40 ×1.5 − F/40 ×1.0 + plus/minus ×0.15, scaled to squad range';
@@ -1933,10 +2001,44 @@ function openGameReport(idx){
 <div class="page-header"><div class="page-title"><h1>${homeTeam.trim()}</h1><div class="sub">${sub}</div></div><div class="result">${resultStr}</div></div>
 <div class="scores"><div class="sc"><div class="sc-n">${state.config.clubName||'Home'}</div><div class="sc-v" style="color:${diff>0?'#16a34a':diff<0?'#dc2626':'#1a1a1a'};">${g.scoreHome||0}</div></div><div class="sc"><div class="sc-n">${opp}</div><div class="sc-v" style="color:${diff<0?'#dc2626':diff>0?'#16a34a':'#1a1a1a'};">${g.scoreAway||0}</div></div></div>
 <div class="mg">${diff===0?'Draw':((diff>0?(state.config.clubName||'Home'):opp)+' won by '+Math.abs(diff)+' pt'+(Math.abs(diff)===1?'':'s'))}</div>
-<h2>Player Performance — sorted by rating</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;">Player</th><th>Min</th><th>+/−</th><th>PTS</th><th>FT</th><th>FT%</th><th>FG</th><th>FG%</th><th>AST</th><th>REB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th><th style="min-width:90px;">Rating</th></tr></thead><tbody>${sRows}</tbody></table></div>
+<h2>Player Performance — sorted by rating</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;">Player</th><th>Min</th><th>+/−</th><th>PTS</th><th>FT</th><th>FT%</th><th>FG</th><th>FG%</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th><th style="min-width:90px;">Rating</th></tr></thead><tbody>${sRows}</tbody></table></div>
 <div class="note">${note}</div>
-${qHtml}${scHtml}${oppStatsHtml}${tlHtml?`<h2>Game Timeline</h2>${tlHtml}`:''}
+${advHtml}${qHtml}${scHtml}${oppStatsHtml}${tlHtml?`<h2>Game Timeline</h2>${tlHtml}`:''}
 <p style="font-size:10px;color:#bbb;margin-top:24px;text-align:center;">CourtTrack · ${homeTeam.trim()} · ${new Date().toLocaleDateString('en-AU')}</p>
+<div style="margin-top:40px;border-top:2px solid #e8e8e8;padding-top:24px;">
+<h2>Glossary</h2>
+<table style="font-size:11px;"><thead><tr><th style="text-align:left;min-width:80px;">Stat</th><th style="text-align:left;">Definition</th></tr></thead><tbody>
+<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">MIN</td><td style="padding:5px 8px;">Minutes played — tracked from sub-on to sub-off during live game.</td></tr>
+<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">+/−</td><td style="padding:5px 8px;">Plus/minus — net score while the player was on the court. Positive means the team outscored the opposition during their time on court.</td></tr>
+<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">PTS</td><td style="padding:5px 8px;">Points scored — includes free throws (1pt), field goals (2pt) and three-pointers (3pt).</td></tr>
+<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">FT / FT%</td><td style="padding:5px 8px;">Free throws made / attempted and percentage. FT% = FTM ÷ FTA × 100.</td></tr>
+<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">FG / FG%</td><td style="padding:5px 8px;">Field goals made / attempted (all shots except free throws) and percentage. FG% = FGM ÷ FGA × 100.</td></tr>
+<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">3P%</td><td style="padding:5px 8px;">Three-point percentage — three-pointers made ÷ three-pointers attempted × 100.</td></tr>
+<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">eFG%</td><td style="padding:5px 8px;">Effective field goal % — adjusts for the extra value of three-pointers. Formula: (FGM + 0.5 × 3PM) ÷ FGA. A player who makes 4/8 shots (50% FG%) but 2 of those are threes will have an eFG% above 50%.</td></tr>
+<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">AST</td><td style="padding:5px 8px;">Assists — a pass that directly leads to a made basket by a teammate.</td></tr>
+<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">OREB</td><td style="padding:5px 8px;">Offensive rebounds — possession retained after a missed shot by own team.</td></tr>
+<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">DREB</td><td style="padding:5px 8px;">Defensive rebounds — possession gained after a missed shot by the opposition.</td></tr>
+<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">STL</td><td style="padding:5px 8px;">Steals — taking possession from the opposition without a foul.</td></tr>
+<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">BLK</td><td style="padding:5px 8px;">Blocks — deflecting or rejecting an opposition shot attempt.</td></tr>
+<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">TO</td><td style="padding:5px 8px;">Turnovers — losing possession without taking a shot (bad pass, travel, charge etc).</td></tr>
+<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">FL</td><td style="padding:5px 8px;">Personal fouls — contact fouls called against the player. Highlighted red at 4+.</td></tr>
+<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">Pts/40</td><td style="padding:5px 8px;">Points per 40 minutes — normalises scoring to a full game equivalent regardless of minutes played. Formula: PTS × 40 ÷ MIN.</td></tr>
+<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">Ast/40</td><td style="padding:5px 8px;">Assists per 40 minutes — normalised assist rate. Useful for comparing players with different court time.</td></tr>
+<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">Reb/40</td><td style="padding:5px 8px;">Total rebounds (OREB + DREB) per 40 minutes.</td></tr>
+<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">Stl/40</td><td style="padding:5px 8px;">Steals per 40 minutes.</td></tr>
+<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">DI/40</td><td style="padding:5px 8px;">Defensive Impact per 40 minutes. Formula: (STL + BLK − TOV − FL) × 40 ÷ MIN. Positive = net positive defensive contributor. Minimum 5 minutes required.</td></tr>
+<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">EFF</td><td style="padding:5px 8px;">Raw efficiency units. Formula: (PTS + AST + OREB + DREB + STL + BLK) − (TOV + FL). A simple total contribution score — not normalised for minutes.</td></tr>
+</tbody></table>
+<div style="margin-top:20px;padding:14px 16px;background:#f0f6ff;border-left:3px solid #3b82f6;border-radius:4px;">
+<div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:6px;">Player Rating (1.0 – 10.0)</div>
+<div style="font-size:11px;color:#444;line-height:1.7;">
+The player rating is a single number summarising each player's contribution, scaled from 1 to 10 relative to the squad in this game.<br>
+<strong>Formula:</strong> Raw score = (Pts/40 × 1.0) + (Stl/40 × 1.5) + (Blk/40 × 1.2) + (Reb/40 × 0.8) + (Ast/40 × 1.0) − (Tov/40 × 1.5) − (Fouls/40 × 1.0) + (Plus/minus × 0.15)<br>
+Defensive contributions (steals, blocks) are weighted higher than scoring. Turnovers and fouls are penalised. The raw scores are then scaled so the best performer in each game scores 10.0 and the lowest scores 1.0 — meaning ratings are relative to the squad, not absolute.<br>
+<strong>Minimum 30 seconds</strong> of court time required. DNP = Did Not Play (below threshold).
+</div>
+</div>
+</div>
 <button class="pb" onclick="window.print()">Save as PDF / Print</button>
 <div class="ios">On iPhone: tap Share → Print → pinch to zoom → Share → Save to Files</div>
 </div></body></html>`;
