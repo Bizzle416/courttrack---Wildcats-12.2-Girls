@@ -841,7 +841,15 @@ const TL_ICONS={pts_1:'🎯',pts_2:'🏀',pts_3:'🔥',opp_pts:'⚡',opp_pts_1:'
 const TL_CLASS={pts_1:'pts',pts_2:'pts',pts_3:'pts',opp_pts:'opp',opp_pts_1:'opp',opp_pts_2:'opp',opp_pts_3:'opp',sub_on:'sub',sub_off:'sub',opp_sub_on:'sub',opp_sub_off:'sub',timeout:'timeout',opp_timeout:'timeout',fga:'stat',fga3:'stat',ft_miss:'stat',opp_ft_miss:'stat',ast:'stat',opp_ast:'stat',reb:'stat',oreb:'stat',dreb:'stat',opp_oreb:'stat',opp_dreb:'stat',stl:'stat',opp_stl:'stat',blk:'stat',opp_blk:'stat',tov:'stat',opp_tov:'stat',foul:'foul',opp_foul:'foul',opp_fga:'stat',opp_fga3:'stat',qend:'system',start:'system'};
 
 // ── PERSIST ───────────────────────────────────────────
-function save(){try{localStorage.setItem(APP_KEY,JSON.stringify({...state,_starters:[...pendingStarters]}));}catch(e){}}
+function save(){
+  try{
+    localStorage.setItem(APP_KEY,JSON.stringify({...state,_starters:[...pendingStarters]}));
+  }catch(e){
+    if(e&&(e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED'||e.code===22)){
+      showToast('⚠ Storage full — export a JSON backup now from the Data tab');
+    }
+  }
+}
 function load(){
   try{
     const r=localStorage.getItem(APP_KEY);
@@ -856,7 +864,25 @@ function load(){
   if(!state.games)state.games=[];
   if(!state.config)state.config=defaultConfig();
   const ready=state.players.length>=1&&state.config.clubName&&state.config.teamName;
-  if(ready){showApp();}else{showOnboarding();}
+  if(ready){
+    if(state.currentGame){
+      const cg=state.currentGame;
+      // Restore volatile module-level vars from persisted game
+      isFilmed=cg.filmed||false;
+      currentGameTab=cg._uiTab||'home';
+      reopenIdx=cg._reopenIdx!=null?cg._reopenIdx:null;
+      // Restore undo logs (point module vars at the arrays on currentGame)
+      if(!cg.actionLog)cg.actionLog=[];
+      if(!cg.oppScoreLog)cg.oppScoreLog=[];
+      if(!cg.oppActionLog)cg.oppActionLog=[];
+      if(!cg.oppStatLog)cg.oppStatLog=[];
+      actionLog=cg.actionLog;
+      oppScoreLog=cg.oppScoreLog;
+      oppActionLog=cg.oppActionLog;
+      oppStatLog=cg.oppStatLog;
+    }
+    showApp();
+  }else{showOnboarding();}
 }
 
 // ── ONBOARDING ────────────────────────────────────────
@@ -1220,6 +1246,7 @@ function oppPreAdd(){
 // Tab switcher
 function setGameTab(tab){
   currentGameTab=tab;
+  if(state.currentGame)state.currentGame._uiTab=tab;
   const hBtn=document.getElementById('game-tab-home'),oBtn=document.getElementById('game-tab-opp');
   const hPanel=document.getElementById('game-panel-home'),oPanel=document.getElementById('game-panel-opp');
   if(tab==='home'){
@@ -1432,12 +1459,23 @@ function setClockManual(){
   if(wasRunning){cg.running=true;const now=Date.now();cg.lastTick=now;cg.onCourt.forEach(pid=>{cg.stints[pid]=now;});if(cg.oppOnCourt)cg.oppOnCourt.forEach(pid=>{cg.oppStints[pid]=now;});startTimer();}
 }
 function setQuarter(q){
-  const cg=state.currentGame;if(!cg)return;if(q>cg.quarter)addEvent('qend',{});
-  cg.quarter=q;cg.qRemaining=cg.periodSecs||Q_SECS_REP;save();renderStatus();renderTimer();renderPeriodBar(cg);
+  const cg=state.currentGame;if(!cg)return;
+  const wasRunning=cg.running;
+  if(wasRunning)pauseInternal();
+  if(q>cg.quarter)addEvent('qend',{});
+  cg.quarter=q;cg.qRemaining=cg.periodSecs||Q_SECS_REP;
+  if(wasRunning){
+    cg.running=true;const now=Date.now();cg.lastTick=now;
+    cg.onCourt.forEach(pid=>{cg.stints[pid]=now;});
+    if(cg.oppOnCourt)cg.oppOnCourt.forEach(pid=>{cg.oppStints[pid]=now;});
+    startTimer();
+  }
+  save();renderStatus();renderTimer();renderPeriodBar(cg);
 }
 function endGame(){
   const cg=state.currentGame;if(!cg)return;if(!confirm('End game and save to season?'))return;
   pauseInternal();cg.ended=true;cg.running=false;cg.timeout=false;cg.onCourt=[];if(cg.oppOnCourt)cg.oppOnCourt=[];
+  if(wakeLock&&wakeLock.release){wakeLock.release().catch(()=>{});wakeLock=null;}
   const pc=cg.gameType==='domestic'?2:4;cg.totalGameMins=(cg.periodSecs||600)/60*pc;
   const pmf=calcLivePlusMinus();
   const summary={minutes:{},stats:{},plusMinus:{}};
@@ -2239,6 +2277,7 @@ function reopenGameForOpp(idx){
   state.players.forEach(function(p){cg.minutes[p.id]=g.summary?g.summary.minutes[p.id]||0:cg.minutes[p.id]||0;if(!cg.stats[p.id])cg.stats[p.id]=emptyStats();if(g.summary&&g.summary.stats&&g.summary.stats[p.id])cg.stats[p.id]=Object.assign({},g.summary.stats[p.id]);});
   cg.scoreAway=0;cg.onCourt=[];cg.stints={};
   state.currentGame=cg;isFilmed=true;
+  cg._uiTab='opp';cg._reopenIdx=idx;
   cg.actionLog=[];cg.oppScoreLog=[];cg.oppActionLog=[];cg.oppStatLog=[];
   actionLog=cg.actionLog;oppScoreLog=cg.oppScoreLog;oppActionLog=cg.oppActionLog;oppStatLog=cg.oppStatLog;
   selectedPid=null;selectedOppPid=null;currentGameTab='opp';
@@ -2253,6 +2292,7 @@ function endReopenSession(){
   if(!confirm('Save this session?'))return;
   pauseInternal();cg.ended=true;cg.running=false;cg.timeout=false;
   cg.onCourt=[];if(cg.oppOnCourt)cg.oppOnCourt=[];
+  if(wakeLock&&wakeLock.release){wakeLock.release().catch(()=>{});wakeLock=null;}
   const pc=cg.gameType==='domestic'?2:4;cg.totalGameMins=(cg.periodSecs||600)/60*pc;
   const pmf=calcLivePlusMinus();
   const summary={minutes:{},stats:{},plusMinus:{}};
