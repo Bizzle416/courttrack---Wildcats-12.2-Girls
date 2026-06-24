@@ -753,9 +753,13 @@ function sbUrl(){return(state.config&&state.config.sbUrl)||'';}
 function sbKey(){return(state.config&&state.config.sbKey)||'';}
 function sbOk(){return !!(sbUrl()&&sbKey());}
 function teamId(){
+  // Check for legacy key first so existing data is found
   const c=(state.config&&state.config.clubName)||'team';
   const t=(state.config&&state.config.teamName)||'squad';
-  return(c+'_'+t).toLowerCase().replace(/[^a-z0-9]+/g,'_').slice(0,64);
+  const generated=(c+'_'+t).toLowerCase().replace(/[^a-z0-9]+/g,'_').slice(0,64);
+  // Map known legacy identifiers
+  const legacyMap={'eltham_wildcats_12_2_girls':'eltham_u12_wildcats'};
+  return legacyMap[generated]||generated;
 }
 async function sbFetch(path,options={}){
   if(!sbOk())return null;
