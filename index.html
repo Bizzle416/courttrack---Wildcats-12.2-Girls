@@ -941,7 +941,9 @@ function renderObPlayerList(){
 function obAddPlayer(){
   const num=document.getElementById('ob-new-num').value.trim();
   const name=document.getElementById('ob-new-name').value.trim();if(!name)return;
-  obPlayers.push({id:Date.now()+obPlayers.length,num:num?'#'+num.replace('#',''):'-',name});
+  const cleanNum=num?num.replace('#',''):'';
+  const pid=cleanNum&&!isNaN(parseInt(cleanNum))?parseInt(cleanNum):(Date.now()+obPlayers.length);
+  obPlayers.push({id:pid,num:cleanNum?'#'+cleanNum:'-',name});
   document.getElementById('ob-new-num').value='';document.getElementById('ob-new-name').value='';
   renderObPlayerList();
 }
@@ -2211,7 +2213,11 @@ function renamePlayer(id,v){const p=state.players.find(p=>p.id===id);if(p){p.nam
 function removePlayer(id){state.players=state.players.filter(p=>p.id!==id);save();renderSetup();}
 function addPlayer(){
   const num=document.getElementById('new-num').value.trim(),name=document.getElementById('new-name').value.trim();if(!name)return;
-  const id=Date.now();state.players.push({id,num:num?'#'+num.replace('#',''):'-',name});
+  const cleanNum2=num?num.replace('#',''):'';
+  const id=cleanNum2&&!isNaN(parseInt(cleanNum2))?parseInt(cleanNum2):Date.now();
+  // Check for duplicate ID — if jersey number already taken, use timestamp
+  const idFinal=state.players.find(p=>p.id===id)?Date.now():id;
+  state.players.push({id:idFinal,num:cleanNum2?'#'+cleanNum2:'-',name});
   if(state.currentGame){state.currentGame.minutes[id]=0;state.currentGame.stats[id]=emptyStats();}
   document.getElementById('new-num').value='';document.getElementById('new-name').value='';save();renderSetup();
 }
@@ -2221,6 +2227,57 @@ function clearAll(){if(!confirm('Clear all game data? Squad will be kept.'))retu
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='courttrack_backup_'+new Date().toISOString().split('T')[0]+'.json';a.click();URL.revokeObjectURL(url);}
 function importData(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.players)throw new Error();if(!confirm('Replace all current data?'))return;if(d._starters){pendingStarters=new Set(d._starters.map(Number));delete d._starters;}state=d;if(!state.config)state.config=defaultConfig();save();showApp();render();renderStarterGrid();alert('Restored.');}catch(err){alert('Invalid backup file.');}};reader.readAsText(file);e.target.value='';}
 async function syncGameToCloud(game){try{const r=await sbSaveGame(game);if(r!==null)showToast('✓ Saved to cloud');else showToast('⚠ Cloud sync failed');}catch(e){showToast('⚠ Cloud sync failed');}}
+function autoRemapPlayerIds(cloudGames){
+  // Find a game with summary data to detect what IDs the cloud uses
+  const sampleGame=cloudGames.find(g=>g.summary&&g.summary.stats);
+  if(!sampleGame)return;
+  const cloudIds=Object.keys(sampleGame.summary.stats).map(Number).filter(n=>!isNaN(n));
+  if(!cloudIds.length)return;
+
+  // Check if current squad IDs already match cloud IDs
+  const squadIds=state.players.map(p=>p.id);
+  const alreadyMatch=cloudIds.every(cid=>squadIds.includes(cid));
+  if(alreadyMatch)return;  // nothing to do
+
+  // Try to match by jersey number — cloud uses jersey num as ID
+  // e.g. cloud ID 4 → find squad player with num '#4'
+  let remapped=0;
+  const idMap={};  // old timestamp ID → new jersey number ID
+  state.players.forEach(p=>{
+    const numStr=(p.num||'').replace('#','').trim();
+    const numInt=parseInt(numStr);
+    if(!isNaN(numInt)&&cloudIds.includes(numInt)&&p.id!==numInt){
+      idMap[p.id]=numInt;
+    }
+  });
+
+  if(!Object.keys(idMap).length)return;  // no matches found
+
+  // Apply remap to squad
+  state.players=state.players.map(p=>({...p,id:idMap[p.id]!==undefined?idMap[p.id]:p.id}));
+
+  // Apply remap to any existing local games
+  state.games.forEach(g=>{
+    if(g.summary){
+      const newMins={},newStats={},newPm={};
+      Object.entries(idMap).forEach(([oldId,newId])=>{
+        if(g.summary.minutes[oldId]!==undefined)newMins[newId]=g.summary.minutes[oldId];
+        if(g.summary.stats&&g.summary.stats[oldId])newStats[newId]=g.summary.stats[oldId];
+        if(g.summary.plusMinus&&g.summary.plusMinus[oldId]!==undefined)newPm[newId]=g.summary.plusMinus[oldId];
+      });
+      // Keep any IDs that weren't in the remap
+      Object.keys(g.summary.minutes).forEach(k=>{if(!idMap[k])newMins[k]=g.summary.minutes[k];});
+      if(g.summary.stats)Object.keys(g.summary.stats).forEach(k=>{if(!idMap[k])newStats[k]=g.summary.stats[k];});
+      g.summary.minutes=newMins;
+      if(g.summary.stats)g.summary.stats=newStats;
+      if(g.summary.plusMinus)g.summary.plusMinus=newPm;
+    }
+    remapped++;
+  });
+
+  console.log('CourtTrack: auto-remapped '+Object.keys(idMap).length+' player IDs to jersey numbers');
+}
+
 async function loadGamesFromCloud(){try{const cg=await sbLoadGames();if(!cg||!cg.length)return false;const li=new Set(state.games.map(g=>String(g.id)));const ng=cg.filter(g=>!li.has(String(g.id)));if(ng.length){state.games=[...state.games,...ng];state.games.sort((a,b)=>parseDateStr(b.date)-parseDateStr(a.date));save();return true;}return false;}catch(e){return false;}}
 async function pushAllToCloud(){
   if(!sbOk()){showToast('⚠ No cloud credentials — add in Squad tab');return;}
@@ -2232,7 +2289,15 @@ async function pushAllToCloud(){
 async function pullFromCloud(){
   if(!sbOk()){showToast('⚠ No cloud credentials — add in Squad tab');return;}
   showToast('Pulling from cloud...');
-  try{const cg=await sbLoadGames();if(!cg||!cg.length){showToast('No games found in cloud');return;}state.games=cg;state.games.sort((a,b)=>parseDateStr(b.date)-parseDateStr(a.date));save();renderSeason();showToast('✓ Loaded '+cg.length+' games from cloud');}catch(e){showToast('⚠ Pull failed');}
+  try{
+    const cg=await sbLoadGames();
+    if(!cg||!cg.length){showToast('No games found in cloud');return;}
+    autoRemapPlayerIds(cg);
+    state.games=cg;
+    state.games.sort((a,b)=>parseDateStr(b.date)-parseDateStr(a.date));
+    save();renderSeason();renderSetup();
+    showToast('✓ Loaded '+cg.length+' games from cloud');
+  }catch(e){showToast('⚠ Pull failed');}
 }
 function exportCSV(){
   const games=state.games;if(!games.length){showToast('No games to export');return;}
