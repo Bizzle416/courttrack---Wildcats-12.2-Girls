@@ -265,30 +265,65 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
 <!-- ONBOARDING OVERLAY -->
 <div class="onboard-overlay" id="onboard-overlay">
   <div class="onboard-logo">🏀 CourtTrack</div>
-  <div class="onboard-sub">Set up your team to get started</div>
-  <div class="onboard-section">
-    <div class="onboard-section-title">Team details</div>
-    <div class="field"><div class="field-label">Club name</div><input type="text" id="ob-club" placeholder="e.g. Eltham Wildcats"/></div>
-    <div class="field"><div class="field-label">Team name</div><input type="text" id="ob-team" placeholder="e.g. U12 Girls"/></div>
-    <div class="field"><div class="field-label">Season / year</div><input type="text" id="ob-season" placeholder="e.g. Winter 2026"/></div>
-  </div>
-  <div class="onboard-section">
-    <div class="onboard-section-title">Squad — add at least 5 players</div>
-    <div id="ob-player-list"></div>
-    <div class="ob-player-row" style="margin-top:6px;">
-      <input type="text" id="ob-new-num" placeholder="#" style="width:54px;flex:none;"/>
-      <input type="text" id="ob-new-name" placeholder="Player name"/>
-      <button class="btn btn-primary" style="padding:9px 14px;white-space:nowrap;flex:none;" onclick="obAddPlayer()">Add</button>
+  <div class="onboard-sub">Basketball statistics tracker</div>
+
+  <!-- PATH CHOOSER -->
+  <div id="ob-path-chooser">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <button onclick="showObPath('join')" style="padding:16px 10px;border-radius:var(--rs);border:2px solid var(--accent);background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:center;line-height:1.4;">
+        <div style="font-size:20px;margin-bottom:4px;">🔗</div>
+        <div>Join existing team</div>
+        <div style="font-size:11px;opacity:0.85;margin-top:2px;">Load squad & data from cloud</div>
+      </button>
+      <button onclick="showObPath('new')" style="padding:16px 10px;border-radius:var(--rs);border:2px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:center;line-height:1.4;">
+        <div style="font-size:20px;margin-bottom:4px;">✨</div>
+        <div>New team</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Set up from scratch</div>
+      </button>
     </div>
   </div>
-  <div class="onboard-section">
-    <div class="onboard-section-title">Cloud sync (optional)</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Enter Supabase credentials to sync across devices. Leave blank to use local storage only.</div>
-    <div class="field"><div class="field-label">Supabase project URL</div><input type="text" id="ob-sb-url" placeholder="https://xxxx.supabase.co"/></div>
-    <div class="field"><div class="field-label">Supabase anon key</div><input type="text" id="ob-sb-key" placeholder="eyJhbGci..."/></div>
+
+  <!-- PATH: JOIN EXISTING TEAM -->
+  <div id="ob-path-join" style="display:none;">
+    <div class="onboard-section">
+      <div class="onboard-section-title">Connect to your team</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6;">Enter the Supabase credentials your team admin shared with you. Your squad and all season data will load automatically.</div>
+      <div class="field"><div class="field-label">Supabase project URL</div><input type="text" id="ob-join-url" placeholder="https://xxxx.supabase.co"/></div>
+      <div class="field"><div class="field-label">Supabase anon key</div><input type="text" id="ob-join-key" placeholder="eyJhbGci..."/></div>
+    </div>
+    <div id="ob-join-status" style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0;min-height:24px;"></div>
+    <div class="onboard-warn" id="ob-join-warn" style="display:none;">⚠ Enter both credentials to continue.</div>
+    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="joinExistingTeam()">🔗 Connect &amp; Load team →</button>
+    <div style="text-align:center;margin-top:12px;"><span style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;" onclick="showObPath('chooser')">← Back</span></div>
   </div>
-  <div class="onboard-warn" id="ob-warn">⚠ Enter club name, team name and at least 1 player to continue.</div>
-  <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="completeOnboarding()">Start using CourtTrack →</button>
+
+  <!-- PATH: NEW TEAM -->
+  <div id="ob-path-new" style="display:none;">
+    <div class="onboard-section">
+      <div class="onboard-section-title">Team details</div>
+      <div class="field"><div class="field-label">Club name</div><input type="text" id="ob-club" placeholder="e.g. Eltham Wildcats"/></div>
+      <div class="field"><div class="field-label">Team name</div><input type="text" id="ob-team" placeholder="e.g. U12 Girls"/></div>
+      <div class="field"><div class="field-label">Season / year</div><input type="text" id="ob-season" placeholder="e.g. Winter 2026"/></div>
+    </div>
+    <div class="onboard-section">
+      <div class="onboard-section-title">Squad — add at least 5 players</div>
+      <div id="ob-player-list"></div>
+      <div class="ob-player-row" style="margin-top:6px;">
+        <input type="text" id="ob-new-num" placeholder="#" style="width:54px;flex:none;"/>
+        <input type="text" id="ob-new-name" placeholder="Player name"/>
+        <button class="btn btn-primary" style="padding:9px 14px;white-space:nowrap;flex:none;" onclick="obAddPlayer()">Add</button>
+      </div>
+    </div>
+    <div class="onboard-section">
+      <div class="onboard-section-title">Cloud sync (optional)</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Enter Supabase credentials to sync across devices. Leave blank to use local storage only.</div>
+      <div class="field"><div class="field-label">Supabase project URL</div><input type="text" id="ob-sb-url" placeholder="https://xxxx.supabase.co"/></div>
+      <div class="field"><div class="field-label">Supabase anon key</div><input type="text" id="ob-sb-key" placeholder="eyJhbGci..."/></div>
+    </div>
+    <div class="onboard-warn" id="ob-warn">⚠ Enter club name, team name and at least 1 player to continue.</div>
+    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="completeOnboarding()">Start using CourtTrack →</button>
+    <div style="text-align:center;margin-top:12px;"><span style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;" onclick="showObPath('chooser')">← Back</span></div>
+  </div>
 </div>
 
 <!-- APP SHELL (hidden until onboarding complete) -->
@@ -900,7 +935,77 @@ let obPlayers=[];
 function showOnboarding(){
   document.getElementById('onboard-overlay').classList.remove('hidden');
   document.getElementById('app-shell').style.display='none';
-  renderObPlayerList();applyTheme();
+  showObPath('chooser');renderObPlayerList();applyTheme();
+}
+function showObPath(path){
+  document.getElementById('ob-path-chooser').style.display=path==='chooser'?'block':'none';
+  document.getElementById('ob-path-join').style.display=path==='join'?'block':'none';
+  document.getElementById('ob-path-new').style.display=path==='new'?'block':'none';
+}
+async function joinExistingTeam(){
+  const url=document.getElementById('ob-join-url').value.trim();
+  const key=document.getElementById('ob-join-key').value.trim();
+  const warn=document.getElementById('ob-join-warn');
+  const status=document.getElementById('ob-join-status');
+  if(!url||!key){warn.style.display='block';return;}
+  warn.style.display='none';
+  status.textContent='Connecting to cloud...';
+  // Temporarily set credentials so sbFetch can use them
+  state.config=state.config||{};
+  state.config.sbUrl=url;state.config.sbKey=key;
+  try{
+    const games=await sbLoadGames();
+    if(!games||!games.length){status.textContent='';warn.style.display='block';document.getElementById('ob-join-warn').textContent='⚠ No team data found. Check your credentials or set up as a new team.';return;}
+    // Reconstruct squad from the most recent game with a player list
+    const squadGame=games.find(g=>g.summary&&g.summary.stats&&Object.keys(g.summary.stats).length>0)||games[0];
+    let players=[];
+    if(squadGame&&squadGame.summary&&squadGame.summary.stats){
+      const ids=Object.keys(squadGame.summary.stats).map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
+      // Try to get names from timeline start event
+      const startEv=squadGame.timeline&&squadGame.timeline.find(e=>e.type==='start'&&e.data&&e.data.label);
+      const nameMap={};
+      if(startEv){
+        // timeline has player names in sub events
+        squadGame.timeline.forEach(e=>{
+          if((e.type==='sub_on'||e.type==='sub_off')&&e.data&&e.data.player){
+            // find matching id from stats — use plus/minus data if available
+          }
+        });
+      }
+      // Best source: get from the game's oppRoster equivalent for home — the player data embedded in sub events
+      const seenNames={};
+      if(squadGame.timeline){
+        squadGame.timeline.forEach(e=>{
+          if(e.data&&e.data.player&&e.data.pid){seenNames[e.data.pid]=e.data.player;}
+        });
+      }
+      players=ids.map(id=>({
+        id,
+        num:'#'+id,
+        name:seenNames[id]||'Player '+id
+      }));
+    }
+    // Try to get config from game metadata
+    const teamName=squadGame.team||'';
+    state.config={
+      clubName:'',teamName:'',season:squadGame.date?squadGame.date.split('/')[2]||'':new Date().getFullYear()+'',
+      sbUrl:url,sbKey:key
+    };
+    state.players=players.length>=1?players:[{id:1,num:'#1',name:'Player 1'}];
+    state.games=games;
+    state.games.sort((a,b)=>parseDateStr(b.date)-parseDateStr(a.date));
+    autoRemapPlayerIds(games);
+    save();
+    // Show app but force Squad tab open so they can verify/fix player names
+    showApp();
+    showScreen('squad',document.getElementById('tab-btn-squad'));
+    showToast('✓ Loaded '+games.length+' games — check Squad tab to verify player names');
+  }catch(e){
+    status.textContent='';
+    document.getElementById('ob-join-warn').textContent='⚠ Connection failed. Check your credentials.';
+    warn.style.display='block';
+    state.config={};
+  }
 }
 function showApp(){
   document.getElementById('onboard-overlay').classList.add('hidden');
