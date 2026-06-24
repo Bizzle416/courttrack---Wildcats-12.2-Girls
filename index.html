@@ -381,7 +381,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
     </div>
     <div class="g3" style="margin-bottom:8px;">
       <button class="btn btn-primary" id="pause-btn" onclick="togglePause()">Pause</button>
-      <button class="btn btn-amber" onclick="resetQClock()">Set clock</button>
+      <button class="btn btn-amber" onclick="setClockManual()">Set clock</button>
       <button class="btn btn-red" onclick="reopenIdx!==null?endReopenSession():endGame()">End game</button>
     </div>
     <div class="g2">
@@ -1367,6 +1367,21 @@ function callTimeout(team){
   addEvent(team==='home'?'timeout':'opp_timeout',{team:cg.timeoutTeam});save();render();
 }
 function resetQClock(){const cg=state.currentGame;if(!cg)return;cg.qRemaining=cg.periodSecs||Q_SECS_REP;save();renderTimer();}
+function setClockManual(){
+  const cg=state.currentGame;if(!cg)return;
+  const wasRunning=cg.running;
+  if(wasRunning)pauseInternal();
+  const input=prompt('Set clock to (MM:SS):','');
+  if(input===null){if(wasRunning){cg.running=true;cg.lastTick=Date.now();cg.onCourt.forEach(pid=>{cg.stints[pid]=Date.now();});if(cg.oppOnCourt)cg.oppOnCourt.forEach(pid=>{cg.oppStints[pid]=Date.now();});startTimer();}return;}
+  const parts=input.trim().split(':');
+  let secs=0;
+  if(parts.length===2){secs=parseInt(parts[0]||0)*60+parseInt(parts[1]||0);}
+  else if(parts.length===1){secs=parseInt(parts[0]||0);}
+  if(isNaN(secs)||secs<0){showToast('⚠ Invalid time');if(wasRunning){cg.running=true;cg.lastTick=Date.now();startTimer();}return;}
+  cg.qRemaining=Math.min(secs,cg.periodSecs||Q_SECS_REP);
+  save();renderTimer();
+  if(wasRunning){cg.running=true;const now=Date.now();cg.lastTick=now;cg.onCourt.forEach(pid=>{cg.stints[pid]=now;});if(cg.oppOnCourt)cg.oppOnCourt.forEach(pid=>{cg.oppStints[pid]=now;});startTimer();}
+}
 function setQuarter(q){
   const cg=state.currentGame;if(!cg)return;if(q>cg.quarter)addEvent('qend',{});
   cg.quarter=q;cg.qRemaining=cg.periodSecs||Q_SECS_REP;save();renderStatus();renderTimer();renderPeriodBar(cg);
