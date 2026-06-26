@@ -961,6 +961,7 @@ function load(){
   // Ready if players exist — don't require clubName/teamName (pre-existing users may not have these)
   const ready=state.players.length>=1;
   const hasCredentials=state.config.sbUrl&&state.config.sbKey;
+  const hasGames=state.games.length>=1;
   if(ready){
     if(state.currentGame){
       const cg=state.currentGame;
@@ -977,10 +978,13 @@ function load(){
       oppStatLog=cg.oppStatLog;
     }
     showApp();
-  } else if(hasCredentials&&!ready){
-    // Credentials saved (e.g. from join link) but no squad yet — auto-connect
+  } else if(hasGames){
+    // Games exist but players array is empty (corruption/overwrite) — show app anyway
+    // User can fix squad in Squad tab
+    showApp();
+  } else if(hasCredentials&&!ready&&!hasGames){
+    // Truly fresh device with credentials from join link — auto-connect
     showOnboarding();
-    // Slight delay so DOM is ready, then auto-trigger join
     setTimeout(()=>{
       const urlEl=document.getElementById('ob-join-url');
       const keyEl=document.getElementById('ob-join-key');
@@ -2822,15 +2826,15 @@ applyTheme();
   try{
     const payload=JSON.parse(atob(hash.slice(6)));
     if(!payload.u||!payload.k)return;
-    // Read existing state from localStorage and inject credentials
+    // Read existing state and ONLY update credentials — never wipe players/games
     const APP_KEY_BOOT='courttrack_v1';
     let existing={};
     try{const raw=localStorage.getItem(APP_KEY_BOOT);if(raw)existing=JSON.parse(raw);}catch(e){}
     if(!existing.config)existing.config={};
     existing.config.sbUrl=payload.u;
     existing.config.sbKey=payload.k;
+    // CRITICAL: never overwrite players or games
     localStorage.setItem(APP_KEY_BOOT,JSON.stringify(existing));
-    // Clean hash from URL
     history.replaceState(null,'',window.location.pathname);
   }catch(e){}
 })();
