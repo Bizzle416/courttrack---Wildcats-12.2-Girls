@@ -952,14 +952,13 @@ function load(){
   if(!state.games)state.games=[];
   if(!state.config)state.config=defaultConfig();
   const ready=state.players.length>=1&&state.config.clubName&&state.config.teamName;
+  const hasCredentials=state.config.sbUrl&&state.config.sbKey;
   if(ready){
     if(state.currentGame){
       const cg=state.currentGame;
-      // Restore volatile module-level vars from persisted game
       isFilmed=cg.filmed||false;
       currentGameTab=cg._uiTab||'home';
       reopenIdx=cg._reopenIdx!=null?cg._reopenIdx:null;
-      // Restore undo logs (point module vars at the arrays on currentGame)
       if(!cg.actionLog)cg.actionLog=[];
       if(!cg.oppScoreLog)cg.oppScoreLog=[];
       if(!cg.oppActionLog)cg.oppActionLog=[];
@@ -970,7 +969,22 @@ function load(){
       oppStatLog=cg.oppStatLog;
     }
     showApp();
-  }else{showOnboarding();}
+  } else if(hasCredentials&&!ready){
+    // Credentials saved (e.g. from join link) but no squad yet — auto-connect
+    showOnboarding();
+    // Slight delay so DOM is ready, then auto-trigger join
+    setTimeout(()=>{
+      const urlEl=document.getElementById('ob-join-url');
+      const keyEl=document.getElementById('ob-join-key');
+      if(urlEl)urlEl.value=state.config.sbUrl;
+      if(keyEl)keyEl.value=state.config.sbKey;
+      document.getElementById('ob-auto-connect').style.display='block';
+      document.getElementById('ob-manual-creds').style.display='none';
+      showObPath('join');
+    },100);
+  } else {
+    showOnboarding();
+  }
 }
 
 function generateJoinLink(){
@@ -2642,6 +2656,26 @@ function endReopenSession(){
   if(sbOk())syncGameToCloud(saved);
 }
 applyTheme();
+// Check for join hash BEFORE load() — saves credentials to localStorage
+// so they survive "Add to Home Screen" (which strips the URL hash)
+(function(){
+  const hash=window.location.hash;
+  if(!hash.startsWith('#join='))return;
+  try{
+    const payload=JSON.parse(atob(hash.slice(6)));
+    if(!payload.u||!payload.k)return;
+    // Read existing state from localStorage and inject credentials
+    const APP_KEY_BOOT='courttrack_v1';
+    let existing={};
+    try{const raw=localStorage.getItem(APP_KEY_BOOT);if(raw)existing=JSON.parse(raw);}catch(e){}
+    if(!existing.config)existing.config={};
+    existing.config.sbUrl=payload.u;
+    existing.config.sbKey=payload.k;
+    localStorage.setItem(APP_KEY_BOOT,JSON.stringify(existing));
+    // Clean hash from URL
+    history.replaceState(null,'',window.location.pathname);
+  }catch(e){}
+})();
 load();
 </script>
 </body>
