@@ -1046,46 +1046,116 @@ async function joinExistingTeam(){
   const status=document.getElementById('ob-join-status');
   if(!url||!key){warn.style.display='block';return;}
   warn.style.display='none';
-  status.textContent='Connecting to cloud...';
-  // Temporarily set credentials so sbFetch can use them
+  if(status)status.textContent='Connecting to cloud...';
   state.config=state.config||{};
   state.config.sbUrl=url;state.config.sbKey=key;
   try{
     const games=await sbLoadGamesForKey(url,key);
-    if(!games||!games.length){status.textContent='';warn.style.display='block';document.getElementById('ob-join-warn').textContent='⚠ No team data found. Check your credentials or set up as a new team.';return;}
-    // Reconstruct squad from the most recent game with a player list
-    const squadGame=games.find(g=>g.summary&&g.summary.stats&&Object.keys(g.summary.stats).length>0)||games[0];
-    let players=[];
-    if(squadGame&&squadGame.summary&&squadGame.summary.stats){
-      const ids=Object.keys(squadGame.summary.stats).map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
-      // Try to get names from timeline start event
-      const startEv=squadGame.timeline&&squadGame.timeline.find(e=>e.type==='start'&&e.data&&e.data.label);
-      const nameMap={};
+    if(!games||!games.length){
+      if(status)status.textContent='';
+      const w=document.getElementById('ob-join-warn');
+      if(w){w.textContent='⚠ No team data found. Check your credentials or set up as a new team.';w.style.display='block';}
+      return;
+    }
+
+    // ── BUILD SQUAD FROM CLOUD DATA ──────────────────────────────
+    // Step 1: collect all player IDs from summaries across all games
+    const allIds=new Set();
+    games.forEach(g=>{
+      if(g.summary&&g.summary.stats){
+        Object.keys(g.summary.stats).forEach(k=>{const n=parseInt(k);if(!isNaN(n))allIds.add(n);});
+      }
+    });
+
+    // Step 2: build id→name map by scanning ALL timeline events across ALL games
+    // Every event with e.data.player gives us a name. The player's jersey number IS their ID.
+    // Cross-reference: find events where we can tie a name to an ID.
+    // Strategy: the start event lists "Starting 5: Name1, Name2..." — parse those names,
+    // then look up what IDs scored/got stats in that game to map name→id
+    const nameById={};  // id → name
+
+    games.forEach(g=>{
+      if(!g.timeline)return;
+      // Collect names seen in this game's timeline
+      const namesInGame=new Set();
+      g.timeline.forEach(e=>{
+        if(e.data&&e.data.player&&typeof e.data.player==='string'){
+          namesInGame.add(e.data.player.trim());
+        }
+        // If pid is stored (newer events), use it directly
+        if(e.data&&e.data.pid&&e.data.player){
+          nameById[e.data.pid]=e.data.player.trim();
+        }
+      });
+
+      // Cross-reference: for each player who has stats in this game,
+      // if there's exactly one unmatched name in the timeline that appears
+      // in scoring/stat events, assign it
+      if(g.summary&&g.summary.stats){
+        Object.keys(g.summary.stats).forEach(k=>{
+          const id=parseInt(k);if(isNaN(id)||nameById[id])return;
+          // Find all event names for events linked to this player via pid
+          // Since most events don't have pid, use a different approach:
+          // scan the start event for player names, then match by position in squad
+        });
+      }
+
+      // Parse start event: "Starting 5: Alice, Bob, Carol, Dave, Eve"
+      const startEv=g.timeline.find(e=>e.type==='start'&&e.data&&e.data.label&&e.data.label.includes('Starting 5:'));
       if(startEv){
-        // timeline has player names in sub events
-        squadGame.timeline.forEach(e=>{
-          if((e.type==='sub_on'||e.type==='sub_off')&&e.data&&e.data.player){
-            // find matching id from stats — use plus/minus data if available
+        const starterNames=startEv.data.label.replace('Starting 5:','').split(',').map(n=>n.trim()).filter(Boolean);
+        // These are the 5 starters — find their IDs from sub events
+        // Sub-off events for these players will have their names
+        g.timeline.forEach(e=>{
+          if((e.type==='sub_off'||e.type==='sub_on')&&e.data&&e.data.player&&e.data.pid){
+            nameById[e.data.pid]=e.data.player.trim();
           }
         });
       }
-      // Best source: get from the game's oppRoster equivalent for home — the player data embedded in sub events
-      const seenNames={};
-      if(squadGame.timeline){
-        squadGame.timeline.forEach(e=>{
-          if(e.data&&e.data.player&&e.data.pid){seenNames[e.data.pid]=e.data.player;}
-        });
+    });
+
+    // Step 3: for any remaining IDs without names, scan sub events without pid
+    // The pattern: sub_on/sub_off events name players — and if the same name
+    // appears in stats for a game, we can infer the id
+    games.forEach(g=>{
+      if(!g.timeline||!g.summary||!g.summary.stats)return;
+      // Get ids that appeared in this game
+      const gameIds=Object.keys(g.summary.stats).map(Number).filter(n=>!isNaN(n));
+      // Get names seen in sub events
+      const subNames=[];
+      g.timeline.forEach(e=>{
+        if((e.type==='sub_on'||e.type==='sub_off'||e.type==='start')&&e.data&&e.data.player){
+          subNames.push(e.data.player.trim());
+        }
+      });
+      // Parse starting 5 names
+      const startEv=g.timeline.find(e=>e.type==='start'&&e.data&&e.data.label);
+      if(startEv&&startEv.data.label.includes('Starting 5:')){
+        startEv.data.label.replace('Starting 5:','').split(',').forEach(n=>subNames.push(n.trim()));
       }
-      players=ids.map(id=>({
-        id,
-        num:'#'+id,
-        name:seenNames[id]||'Player '+id
-      }));
-    }
-    // Try to get config from game metadata
-    const teamName=squadGame.team||'';
+      // Unique names seen
+      const uniqueNames=[...new Set(subNames)].filter(Boolean);
+      // For each game id without a name, if uniqueNames has exactly as many unknowns
+      // as unmapped ids, assign them — but only if we can be confident
+      // Safe assignment: if only ONE id is unmapped and ONE name is unmapped, assign it
+      const unmappedIds=gameIds.filter(id=>!nameById[id]);
+      const mappedNames=new Set(Object.values(nameById));
+      const unmappedNames=uniqueNames.filter(n=>!mappedNames.has(n));
+      if(unmappedIds.length===1&&unmappedNames.length===1){
+        nameById[unmappedIds[0]]=unmappedNames[0];
+      }
+    });
+
+    // Step 4: build final player array
+    const sortedIds=[...allIds].sort((a,b)=>a-b);
+    const players=sortedIds.map(id=>({
+      id,
+      num:'#'+id,
+      name:nameById[id]||('#'+id+' (update name in Squad tab)')
+    }));
+
     state.config={
-      clubName:'',teamName:'',season:squadGame.date?squadGame.date.split('/')[2]||'':new Date().getFullYear()+'',
+      clubName:'',teamName:'',season:'',
       sbUrl:url,sbKey:key,_teamKey:window._joinedTeamKey||''
     };
     state.players=players.length>=1?players:[{id:1,num:'#1',name:'Player 1'}];
@@ -1093,11 +1163,18 @@ async function joinExistingTeam(){
     state.games.sort((a,b)=>parseDateStr(b.date)-parseDateStr(a.date));
     autoRemapPlayerIds(games);
     save();
-    // Show app but force Squad tab open so they can verify/fix player names
     showApp();
     showScreen('squad',document.getElementById('tab-btn-squad'));
-    showToast('✓ Loaded '+games.length+' games — check Squad tab to verify player names');
+    const unnamed=players.filter(p=>p.name.includes('update name')).length;
+    showToast('✓ Loaded '+games.length+' games'+(unnamed>0?' — update '+unnamed+' player names in Squad':''));
   }catch(e){
+    if(status)status.textContent='';
+    const w=document.getElementById('ob-join-warn');
+    if(w){w.textContent='⚠ Connection failed. Check your credentials.';w.style.display='block';}
+    state.config={};
+    console.error('joinExistingTeam error:',e);
+  }
+}
     status.textContent='';
     document.getElementById('ob-join-warn').textContent='⚠ Connection failed. Check your credentials.';
     warn.style.display='block';
