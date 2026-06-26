@@ -1187,12 +1187,6 @@ async function joinExistingTeam(){
     console.error('joinExistingTeam error:',e);
   }
 }
-    status.textContent='';
-    document.getElementById('ob-join-warn').textContent='⚠ Connection failed. Check your credentials.';
-    warn.style.display='block';
-    state.config={};
-  }
-}
 function showApp(){
   document.getElementById('onboard-overlay').classList.add('hidden');
   document.getElementById('app-shell').style.display='block';
