@@ -439,15 +439,6 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
   <div class="to-banner" id="to-banner">TIMEOUT — <span id="to-team"></span></div>
   <div class="to-banner" id="reopen-banner" style="background:var(--red-bg);border-color:rgba(220,38,38,0.35);color:var(--red);display:none;">REPLAY SESSION - <span id="reopen-game-label"></span><button onclick="endReopenSession()" style="margin-left:12px;padding:4px 12px;border-radius:6px;border:1px solid rgba(220,38,38,0.4);background:var(--red);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;">End &amp; Save</button></div>
 
-  <!-- MASTER UNDO — always visible, undoes most recent action from either team -->
-  <div style="background:var(--amber-bg);border:1px solid rgba(217,119,6,0.3);border-radius:var(--rs);padding:10px 12px;margin-bottom:10px;">
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-      <button onclick="masterUndo()" style="flex:none;padding:9px 16px;border-radius:var(--rs);border:1px solid rgba(217,119,6,0.5);background:var(--amber);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">&#8629; Undo</button>
-      <div id="master-last-action" style="flex:1;font-size:12px;color:var(--amber);font-weight:600;">—</div>
-    </div>
-    <div id="master-last-5" style="display:flex;flex-direction:column;gap:2px;"></div>
-  </div>
-
   <!-- Team switcher tabs - filmed only -->
   <div id="game-tab-switcher" style="display:flex;gap:0;margin-bottom:10px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--border2);">
     <button id="game-tab-home" onclick="setGameTab('home')" style="flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;">🏠 Our Team</button>
@@ -490,6 +481,14 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
         <div id="last-actions-list" style="margin-top:4px;display:none;"></div>
       </div><!-- /action-card -->
     </div><!-- /court-action-row -->
+  <!-- MASTER UNDO — below action, above scores -->
+  <div id="master-undo-bar" style="background:var(--amber-bg);border:1px solid rgba(217,119,6,0.3);border-radius:var(--rs);padding:10px 12px;margin-bottom:10px;">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+      <button onclick="masterUndo()" style="flex:none;padding:9px 16px;border-radius:var(--rs);border:1px solid rgba(217,119,6,0.5);background:var(--amber);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">&#8629; Undo</button>
+      <div id="master-last-action" style="flex:1;font-size:12px;color:var(--amber);font-weight:600;">—</div>
+    </div>
+    <div id="master-last-5" style="display:flex;flex-direction:column;gap:2px;"></div>
+  </div>
     <div class="scores-row">
       <div class="score-side">
         <div style="display:flex;align-items:center;margin-bottom:4px;">
@@ -508,14 +507,12 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
             <button class="pts-btn away" onclick="addOppScore(2)">+2</button>
             <button class="pts-btn away" onclick="addOppScore(3)">+3</button>
           </div>
-          <button class="btn btn-red" style="width:100%;margin-top:6px;padding:9px;" onclick="undoOppScore()">&#8629; Undo</button>
           <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
             <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px;">Rebounds</div>
-            <div class="pts-row" style="margin-bottom:6px;">
+            <div class="pts-row">
               <button class="pts-btn away" onclick="addOppStat('oreb')">OREB</button>
               <button class="pts-btn away" onclick="addOppStat('dreb')">DREB</button>
             </div>
-            <button class="btn" style="width:100%;padding:7px;font-size:12px;color:var(--muted);" onclick="undoOppStat()">&#8629; Undo reb</button>
           </div>
         </div>
       </div>
@@ -1904,21 +1901,34 @@ function updateMasterLastAction(text,isOpp){
 }
 function masterUndo(){
   const cg=state.currentGame;if(!cg)return;
-  // Compare timestamps of last home action vs last opp action
+  // Gather last entry from each log with its timeline ID for comparison
   const lastHome=actionLog.length?actionLog[actionLog.length-1]:null;
-  const lastOpp=oppActionLog.length?oppActionLog[oppActionLog.length-1]:null;
-  if(!lastHome&&!lastOpp){updateMasterLastAction('Nothing to undo.',false);return;}
-  // Use timeline index to determine which was more recent
-  const homeIdx=lastHome?lastHome.tlIdx:-1;
-  const oppIdx=lastOpp?lastOpp.tlIdx:-1;
-  if(oppIdx>homeIdx){
-    undoOppAction();
-    const p=cg.oppRoster&&cg.oppRoster.find(p=>p.id===lastOpp.pid);
-    updateMasterLastAction('Undone: '+(p?p.name:'Opp')+' — '+lastOpp.type,true);
-  } else if(lastHome){
-    undoAction();
+  const lastOppStat=oppActionLog.length?oppActionLog[oppActionLog.length-1]:null;
+  const lastScore=oppScoreLog.length?oppScoreLog[oppScoreLog.length-1]:null;
+  const lastOppReb=oppStatLog.length?oppStatLog[oppStatLog.length-1]:null;
+  // Find the most recent entry by tlId/tlIdx
+  const entries=[
+    {src:'home',   entry:lastHome,    id:lastHome?   (lastHome.tlIdx||lastHome.tlId||0):-1},
+    {src:'oppStat',entry:lastOppStat, id:lastOppStat?(lastOppStat.tlIdx||lastOppStat.tlId||0):-1},
+    {src:'score',  entry:lastScore,   id:lastScore?  (lastScore.tlId||0):-1},
+    {src:'oppReb', entry:lastOppReb,  id:lastOppReb? (lastOppReb.tlId||0):-1},
+  ].filter(e=>e.entry);
+  if(!entries.length){updateMasterLastAction('Nothing to undo.',false);renderMasterLast5();return;}
+  const latest=entries.reduce((a,b)=>b.id>a.id?b:a);
+  if(latest.src==='home'){
     const p=state.players.find(p=>p.id===lastHome.pid);
+    undoAction();
     updateMasterLastAction('Undone: '+(p?p.name:'?')+' — '+lastHome.type,false);
+  } else if(latest.src==='oppStat'){
+    const p=cg.oppRoster&&cg.oppRoster.find(p=>p.id===lastOppStat.pid);
+    undoOppAction();
+    updateMasterLastAction('Undone: '+(p?p.name:'Opp')+' — '+lastOppStat.type,true);
+  } else if(latest.src==='score'){
+    undoOppScore();
+    updateMasterLastAction('Undone: '+(cg.opponent||'Opp')+' score',true);
+  } else if(latest.src==='oppReb'){
+    undoOppStat();
+    updateMasterLastAction('Undone: '+(cg.opponent||'Opp')+' rebound',true);
   }
   renderMasterLast5();
 }
@@ -1959,7 +1969,9 @@ function undoAction(){
 function addOppScore(pts){
   const cg=state.currentGame;if(!cg||cg.ended)return;cg.scoreAway+=pts;addEvent('opp_pts',{pts});
   const tlId=cg.timeline&&cg.timeline.length>0?cg.timeline[cg.timeline.length-1].id:null;
-  oppScoreLog.push({pts,tlId});save();renderScores();
+  oppScoreLog.push({pts,tlId});
+  updateMasterLastAction((cg.opponent||'Opp')+' +'+pts,true);
+  save();renderScores();
 }
 function undoOppScore(){
   const cg=state.currentGame;if(!cg||!oppScoreLog.length)return;
@@ -2789,7 +2801,9 @@ function addOppStat(stat){
   const cg=state.currentGame;if(!cg||cg.ended)return;
   if(!cg.oppAggregate)cg.oppAggregate={oreb:0,dreb:0};
   cg.oppAggregate[stat]=(cg.oppAggregate[stat]||0)+1;
-  oppStatLog.push({stat});save();
+  oppStatLog.push({stat});
+  updateMasterLastAction((cg.opponent||'Opp')+' — '+(stat==='oreb'?'Off reb':'Def reb'),true);
+  save();
 }
 function undoOppStat(){
   const cg=state.currentGame;if(!cg||!oppStatLog.length)return;
