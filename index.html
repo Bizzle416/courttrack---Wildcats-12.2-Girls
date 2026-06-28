@@ -658,6 +658,19 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
 
 <!-- SHOT CHART -->
 <div id="screen-shots" class="screen">
+  <!-- PENDING SHOTS BANNER — shown when shots.html has written pending data -->
+  <div id="pending-shots-banner" style="display:none;background:var(--green-bg);border:1.5px solid rgba(22,163,74,0.4);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;">
+    <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:8px;">🏀 Shots ready to import</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;" id="pending-shots-desc"></div>
+    <div class="field" style="margin-bottom:8px;">
+      <div style="font-size:11px;color:var(--muted);font-weight:500;margin-bottom:4px;">Attach to game</div>
+      <select id="pending-game-sel" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;outline:none;-webkit-appearance:none;"><option value="">— Select game —</option></select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button class="btn btn-green" onclick="importPendingShots()" style="font-size:13px;">⬆ Import shots</button>
+      <button class="btn" onclick="dismissPendingShots()" style="font-size:13px;color:var(--muted);">Dismiss</button>
+    </div>
+  </div>
   <!-- Game selector + period/player filters shared -->
   <div class="card">
     <div class="sec-label" style="margin-bottom:6px;">Shot Chart</div>
@@ -709,7 +722,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
   </div>
   <div class="card" id="sc-zone-card" style="display:none;">
     <div class="sec-label">Home — Zone breakdown</div>
-    <div class="tbl-wrap"><table class="stbl"><thead><tr><th style="text-align:left;">Zone</th><th>FGM</th><th>FGA</th><th>FG%</th></tr></thead><tbody id="sc-zone-body"></tbody></table></div>
+    <div class="tbl-wrap"><table class="stbl"><thead><tr><th style="text-align:left;" class="type-col">Type</th><th style="text-align:left;">Zone</th><th>FGM</th><th>FGA</th><th>FG%</th></tr></thead><tbody id="sc-zone-body"></tbody></table></div>
   </div>
 
   <!-- SHOT CHART CSV EXPORT -->
@@ -771,7 +784,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
   </div>
   <div class="card" id="sc-opp-zone-card" style="display:none;border-color:rgba(220,38,38,0.2);">
     <div class="sec-label" style="color:var(--red);">Opposition — Zone breakdown</div>
-    <div class="tbl-wrap"><table class="stbl"><thead><tr><th style="text-align:left;">Zone</th><th>FGM</th><th>FGA</th><th>FG%</th></tr></thead><tbody id="sc-opp-zone-body"></tbody></table></div>
+    <div class="tbl-wrap"><table class="stbl"><thead><tr><th style="text-align:left;" class="type-col">Type</th><th style="text-align:left;">Zone</th><th>FGM</th><th>FGA</th><th>FG%</th></tr></thead><tbody id="sc-opp-zone-body"></tbody></table></div>
   </div>
 
   <!-- OPP IMPORT -->
@@ -2072,6 +2085,59 @@ function importShotsFromPaste(teamSlot){
 }
 const SC_ZONES=[{id:'paint',label:'Paint',x1:88,y1:3,x2:212,y2:95},{id:'corner3l',label:'Corner 3 Left',x1:3,y1:3,x2:28,y2:62},{id:'corner3r',label:'Corner 3 Right',x1:272,y1:3,x2:297,y2:62},{id:'midl',label:'Mid-range Left',x1:3,y1:62,x2:88,y2:130},{id:'midr',label:'Mid-range Right',x1:212,y1:62,x2:297,y2:130},{id:'topkey',label:'Top of key / 3pt',x1:88,y1:95,x2:212,y2:130},{id:'other',label:'Backcourt',x1:3,y1:130,x2:297,y2:162}];
 function getZone(x,y){for(const z of SC_ZONES){if(x>=z.x1&&x<=z.x2&&y>=z.y1&&y<=z.y2)return z.id;}return'other';}
+function checkPendingShots(){
+  const banner=document.getElementById('pending-shots-banner');if(!banner)return;
+  try{
+    const raw=localStorage.getItem('courttrack_shots_pending');
+    if(!raw){banner.style.display='none';return;}
+    const d=JSON.parse(raw);
+    if(!d||!d.shots||!d.shots.length){banner.style.display='none';return;}
+    const teamLabel=d.team==='opp'?'Opposition':'Home team';
+    const made=d.shots.filter(s=>s.made).length;
+    const desc=document.getElementById('pending-shots-desc');
+    if(desc)desc.textContent=teamLabel+' · '+d.shots.length+' shots ('+made+' made) · '+( d.gameLabel||'');
+    // Populate game selector
+    const sel=document.getElementById('pending-game-sel');
+    if(sel){
+      sel.innerHTML='<option value="">— Select game —</option>';
+      state.games.forEach(g=>{const o=document.createElement('option');o.value=String(g.id);o.textContent=[g.date,g.time,'vs '+(g.opponent||'?')].filter(Boolean).join(' · ');sel.appendChild(o);});
+      // Auto-select most recent game
+      if(state.games.length)sel.value=String(state.games[0].id);
+    }
+    banner.style.display='block';
+  }catch(e){banner.style.display='none';}
+}
+function importPendingShots(){
+  const sel=document.getElementById('pending-game-sel');
+  const tgid=sel?sel.value:'';
+  if(!tgid){showToast('⚠ Select a game first');return;}
+  try{
+    const raw=localStorage.getItem('courttrack_shots_pending');
+    if(!raw){showToast('No pending shots found');return;}
+    const d=JSON.parse(raw);
+    const shots=d.shots||[];if(!shots.length){showToast('No shots to import');return;}
+    const detectedTeam=d.team||'home';
+    const taggedShots=shots.map(s=>({...s,game_id:tgid,shotTeam:detectedTeam}));
+    let impCount=0;
+    taggedShots.forEach(shot=>{
+      if(!shotCache[tgid])shotCache[tgid]=[];
+      if(!shotCache[tgid].find(x=>x.id===shot.id)){shotCache[tgid].push(shot);impCount++;}
+      const g=state.games.find(g=>String(g.id)===tgid);
+      if(g){if(!g.shots)g.shots=[];if(!g.shots.find(x=>x.id===shot.id))g.shots.push(shot);}
+    });
+    save();
+    localStorage.removeItem('courttrack_shots_pending');
+    document.getElementById('pending-shots-banner').style.display='none';
+    const scSel=document.getElementById('sc-game-sel');if(scSel)scSel.value=tgid;
+    renderShotChart();
+    showToast('✓ '+impCount+' '+(detectedTeam==='opp'?'opp':'home')+' shots imported');
+  }catch(e){showToast('⚠ Import failed: '+e.message);}
+}
+function dismissPendingShots(){
+  localStorage.removeItem('courttrack_shots_pending');
+  const banner=document.getElementById('pending-shots-banner');if(banner)banner.style.display='none';
+  showToast('Pending shots dismissed');
+}
 function renderShotChart(){
   populateScGameSel();const gid=document.getElementById('sc-game-sel')?.value||'';
   // Empty state — no game selected
@@ -2149,12 +2215,83 @@ function renderDots(dotGroupId,shots,team){
     const t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=(s.player_name||'?')+' -- '+(s.made?'Made':'Missed');g.appendChild(t);dotsEl.appendChild(g);
   });
 }
+// Zone → shot type: paint=2pt, corner3l/corner3r/topkey=3pt, mid=2pt, backcourt=2pt
+const ZONE_IS_3PT={paint:false,corner3l:true,corner3r:true,midl:false,midr:false,topkey:true,other:false};
+// SVG overlay rects matching SC_ZONES coordinates (home chart)
+const ZONE_OVERLAYS={
+  paint:    {x:88, y:3,  w:124,h:92},
+  corner3l: {x:3,  y:3,  w:25, h:59},
+  corner3r: {x:272,y:3,  w:25, h:59},
+  midl:     {x:3,  y:62, w:85, h:68},
+  midr:     {x:212,y:62, w:85, h:68},
+  topkey:   {x:88, y:95, w:124,h:35},
+  other:    {x:3,  y:130,w:294,h:32}
+};
+function pctToOverlayColor(pct,alpha){
+  if(pct===null)return'rgba(0,0,0,0)';
+  if(pct>=50)return`rgba(22,163,74,${alpha})`;
+  if(pct>=33)return`rgba(217,119,6,${alpha})`;
+  return`rgba(220,38,38,${alpha})`;
+}
+function renderZoneOverlays(shots,svgId){
+  const svg=document.getElementById(svgId);if(!svg)return;
+  // Remove existing overlays
+  svg.querySelectorAll('.zone-overlay').forEach(e=>e.remove());
+  if(!shots||!shots.length)return;
+  const zd={};SC_ZONES.forEach(z=>zd[z.id]={made:0,total:0});
+  shots.forEach(s=>{const z=getZone(parseFloat(s.x),parseFloat(s.y));if(zd[z]){zd[z].total++;if(s.made)zd[z].made++;}});
+  // Insert overlays before shot dots group
+  const dotsGroup=svg.querySelector('g');
+  SC_ZONES.forEach(z=>{
+    const d=zd[z.id],ov=ZONE_OVERLAYS[z.id];if(!ov)return;
+    const pct=d.total>0?Math.round(d.made/d.total*100):null;
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.classList.add('zone-overlay');
+    const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x',ov.x);rect.setAttribute('y',ov.y);rect.setAttribute('width',ov.w);rect.setAttribute('height',ov.h);
+    rect.setAttribute('fill',pctToOverlayColor(pct,0.22));rect.setAttribute('stroke',pctToOverlayColor(pct,0.5));
+    rect.setAttribute('stroke-width','1');rect.setAttribute('rx','2');
+    g.appendChild(rect);
+    if(pct!==null&&d.total>0){
+      const txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x',ov.x+ov.w/2);txt.setAttribute('y',ov.y+ov.h/2+4);
+      txt.setAttribute('text-anchor','middle');txt.setAttribute('font-size','9');txt.setAttribute('font-weight','700');
+      txt.setAttribute('fill',pct>=50?'#15803d':pct>=33?'#92400e':'#991b1b');
+      txt.textContent=pct+'%';g.appendChild(txt);
+      const sub=document.createElementNS('http://www.w3.org/2000/svg','text');
+      sub.setAttribute('x',ov.x+ov.w/2);sub.setAttribute('y',ov.y+ov.h/2+15);
+      sub.setAttribute('text-anchor','middle');sub.setAttribute('font-size','7');
+      sub.setAttribute('fill','#666');sub.textContent=d.made+'/'+d.total;g.appendChild(sub);
+    }
+    if(dotsGroup)svg.insertBefore(g,dotsGroup);else svg.appendChild(g);
+  });
+}
 function renderZoneBreakdown(shots,bodyId,cardId){
   const card=document.getElementById(cardId||'sc-zone-card'),tbody=document.getElementById(bodyId||'sc-zone-body');if(!card||!tbody)return;
-  if(!shots.length){card.style.display='none';return;}
-  card.style.display='block';const zd={};SC_ZONES.forEach(z=>zd[z.id]={made:0,total:0,label:z.label});
+  if(!shots.length){
+    card.style.display='none';
+    // Clear overlays too
+    const svgId=cardId==='sc-opp-zone-card'?'shot-chart-opp-svg':'shot-chart-svg';
+    renderZoneOverlays([],'shot-chart-svg');renderZoneOverlays([],'shot-chart-opp-svg');
+    return;
+  }
+  card.style.display='block';
+  const zd={};SC_ZONES.forEach(z=>zd[z.id]={made:0,total:0,label:z.label});
   shots.forEach(s=>{const z=getZone(parseFloat(s.x),parseFloat(s.y));if(zd[z]){zd[z].total++;if(s.made)zd[z].made++;}});
-  tbody.innerHTML=SC_ZONES.map(z=>{const d=zd[z.id];if(!d||!d.total)return'';const pct=Math.round(d.made/d.total*100),col=pct>=50?'var(--green)':pct>=33?'var(--amber)':'var(--red)';return`<tr><td style="font-size:12px;">${d.label}</td><td>${d.made}</td><td>${d.total}</td><td style="color:${col};font-weight:600;">${pct}%</td></tr>`;}).filter(Boolean).join('');
+  // Render overlays on correct chart
+  const svgId=cardId==='sc-opp-zone-card'?'shot-chart-opp-svg':'shot-chart-svg';
+  renderZoneOverlays(shots,svgId);
+  // Zone table — add 2pt/3pt type column
+  const thead=card.querySelector('thead tr');
+  if(thead&&!thead.querySelector('.type-col')){
+    const th=document.createElement('th');th.className='type-col';th.textContent='Type';th.style.cssText='text-align:left;';thead.insertBefore(th,thead.firstChild);
+  }
+  tbody.innerHTML=SC_ZONES.map(z=>{
+    const d=zd[z.id];if(!d||!d.total)return'';
+    const pct=Math.round(d.made/d.total*100);
+    const col=pct>=50?'var(--green)':pct>=33?'var(--amber)':'var(--red)';
+    const typeLabel=ZONE_IS_3PT[z.id]?'<span style="font-size:10px;font-weight:700;color:var(--purple);background:var(--purple-bg,rgba(124,58,237,0.1));border-radius:3px;padding:1px 5px;">3PT</span>':'<span style="font-size:10px;font-weight:700;color:var(--accent);background:var(--accent-bg);border-radius:3px;padding:1px 5px;">2PT</span>';
+    return`<tr><td style="font-size:12px;">${typeLabel}</td><td style="font-size:12px;">${d.label}</td><td>${d.made}</td><td>${d.total}</td><td style="color:${col};font-weight:600;">${pct}%</td></tr>`;
+  }).filter(Boolean).join('');
 }
 let scSelectedOppPlayer='all';
 function scSelectOppPlayer(pid){scSelectedOppPlayer=pid;renderShotChart();}
@@ -3007,7 +3144,7 @@ function showScreen(name,el){
   if(name==='season')renderSeason();
   if(name==='squad'){renderSetup();document.getElementById('settings-club').value=state.config.clubName||'';document.getElementById('settings-team').value=state.config.teamName||'';document.getElementById('settings-season').value=state.config.season||'';document.getElementById('settings-sb-url').value=state.config.sbUrl||'';document.getElementById('settings-sb-key').value=state.config.sbKey||'';}
   if(name==='timeline'){populateTlSelector();renderTimeline();}
-  if(name==='shots'){populateScGameSel();populateImportGameSel();renderShotChart();}
+  if(name==='shots'){populateScGameSel();populateImportGameSel();checkPendingShots();renderShotChart();}
   requestWakeLock();
 }
 function setSeasonView(v){
