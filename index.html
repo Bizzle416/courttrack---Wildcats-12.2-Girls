@@ -2674,7 +2674,8 @@ function openGameReport(idx){
     // SVG dimensions
     const W=660,H=220,PL=42,PR=16,PT=14,PB=32;
     const chartW=W-PL-PR,chartH=H-PT-PB;
-    const maxScore=70;
+    const topScore=Math.max(finalH,finalA,10);
+    const maxScore=Math.ceil((topScore+8)/10)*10;
     const totalTicks=periods; // one segment per period
 
     // Convert event to x,y
@@ -2780,7 +2781,7 @@ ${fhLabel}${faLabel}
   <span style="color:#aaa;margin-left:auto;">${leadChanges} lead change${leadChanges===1?'':'s'}</span>
 </div>`;
 
-    return `<h2>Probabilities &amp; Game Flow</h2><div style="background:#fafafa;border:1px solid #e8e8e8;border-radius:8px;padding:14px 10px 8px;">${svg}${legend}</div>`;
+    return `<h2>Game Flow</h2><div style="background:#fafafa;border:1px solid #e8e8e8;border-radius:8px;padding:14px 10px 8px;">${svg}${legend}</div>`;
   }
   const gameFlowHtml=buildGameFlowChart(g);
 
