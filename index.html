@@ -2294,8 +2294,8 @@ function renderZoneOverlays(shots,svgId){
   // Insert overlays before shot dots group
   const dotsGroup=svg.querySelector('g');
   SC_ZONES.forEach(z=>{
-    const d=zd[z.id],ov=ZONE_OVERLAYS[z.id];if(!ov)return;
-    const pct=d.total>0?Math.round(d.made/d.total*100):null;
+    const d=zd[z.id],ov=ZONE_OVERLAYS[z.id];if(!ov||!d.total)return;
+    const pct=Math.round(d.made/d.total*100);
     const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.classList.add('zone-overlay');
     const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
     rect.setAttribute('x',ov.x);rect.setAttribute('y',ov.y);rect.setAttribute('width',ov.w);rect.setAttribute('height',ov.h);
