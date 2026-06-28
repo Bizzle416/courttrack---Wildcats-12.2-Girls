@@ -494,8 +494,13 @@ function endGame(){
   // Show switch-to-opp only if we just finished home team
   const sw=document.getElementById('switch-to-opp-wrap');
   if(sw)sw.style.display=teamMode==='home'?'block':'none';
+  // Write to pending key so main tracker can auto-import without clipboard
+  try{
+    const pendingData={version:1,team:teamMode,gameLabel,exportedAt:new Date().toISOString(),periodLabel,periodCount,shots:[...shots].reverse()};
+    localStorage.setItem('courttrack_shots_pending',JSON.stringify(pendingData));
+  }catch(e){}
   exportShots();document.getElementById('export-card').scrollIntoView({behavior:'smooth',block:'start'});
-  toast((teamMode==='home'?'Home':'Opp')+' shots done — copied to clipboard');
+  toast((teamMode==='home'?'Home':'Opp')+' shots ready — switch to Shot Chart to import');
 }
 function newGame(){
   selectedPlayer=null;selectedMade=null;currentPeriod=1;cancelShot();
@@ -524,6 +529,8 @@ function clearSession(){
 
 // ── SWITCH TO OPP ─────────────────────────────────────
 function switchToOpp(){
+  // Clear the home pending key — it's been imported or user is moving on
+  try{localStorage.removeItem('courttrack_shots_pending');}catch(e){}
   // Keep game label and format, clear shots and court, switch to opp roster
   const prevGameLabel=gameLabel;
   const prevPeriodCount=periodCount;
