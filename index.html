@@ -706,12 +706,14 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
         <line x1="272" y1="3" x2="272" y2="62" stroke="#60a5fa" stroke-width="1.2"/>
         <path d="M 28,62 A 130,130 0 0 0 272,62" fill="none" stroke="#60a5fa" stroke-width="1.2"/>
         <line x1="3" y1="159" x2="297" y2="159" stroke="#93c5fd" stroke-width="1" stroke-dasharray="4,3"/>
-        <text x="150" y="62" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.7">Paint</text>
-        <text x="15" y="34" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.6">3L</text>
-        <text x="285" y="34" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.6">3R</text>
-        <text x="50" y="82" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.6">Mid-L</text>
-        <text x="250" y="82" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.6">Mid-R</text>
-        <text x="150" y="125" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.6">Top key</text>
+        <text x="150" y="55" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.7">Paint</text>
+        <text x="15" y="34" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.6">C3L</text>
+        <text x="285" y="34" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.6">C3R</text>
+        <text x="44" y="55" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.6">Mid</text>
+        <text x="256" y="55" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.6">Mid</text>
+        <text x="44" y="110" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.6">W3L</text>
+        <text x="256" y="110" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.6">W3R</text>
+        <text x="150" y="115" text-anchor="middle" font-size="7" fill="#3b82f6" opacity="0.6">Top key</text>
         <g id="shot-dots"></g>
       </svg>
     </div>
@@ -768,12 +770,14 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
         <line x1="272" y1="3" x2="272" y2="62" stroke="#f87171" stroke-width="1.2"/>
         <path d="M 28,62 A 130,130 0 0 0 272,62" fill="none" stroke="#f87171" stroke-width="1.2"/>
         <line x1="3" y1="159" x2="297" y2="159" stroke="#fca5a5" stroke-width="1" stroke-dasharray="4,3"/>
-        <text x="150" y="62" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.7">Paint</text>
-        <text x="15" y="34" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">3L</text>
-        <text x="285" y="34" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">3R</text>
-        <text x="50" y="82" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">Mid-L</text>
-        <text x="250" y="82" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">Mid-R</text>
-        <text x="150" y="125" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">Top key</text>
+        <text x="150" y="55" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.7">Paint</text>
+        <text x="15" y="34" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">C3L</text>
+        <text x="285" y="34" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">C3R</text>
+        <text x="44" y="55" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">Mid</text>
+        <text x="256" y="55" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">Mid</text>
+        <text x="44" y="110" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">W3L</text>
+        <text x="256" y="110" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">W3R</text>
+        <text x="150" y="115" text-anchor="middle" font-size="7" fill="#dc2626" opacity="0.6">Top key</text>
         <g id="shot-dots-opp"></g>
       </svg>
     </div>
@@ -2083,8 +2087,52 @@ function importShotsFromPaste(teamSlot){
     const scSel=document.getElementById('sc-game-sel');if(scSel&&tgid){scSel.value=tgid;renderShotChart();}
   }catch(e){showToast('⚠ Invalid JSON');}
 }
-const SC_ZONES=[{id:'paint',label:'Paint',x1:88,y1:3,x2:212,y2:95},{id:'corner3l',label:'Corner 3 Left',x1:3,y1:3,x2:28,y2:62},{id:'corner3r',label:'Corner 3 Right',x1:272,y1:3,x2:297,y2:62},{id:'midl',label:'Mid-range Left',x1:3,y1:62,x2:88,y2:130},{id:'midr',label:'Mid-range Right',x1:212,y1:62,x2:297,y2:130},{id:'topkey',label:'Top of key / 3pt',x1:88,y1:95,x2:212,y2:130},{id:'other',label:'Backcourt',x1:3,y1:130,x2:297,y2:162}];
-function getZone(x,y){for(const z of SC_ZONES){if(x>=z.x1&&x<=z.x2&&y>=z.y1&&y<=z.y2)return z.id;}return'other';}
+// 3pt arc: M28,62 A130,130 0 0 0 272,62 → centre (150,17.1), radius 130
+// Point is INSIDE arc (2pt) if distance from centre < 130
+// Point is OUTSIDE arc (3pt) if distance >= 130
+const ARC_CX=150,ARC_CY=17.1,ARC_R=130;
+function insideArc(x,y){return Math.sqrt((x-ARC_CX)**2+(y-ARC_CY)**2)<ARC_R;}
+// Side 3pt lines: x<28 or x>272, from baseline (y=3) to arc endpoint (y=62)
+function isSideLineThree(x,y){return(x<28||x>272)&&y>=3&&y<=62;}
+
+const SC_ZONES=[
+  {id:'paint',     label:'Paint'},
+  {id:'corner3l',  label:'Corner 3 (Left)'},
+  {id:'corner3r',  label:'Corner 3 (Right)'},
+  {id:'midl',      label:'Mid-range (Left)'},
+  {id:'midr',      label:'Mid-range (Right)'},
+  {id:'wing3l',    label:'Wing 3 (Left)'},
+  {id:'wing3r',    label:'Wing 3 (Right)'},
+  {id:'topkey',    label:'Top of Key'},
+  {id:'longmid',   label:'Long Mid-range'},
+  {id:'other',     label:'Half-court'},
+];
+
+function getZone(x,y){
+  // Out of bounds / half-court heave
+  if(y>155)return'other';
+  // Paint: inside paint rectangle (x:88-212, y:3-95)
+  if(x>=88&&x<=212&&y>=3&&y<=95)return'paint';
+  // Corner 3: outside the 3pt sideline (x<28 or x>272), below arc endpoint y=62
+  if(x<28&&y<=62)return'corner3l';
+  if(x>272&&y<=62)return'corner3r';
+  // Outside arc entirely = 3pt
+  if(!insideArc(x,y)){
+    // Wing 3: outside sideline extension, above y=62
+    if(x<88)return'wing3l';
+    if(x>212)return'wing3r';
+    // Top of key 3pt (centre, outside arc)
+    return'topkey';
+  }
+  // Inside arc = 2pt. Subdivide by position.
+  // Mid-range left/right: beside the paint, y:3-95 range outside paint
+  if(x<88&&y<=95)return'midl';
+  if(x>212&&y<=95)return'midr';
+  // Long mid-range: inside arc but deep (y>95), outside paint
+  if(x<88||x>212)return x<88?'midl':'midr';
+  // Centre, inside arc, below FT line but above paint top
+  return'longmid';
+}
 function checkPendingShots(){
   const banner=document.getElementById('pending-shots-banner');if(!banner)return;
   try{
@@ -2216,16 +2264,19 @@ function renderDots(dotGroupId,shots,team){
   });
 }
 // Zone → shot type: paint=2pt, corner3l/corner3r/topkey=3pt, mid=2pt, backcourt=2pt
-const ZONE_IS_3PT={paint:false,corner3l:true,corner3r:true,midl:false,midr:false,topkey:true,other:false};
+const ZONE_IS_3PT={paint:false,corner3l:true,corner3r:true,midl:false,midr:false,wing3l:true,wing3r:true,topkey:true,longmid:false,other:false};
 // SVG overlay rects matching SC_ZONES coordinates (home chart)
 const ZONE_OVERLAYS={
   paint:    {x:88, y:3,  w:124,h:92},
   corner3l: {x:3,  y:3,  w:25, h:59},
   corner3r: {x:272,y:3,  w:25, h:59},
-  midl:     {x:3,  y:62, w:85, h:68},
-  midr:     {x:212,y:62, w:85, h:68},
-  topkey:   {x:88, y:95, w:124,h:35},
-  other:    {x:3,  y:130,w:294,h:32}
+  midl:     {x:3,  y:3,  w:85, h:92},
+  midr:     {x:212,y:3,  w:85, h:92},
+  wing3l:   {x:3,  y:62, w:85, h:93},
+  wing3r:   {x:212,y:62, w:85, h:93},
+  topkey:   {x:88, y:95, w:124,h:60},
+  longmid:  {x:88, y:95, w:124,h:30},
+  other:    {x:88, y:150,w:124,h:12}
 };
 function pctToOverlayColor(pct,alpha){
   if(pct===null)return'rgba(0,0,0,0)';
