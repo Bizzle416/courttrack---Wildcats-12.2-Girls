@@ -2608,6 +2608,182 @@ function openGameReport(idx){
       oppStatsHtml+=`<h2>${opp} — Opposition Stats</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;text-align:left;">Player</th><th>PTS</th><th>FT</th><th>FT%</th><th>FG</th><th>FG%</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead><tbody>${oppRows}</tbody></table></div>`;oppStatsHtml+=oppAdvHtml;
     }
   }
+
+  // ── GAME FLOW CHART ──────────────────────────────────────────────────────
+  function buildGameFlowChart(g){
+    const isDom=g.gameType==='domestic';
+    const periods=isDom?2:4;
+    const periodSecs=g.periodSecs||600;
+    const pl=isDom?'H':'Q';
+    const opp=g.opponent||'Opponent';
+    const homeTeamName=(state.config&&state.config.clubName)||'Home';
+
+    // Collect all scoring events in order
+    const scoringEvents=[];
+    let sh=0,sa=0,leadHolder=0; // 0=tied,1=home,-1=away
+    let leadChanges=0;
+
+    // Build timeline events sorted by period then elapsed
+    const tl=(g.timeline||[]).slice().sort((a,b)=>{
+      const qa=(a.q||1),qb=(b.q||1);
+      if(qa!==qb)return qa-qb;
+      try{
+        const at=a.ts.split(' ')[1]||'0:00',bt=b.ts.split(' ')[1]||'0:00';
+        const ap=at.split(':'),bp=bt.split(':');
+        return(parseInt(ap[0])*60+parseInt(ap[1]||0))-(parseInt(bp[0])*60+parseInt(bp[1]||0));
+      }catch(e){return 0;}
+    });
+
+    // Add start point
+    scoringEvents.push({q:1,elapsed:0,sh:0,sa:0});
+
+    // Process scoring events
+    tl.forEach(ev=>{
+      const isHomePts=['pts_1','pts_2','pts_3','pts'].includes(ev.type);
+      const isOppPts=['opp_pts','opp_pts_1','opp_pts_2','opp_pts_3'].includes(ev.type);
+      if(!isHomePts&&!isOppPts)return;
+
+      const q=ev.q||1;
+      let elapsed=0;
+      try{
+        const parts=ev.ts.split(' ');
+        if(parts.length>=2){
+          const tp=parts[1].split(':');
+          elapsed=(parseInt(tp[0])||0)*60+(parseInt(tp[1])||0);
+        }
+      }catch(e){}
+
+      const prevH=sh,prevA=sa;
+      sh=ev.scoreHome||sh;
+      sa=ev.scoreAway||sa;
+
+      // Count lead changes (only when lead actually flips, not tied→tied)
+      const newLeader=sh>sa?1:sh<sa?-1:0;
+      if(newLeader!==0&&leadHolder!==0&&newLeader!==leadHolder)leadChanges++;
+      if(newLeader!==0)leadHolder=newLeader;
+
+      scoringEvents.push({q,elapsed,sh,sa});
+    });
+
+    // Add period end markers for reference (use final event in each period)
+    const finalH=g.scoreHome||0,finalA=g.scoreAway||0;
+    scoringEvents.push({q:periods,elapsed:periodSecs,sh:finalH,sa:finalA,isFinal:true});
+
+    if(scoringEvents.length<2)return'';
+
+    // SVG dimensions
+    const W=660,H=220,PL=42,PR=16,PT=14,PB=32;
+    const chartW=W-PL-PR,chartH=H-PT-PB;
+    const maxScore=70;
+    const totalTicks=periods; // one segment per period
+
+    // Convert event to x,y
+    // X: period 1 = 0..chartW/periods, period 2 = chartW/periods..2*chartW/periods, etc.
+    function toX(q,elapsed){
+      const segW=chartW/periods;
+      const pStart=(q-1)*segW;
+      const pFrac=Math.min(elapsed/periodSecs,1);
+      return PL+pStart+pFrac*segW;
+    }
+    function toY(score){
+      return PT+chartH-Math.min(score,maxScore)/maxScore*chartH;
+    }
+
+    // Build polyline points for home and away
+    let homePts='',awayPts='';
+    // We need step-function segments: score changes instantaneously
+    // Build as path with H (horizontal) + V (vertical) steps
+    let homePath='',awayPath='';
+    let prevX=PL,prevSH=0,prevSA=0;
+
+    for(let i=0;i<scoringEvents.length;i++){
+      const ev=scoringEvents[i];
+      const x=toX(ev.q,ev.elapsed);
+      const yH=toY(ev.sh),yA=toY(ev.sa);
+      if(i===0){
+        homePath=`M${x.toFixed(1)},${yH.toFixed(1)}`;
+        awayPath=`M${x.toFixed(1)},${yA.toFixed(1)}`;
+      } else {
+        // Horizontal to new x at old score, then vertical to new score
+        homePath+=` H${x.toFixed(1)} V${yH.toFixed(1)}`;
+        awayPath+=` H${x.toFixed(1)} V${yA.toFixed(1)}`;
+      }
+      prevX=x;prevSH=ev.sh;prevSA=ev.sa;
+    }
+    // Extend to end of last period
+    const endX=PL+chartW;
+    homePath+=` H${endX.toFixed(1)}`;
+    awayPath+=` H${endX.toFixed(1)}`;
+
+    // Grid lines — Y axis 0,10,20...70
+    let gridLines='',yLabels='';
+    for(let s=0;s<=maxScore;s+=10){
+      const y=toY(s);
+      gridLines+=`<line x1="${PL}" y1="${y.toFixed(1)}" x2="${PL+chartW}" y2="${y.toFixed(1)}" stroke="#e8e8e8" stroke-width="1"/>`;
+      yLabels+=`<text x="${(PL-5).toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="#aaa">${s}</text>`;
+    }
+
+    // Period dividers and labels
+    let periodDivs='',periodLabels='';
+    for(let p=1;p<=periods;p++){
+      const x=PL+(p-1)*chartW/periods;
+      const xMid=x+chartW/(periods*2);
+      if(p>1){
+        periodDivs+=`<line x1="${x.toFixed(1)}" y1="${PT}" x2="${x.toFixed(1)}" y2="${(PT+chartH).toFixed(1)}" stroke="#ddd" stroke-width="1" stroke-dasharray="3,3"/>`;
+      }
+      periodLabels+=`<text x="${xMid.toFixed(1)}" y="${(PT+chartH+18).toFixed(1)}" text-anchor="middle" font-size="10" fill="#999">${pl}${p}</text>`;
+    }
+
+    // Lead changes badge
+    const lcBadge=`<rect x="${PL+chartW-90}" y="${PT+4}" width="86" height="18" rx="4" fill="#f0f0f0"/>
+<text x="${PL+chartW-47}" y="${PT+14}" text-anchor="middle" font-size="9" fill="#888" font-weight="600">${leadChanges} LEAD CHANGE${leadChanges===1?'':'S'}</text>`;
+
+    // Final scores at right edge
+    const fhY=toY(finalH),faY=toY(finalA);
+    const fhLabel=`<text x="${(PL+chartW+3).toFixed(1)}" y="${fhY.toFixed(1)}" dominant-baseline="middle" font-size="9" fill="#16a34a" font-weight="700">${finalH}</text>`;
+    const faLabel=`<text x="${(PL+chartW+3).toFixed(1)}" y="${faY.toFixed(1)}" dominant-baseline="middle" font-size="9" fill="#dc2626" font-weight="700">${finalA}</text>`;
+
+    // Dotted pattern def for away team
+    const defs=`<defs>
+  <pattern id="dot-pattern" x="0" y="0" width="8" height="1" patternUnits="userSpaceOnUse">
+    <rect x="0" y="0" width="5" height="1" fill="#dc2626"/>
+  </pattern>
+</defs>`;
+
+    const svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px;display:block;">
+${defs}
+<!-- Grid -->
+${gridLines}
+<!-- Period dividers -->
+${periodDivs}
+<!-- Axis -->
+<line x1="${PL}" y1="${PT}" x2="${PL}" y2="${(PT+chartH).toFixed(1)}" stroke="#ccc" stroke-width="1"/>
+<line x1="${PL}" y1="${(PT+chartH).toFixed(1)}" x2="${(PL+chartW).toFixed(1)}" y2="${(PT+chartH).toFixed(1)}" stroke="#ccc" stroke-width="1"/>
+<!-- Away team (dotted) -->
+<path d="${awayPath}" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,3"/>
+<!-- Home team (solid) -->
+<path d="${homePath}" fill="none" stroke="#16a34a" stroke-width="2.5"/>
+<!-- Period labels -->
+${periodLabels}
+<!-- Y labels -->
+${yLabels}
+<!-- Lead changes badge -->
+${lcBadge}
+<!-- Final scores -->
+${fhLabel}${faLabel}
+</svg>`;
+
+    // Legend
+    const legend=`<div style="display:flex;gap:20px;align-items:center;margin-top:8px;font-size:11px;color:#666;">
+  <span style="display:flex;align-items:center;gap:5px;"><svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#16a34a" stroke-width="2.5"/></svg>${homeTeamName}</span>
+  <span style="display:flex;align-items:center;gap:5px;"><svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,3"/></svg>${opp}</span>
+  <span style="color:#aaa;margin-left:auto;">${leadChanges} lead change${leadChanges===1?'':'s'}</span>
+</div>`;
+
+    return `<h2>Probabilities &amp; Game Flow</h2><div style="background:#fafafa;border:1px solid #e8e8e8;border-radius:8px;padding:14px 10px 8px;">${svg}${legend}</div>`;
+  }
+  const gameFlowHtml=buildGameFlowChart(g);
+
   const note='Rating (1–10): Pts/40 ×1.0 · STL/40 ×1.5 · BLK/40 ×1.2 · REB/40 ×0.8 · AST/40 ×1.0 − TOV/40 ×1.5 − F/40 ×1.0 + plus/minus ×0.15, scaled to squad range';
   const html2=`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${homeTeam.trim()} — ${rl} vs ${opp}</title>
 <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f5f5f7;color:#1a1a1a;}.page{background:#fff;max-width:900px;margin:0 auto;padding:28px 28px 40px;}.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e8e8e8;}.page-title h1{font-size:17px;font-weight:700;margin:0 0 3px;}.page-title .sub{font-size:11px;color:#888;}.result{font-size:13px;font-weight:700;border-radius:6px;padding:6px 12px;background:${rBg};color:${rCol};}.scores{display:flex;gap:24px;margin:16px 0 20px;justify-content:center;}.sc{text-align:center;background:#f8faff;border-radius:10px;padding:12px 20px;min-width:100px;}.sc-n{font-size:11px;color:#666;font-weight:600;text-transform:uppercase;margin-bottom:4px;}.sc-v{font-family:monospace;font-size:38px;font-weight:800;line-height:1;}.mg{text-align:center;font-size:12px;color:#888;font-style:italic;margin-bottom:20px;}h2{font-size:13px;font-weight:700;color:#3b82f6;border-bottom:2px solid #3b82f6;padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;letter-spacing:0.05em;}table{width:100%;border-collapse:collapse;font-size:11.5px;}th{font-size:10px;font-weight:600;color:#888;text-align:right;padding:5px 7px;border-bottom:1px solid #e8e8e8;white-space:nowrap;text-transform:uppercase;}th:first-child{text-align:left;}td{padding:6px 7px;border-bottom:1px solid #f0f0f0;text-align:right;vertical-align:middle;}td:first-child{text-align:left;}tfoot td{background:#f5f5f7;border-top:2px solid #dde;border-bottom:none;}.note{font-size:10px;color:#bbb;margin-top:8px;line-height:1.6;}.pb{display:block;margin:20px auto 0;padding:12px 28px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}.ios{text-align:center;font-size:12px;color:#888;margin-top:10px;}@media print{.pb,.ios{display:none;}body{background:#fff;}td,th{font-size:10px;padding:4px 5px;}}</style></head>
@@ -2617,7 +2793,7 @@ function openGameReport(idx){
 <div class="mg">${diff===0?'Draw':((diff>0?(state.config.clubName||'Home'):opp)+' won by '+Math.abs(diff)+' pt'+(Math.abs(diff)===1?'':'s'))}</div>
 <h2>Player Performance — sorted by rating</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;">Player</th><th>Min</th><th>+/−</th><th>PTS</th><th>FT</th><th>FT%</th><th>FG</th><th>FG%</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th><th style="min-width:90px;">Rating</th></tr></thead><tbody>${sRows}</tbody></table></div>
 <div class="note">${note}</div>
-${advHtml}${qHtml}${scHtml}${oppStatsHtml}${tlHtml?`<h2>Game Timeline</h2>${tlHtml}`:''}
+${advHtml}${qHtml}${gameFlowHtml}${scHtml}${oppStatsHtml}${tlHtml?`<h2>Game Timeline</h2>${tlHtml}`:''}
 ${g.editNotes?`<div style="margin-top:24px;padding:14px 16px;background:#fffbf0;border-left:3px solid #d97706;border-radius:4px;"><div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">⚠ Stat corrections</div><div style="font-size:12px;color:#78350f;line-height:1.65;">${g.editNotes.replace(/\n/g,'<br>')}</div><div style="font-size:10px;color:#b45309;margin-top:6px;">Stats in this report have been manually reviewed and corrected after the game.</div></div>`:''}
 <p style="font-size:10px;color:#bbb;margin-top:24px;text-align:center;">CourtTrack · ${homeTeam.trim()} · ${new Date().toLocaleDateString('en-AU')}</p>
 <div style="margin-top:40px;border-top:2px solid #e8e8e8;padding-top:24px;">
