@@ -375,10 +375,8 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
       </div>
     </div>
     <div class="field" id="domestic-duration-field" style="display:none;">
-      <div class="field-label">Period length (minutes)</div>
-      <input type="number" id="g-period-mins" value="20" min="5" max="40" oninput="
-        const lbl=document.getElementById('gt-domestic').classList.contains('active')?'gt-domestic':'gt-tournament';
-        document.getElementById(lbl).querySelector('.gt-sub').textContent='2 × '+this.value+' min';"/>
+      <div class="field-label" id="period-field-label">Period length (minutes)</div>
+      <input type="number" id="g-period-mins" value="20" min="5" max="40" oninput="updatePeriodLabel(this.value)"/>
     </div>
     <div class="two-col">
       <div class="field"><div class="field-label">Date</div><input type="date" id="g-date"/></div>
@@ -403,13 +401,14 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
   </div>
   <div class="card" id="opp-roster-card" style="display:none;">
     <div class="sec-label">Opposition roster <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">— from team sheet or MyHoops</span></div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Add their players now so you can track opposition stats live during footage review.</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Add players then tap to mark their starting 5.</div>
     <div id="opp-roster-pregame"></div>
     <div style="display:flex;gap:6px;align-items:center;margin-top:6px;">
       <input type="text" id="opp-pre-num" placeholder="#" style="width:56px;"/>
       <input type="text" id="opp-pre-name" placeholder="Player name"/>
       <button class="btn btn-primary" style="padding:9px 14px;white-space:nowrap;" onclick="oppPreAdd()">Add</button>
     </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;" id="opp-starter-count-label"></div>
   </div>
   <button class="btn btn-primary" style="width:100%;padding:14px;" onclick="startGame()">Start game</button>
 </div>
@@ -1214,7 +1213,7 @@ function showApp(){
   document.getElementById('settings-sb-key').value=state.config.sbKey||'';
   document.getElementById('g-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('g-time').value='18:00';
-  renderStarterGrid();renderOppPreRoster();
+  renderStarterGrid();renderOppPreRoster();setGameType(currentGameType||'vjbl');
   if(state.currentGame){
     currentGameType=state.currentGame.gameType||'vjbl';
     // Restore undo logs from persisted game state
@@ -1277,21 +1276,32 @@ function updateCloudSettings(){
 }
 
 // ── GAME TYPE ─────────────────────────────────────────
+function updatePeriodLabel(val){
+  const cgt=currentGameType;
+  if(cgt==='vjbl'){const sub=document.getElementById('gt-vjbl').querySelector('.gt-sub');if(sub)sub.textContent='4 × '+val+' min';}
+  else if(cgt==='domestic'){const sub=document.getElementById('gt-domestic').querySelector('.gt-sub');if(sub)sub.textContent='2 × '+val+' min';}
+  else{const sub=document.getElementById('gt-tournament').querySelector('.gt-sub');if(sub)sub.textContent='2 × '+val+' min';}
+}
 function setGameType(t){
   currentGameType=t;
   ['vjbl','domestic','tournament'].forEach(n=>{
     const b=document.getElementById('gt-'+n);
     if(b)b.classList.toggle('active',t===n);
   });
-  const showDur=t==='domestic'||t==='tournament';
-  document.getElementById('domestic-duration-field').style.display=showDur?'':'none';
-  if(t==='tournament'){
-    const sub=document.getElementById('gt-tournament').querySelector('.gt-sub');
-    const mins=parseInt(document.getElementById('g-period-mins')?.value)||20;
-    if(sub)sub.textContent='2 × '+mins+' min';
+  document.getElementById('domestic-duration-field').style.display='';
+  const lbl=document.getElementById('period-field-label');
+  const inp=document.getElementById('g-period-mins');
+  if(t==='vjbl'){
+    if(lbl)lbl.textContent='Quarter length (minutes)';
+    if(inp&&(inp.value==='20'||inp.value===''))inp.value='10';
+    updatePeriodLabel(inp?inp.value:'10');
+  } else {
+    if(lbl)lbl.textContent='Period length (minutes)';
+    if(inp&&inp.value==='10')inp.value='20';
+    updatePeriodLabel(inp?inp.value:'20');
   }
 }
-function getQSecs(){if(currentGameType==='domestic'||currentGameType==='tournament'){const m=parseInt(document.getElementById('g-period-mins')?.value)||20;return m*60;}return Q_SECS_REP;}
+function getQSecs(){const m=parseInt(document.getElementById('g-period-mins')?.value)||((currentGameType==='vjbl')?10:20);return m*60;}
 
 // ── PERIOD BAR ────────────────────────────────────────
 function renderPeriodBar(game){
@@ -1554,6 +1564,7 @@ function renderTimeline(){
 
 // ── OPPOSITION TRACKER ────────────────────────────────
 let pendingOppRoster=[];   // built in pregame
+let pendingOppStarters=new Set(); // opp starters for tipoff
 let selectedOppPid=null;
 let currentGameTab='home';
 
@@ -1562,8 +1573,23 @@ function emptyOppPlayerStats(){return{pts:0,fgm:0,fga:0,fgm3:0,fga3:0,ftm:0,fta:
 // Pregame roster management
 function renderOppPreRoster(){
   const el=document.getElementById('opp-roster-pregame');if(!el)return;
-  if(!pendingOppRoster.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">No players added yet.</div>';return;}
-  el.innerHTML=pendingOppRoster.map((p,i)=>`<div class="setup-row" style="margin-bottom:5px;"><input type="text" value="${p.num}" style="width:56px;" oninput="pendingOppRoster[${i}].num=this.value"/><input type="text" value="${p.name}" oninput="pendingOppRoster[${i}].name=this.value"/><button class="btn btn-red" style="padding:8px 10px;" onclick="pendingOppRoster.splice(${i},1);renderOppPreRoster()">✕</button></div>`).join('');
+  if(!pendingOppRoster.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">No players added yet.</div>';const cl=document.getElementById('opp-starter-count-label');if(cl)cl.textContent='';return;}
+  el.innerHTML=pendingOppRoster.map((p,i)=>{
+    const isSt=pendingOppStarters.has(p.id);
+    return `<div class="setup-row" style="margin-bottom:5px;display:flex;gap:6px;align-items:center;">
+      <input type="text" value="${p.num}" style="width:56px;flex:none;" oninput="pendingOppRoster[${i}].num=this.value"/>
+      <input type="text" value="${p.name}" style="flex:1;" oninput="pendingOppRoster[${i}].name=this.value"/>
+      <button class="btn" style="padding:7px 10px;flex:none;font-size:11px;font-weight:700;${isSt?'background:var(--red);border-color:var(--red);color:#fff;':'color:var(--muted);'}" onclick="toggleOppPregameStarter(${p.id})">${isSt?'START':'start'}</button>
+      <button class="btn btn-red" style="padding:8px 10px;flex:none;" onclick="pendingOppRoster.splice(${i},1);pendingOppStarters.delete(${p.id});renderOppPreRoster()">✕</button>
+    </div>`;
+  }).join('');
+  const cl=document.getElementById('opp-starter-count-label');
+  if(cl)cl.textContent=pendingOppStarters.size>0?'Starters marked: '+pendingOppStarters.size+'/5':'Tap start to mark their starting 5';
+}
+function toggleOppPregameStarter(pid){
+  if(pendingOppStarters.has(pid)){pendingOppStarters.delete(pid);}
+  else{if(pendingOppStarters.size>=5){showToast('⚠ Already 5 opp starters marked');return;}pendingOppStarters.add(pid);}
+  renderOppPreRoster();
 }
 function oppPreAdd(){
   const num=document.getElementById('opp-pre-num').value.trim();
@@ -1751,6 +1777,7 @@ function startGame(){
   const starters=Array.from(pendingStarters);
   state.currentGame={id:Date.now(),date:fmtDate(date),time:fmtTime(time),round,opponent:opp||'Unknown',venue,gameType,periodSecs,filmed:isFilmed,quarter:1,running:true,ended:false,timeout:false,timeoutTeam:'',elapsed:0,lastTick:Date.now(),qRemaining:periodSecs,onCourt:[...starters],stints:{},minutes:{},stats:{},scoreHome:0,scoreAway:0,timeline:[],oppRoster:isFilmed?[...pendingOppRoster]:[],oppOnCourt:[],oppStints:{},oppMinutes:{},oppStats:{},oppAggregate:{oreb:0,dreb:0}};
   pendingOppRoster.forEach(p=>{state.currentGame.oppMinutes[p.id]=0;state.currentGame.oppStats[p.id]=emptyOppPlayerStats();});
+  if(pendingOppStarters.size>0){const _oppNow=Date.now();pendingOppStarters.forEach(pid=>{if(state.currentGame.oppRoster.find(p=>p.id===pid)){state.currentGame.oppOnCourt.push(pid);if(state.currentGame.filmed)state.currentGame.oppStints[pid]=_oppNow;}});}
   state.players.forEach(p=>{state.currentGame.minutes[p.id]=0;state.currentGame.stats[p.id]=emptyStats();});
   const now=Date.now();starters.forEach(pid=>{state.currentGame.stints[pid]=now;});
   const snames=starters.map(pid=>{const p=state.players.find(p=>p.id===pid);return p?p.name:'?';}).join(', ');
@@ -1804,8 +1831,9 @@ function resetQClock(){
 }
 function setClockManual(){
   const cg=state.currentGame;if(!cg)return;
+  const oldRemaining=cg.qRemaining;
   const wasRunning=cg.running;
-  if(wasRunning)pauseInternal();
+  if(wasRunning)pauseInternal(); // banks stints at current wall time
   const input=prompt('Set clock to (MM:SS):','');
   if(input===null){if(wasRunning){cg.running=true;cg.lastTick=Date.now();cg.onCourt.forEach(pid=>{cg.stints[pid]=Date.now();});if(cg.oppOnCourt)cg.oppOnCourt.forEach(pid=>{cg.oppStints[pid]=Date.now();});startTimer();}return;}
   const parts=input.trim().split(':');
@@ -1813,7 +1841,15 @@ function setClockManual(){
   if(parts.length===2){secs=parseInt(parts[0]||0)*60+parseInt(parts[1]||0);}
   else if(parts.length===1){secs=parseInt(parts[0]||0);}
   if(isNaN(secs)||secs<0){showToast('⚠ Invalid time');if(wasRunning){cg.running=true;cg.lastTick=Date.now();startTimer();}return;}
-  cg.qRemaining=Math.min(secs,cg.periodSecs||Q_SECS_REP);
+  const newRemaining=Math.min(secs,cg.periodSecs||Q_SECS_REP);
+  // Going backwards (more time remaining = earlier in period) = overcredited time, deduct it
+  const diffSecs=newRemaining-oldRemaining;
+  if(diffSecs>0){
+    const deductMins=diffSecs/60;
+    cg.onCourt.forEach(pid=>{cg.minutes[pid]=Math.max(0,(cg.minutes[pid]||0)-deductMins);});
+    if(cg.oppOnCourt)cg.oppOnCourt.forEach(pid=>{cg.oppMinutes[pid]=Math.max(0,(cg.oppMinutes[pid]||0)-deductMins);});
+  }
+  cg.qRemaining=newRemaining;
   save();renderTimer();
   if(wasRunning){cg.running=true;const now=Date.now();cg.lastTick=now;cg.onCourt.forEach(pid=>{cg.stints[pid]=now;});if(cg.oppOnCourt)cg.oppOnCourt.forEach(pid=>{cg.oppStints[pid]=now;});startTimer();}
 }
@@ -1845,7 +1881,7 @@ function endGame(){
   if(cg.oppRoster)cg.oppRoster.forEach(p=>{oppSum.minutes[p.id]=cg.oppMinutes[p.id]||0;oppSum.stats[p.id]={...cg.oppStats[p.id]};});
   cg.oppSummary=oppSum;
   const saved={...cg};state.games.push(saved);state.games.sort((a,b)=>parseDateStr(b.date)-parseDateStr(a.date));
-  state.currentGame=null;actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];selectedPid=null;selectedOppPid=null;pendingStarters=new Set();pendingOppRoster=[];currentGameTab='home';isFilmed=false;
+  state.currentGame=null;actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];selectedPid=null;selectedOppPid=null;pendingStarters=new Set();pendingOppRoster=[];pendingOppStarters=new Set();currentGameTab='home';isFilmed=false;
   save();render();renderStarterGrid();renderOppPreRoster();showScreen('season',document.getElementById('tab-btn-season'));
   if(sbOk())syncGameToCloud(saved);
 }
@@ -3297,7 +3333,7 @@ function endReopenSession(){
   state.games[reopenIdx]=Object.assign({},cg);const saved=state.games[reopenIdx];
   const rb=document.getElementById('reopen-banner');if(rb)rb.style.display='none';
   state.currentGame=null;actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];
-  selectedPid=null;selectedOppPid=null;pendingStarters=new Set();pendingOppRoster=[];
+  selectedPid=null;selectedOppPid=null;pendingStarters=new Set();pendingOppRoster=[];pendingOppStarters=new Set();
   currentGameTab='home';reopenIdx=null;isFilmed=false;
   save();render();renderStarterGrid();renderOppPreRoster();
   showScreen('season',document.getElementById('tab-btn-season'));
@@ -3328,3 +3364,4 @@ load();
 </script>
 </body>
 </html>
+
