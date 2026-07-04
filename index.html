@@ -147,6 +147,17 @@ input:focus,select:focus{border-color:var(--accent);}
 
 /* SCORES */
 .scores-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.dual-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:10px;align-items:start;}
+.dual-grid.single-col{grid-template-columns:1fr;}
+.dual-grid.single-col #game-panel-opp{display:none;}
+.team-col{min-width:0;}
+.team-col-header{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;padding:7px 10px;margin-bottom:8px;border-radius:var(--rs);}
+.team-col-header.home{color:var(--accent);background:var(--accent-bg);}
+.team-col-header.opp{color:var(--red);background:var(--red-bg);}
+@media (max-width:860px){.dual-grid{grid-template-columns:1fr;}}
+.shot-log-card{margin-top:8px;transition:box-shadow 0.15s,border-color 0.15s;}
+#shot-log-home.shot-log-active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-bg);}
+#shot-log-opp.shot-log-active{border-color:var(--red);box-shadow:0 0 0 2px var(--red-bg);}
 .score-side{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
 .score-side-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
 .score-num{font-family:'DM Mono',monospace;font-size:40px;font-weight:500;line-height:1;margin-bottom:10px;}
@@ -438,49 +449,176 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
   <div class="to-banner" id="to-banner">TIMEOUT — <span id="to-team"></span></div>
   <div class="to-banner" id="reopen-banner" style="background:var(--red-bg);border-color:rgba(220,38,38,0.35);color:var(--red);display:none;">REPLAY SESSION - <span id="reopen-game-label"></span><button onclick="endReopenSession()" style="margin-left:12px;padding:4px 12px;border-radius:6px;border:1px solid rgba(220,38,38,0.4);background:var(--red);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;">End &amp; Save</button></div>
 
-  <!-- Team switcher tabs - filmed only -->
-  <div id="game-tab-switcher" style="display:flex;gap:0;margin-bottom:10px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--border2);">
+  <!-- Team switcher tabs - legacy, kept in DOM for JS compatibility but no longer used (both teams shown at once) -->
+  <div id="game-tab-switcher" style="display:none;gap:0;margin-bottom:10px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--border2);">
     <button id="game-tab-home" onclick="setGameTab('home')" style="flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;">🏠 Our Team</button>
-    <button id="game-tab-opp" onclick="setGameTab('opp')" style="flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:var(--surface2);color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;" id="game-tab-opp">🔴 Opposition</button>
+    <button id="game-tab-opp" onclick="setGameTab('opp')" style="flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:var(--surface2);color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;">🔴 Opposition</button>
   </div>
 
-  <!-- HOME TEAM PANEL -->
-  <div id="game-panel-home">
-    <div class="warn-bar" id="warn5">5 players on court — sub someone off first</div>
-    <div class="court-action-row">
-      <div class="card court-card">
-        <div class="sec-label">On court</div>
-        <div id="oncourt-list"><span class="oncourt-empty">No players</span></div>
-        <div class="on-count" id="on-count" style="margin-top:8px;">0/5</div>
-      </div>
-      <div class="card action-card">
-        <div class="sec-label">Action</div>
-        <div id="action-no-player" class="no-player-msg" style="padding:12px 0;font-size:12px;">← Select a player</div>
-        <div id="action-panel" style="display:none;">
-          <div class="spb-bar">
-            <div class="spb-name" id="spb-name"></div>
-            <div class="spb-clear" onclick="deselectPlayer()">✕</div>
+  <!-- SPLIT VIEW — both teams visible at once, no tab switching -->
+  <div class="dual-grid" id="dual-grid">
+    <div id="game-panel-home" class="team-col">
+      <div class="team-col-header home">🏠 Our Team</div>
+      <div class="warn-bar" id="warn5">5 players on court — sub someone off first</div>
+      <div class="court-action-row">
+        <div class="card court-card">
+          <div class="sec-label">On court</div>
+          <div id="oncourt-list"><span class="oncourt-empty">No players</span></div>
+          <div class="on-count" id="on-count" style="margin-top:8px;">0/5</div>
+        </div>
+        <div class="card action-card">
+          <div class="sec-label">Action</div>
+          <div id="action-no-player" class="no-player-msg" style="padding:12px 0;font-size:12px;">← Select a player</div>
+          <div id="action-panel" style="display:none;">
+            <div class="spb-bar">
+              <div class="spb-name" id="spb-name"></div>
+              <div class="spb-clear" onclick="deselectPlayer()">✕</div>
+            </div>
+            <div class="action-grid-v">
+              <button class="action-btn pts1" onclick="logAction('1pt')">+1<div class="abl">FT made</div></button>
+              <button class="action-btn miss" onclick="logAction('ft_miss')">FT-X<div class="abl">FT missed</div></button>
+              <button class="action-btn pts2" onclick="logAction('2pt')">+2<div class="abl">2pt made</div></button>
+              <button class="action-btn miss" onclick="logAction('fga')">FGA<div class="abl">2pt missed</div></button>
+              <button class="action-btn pts3" onclick="logAction('3pt')">+3<div class="abl">3pt made</div></button>
+              <button class="action-btn miss" onclick="logAction('fga3')">3PA<div class="abl">3pt missed</div></button>
+              <button class="action-btn" onclick="logAction('oreb')">OREB<div class="abl">Off rebound</div></button>
+              <button class="action-btn" onclick="logAction('dreb')">DREB<div class="abl">Def rebound</div></button>
+              <button class="action-btn" onclick="logAction('ast')">AST<div class="abl">Assist</div></button>
+              <button class="action-btn" onclick="logAction('stl')">STL<div class="abl">Steal</div></button>
+              <button class="action-btn" onclick="logAction('blk')">BLK<div class="abl">Block</div></button>
+              <button class="action-btn tov" onclick="logAction('tov')">TO<div class="abl">Turnover</div></button>
+              <button class="action-btn foul-btn" onclick="logAction('foul')" style="grid-column:1/-1;">FOUL<div class="abl">Personal foul</div></button>
+            </div><!-- /action-grid-v -->
+          </div><!-- /action-panel -->
+          <div id="last-actions-list" style="margin-top:4px;display:none;"></div>
+        </div><!-- /action-card -->
+      </div><!-- /court-action-row -->
+      <div class="card shot-log-card" id="shot-log-home">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div class="sec-label" style="margin-bottom:0;">Shot location</div>
+          <span id="shot-log-home-skip" onclick="skipHomeShot()" style="display:none;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">Skip ✕</span>
+        </div>
+        <div id="shot-log-home-status" style="font-size:11px;color:var(--muted);margin-bottom:6px;">No shot pending — log a 2PT/3PT attempt above, then tap where it happened</div>
+        <div style="width:100%;max-width:280px;margin:0 auto;">
+          <svg id="shot-log-court-home" viewBox="0 0 300 165" style="width:100%;display:block;border-radius:8px;" xmlns="http://www.w3.org/2000/svg" onclick="handleHomeShotTap(event)" ontouchend="handleHomeShotTap(event)">
+            <rect x="0" y="0" width="300" height="165" fill="#dbeafe"/>
+            <rect x="3" y="3" width="294" height="159" rx="2" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+            <rect x="88" y="3" width="124" height="92" fill="#bfdbfe" stroke="#60a5fa" stroke-width="1.2"/>
+            <line x1="120" y1="5" x2="180" y2="5" stroke="#1d4ed8" stroke-width="4"/>
+            <circle cx="150" cy="16" r="5" fill="none" stroke="#1d4ed8" stroke-width="2"/>
+            <line x1="88" y1="95" x2="212" y2="95" stroke="#60a5fa" stroke-width="1.2"/>
+            <path d="M 118,95 A 32,32 0 0 1 182,95" fill="none" stroke="#60a5fa" stroke-width="1.2"/>
+            <path d="M 118,95 A 32,32 0 0 0 182,95" fill="none" stroke="#60a5fa" stroke-width="1.2" stroke-dasharray="3,2"/>
+            <rect x="84" y="25" width="4" height="12" fill="#60a5fa"/><rect x="212" y="25" width="4" height="12" fill="#60a5fa"/>
+            <rect x="84" y="68" width="4" height="12" fill="#60a5fa"/><rect x="212" y="68" width="4" height="12" fill="#60a5fa"/>
+            <line x1="28" y1="3" x2="28" y2="62" stroke="#60a5fa" stroke-width="1.2"/>
+            <line x1="272" y1="3" x2="272" y2="62" stroke="#60a5fa" stroke-width="1.2"/>
+            <path d="M 28,62 A 130,130 0 0 0 272,62" fill="none" stroke="#60a5fa" stroke-width="1.2"/>
+            <line x1="3" y1="159" x2="297" y2="159" stroke="#93c5fd" stroke-width="1" stroke-dasharray="4,3"/>
+          </svg>
+        </div>
+      </div><!-- /shot-log-home -->
+    </div><!-- /game-panel-home -->
+
+    <div id="game-panel-opp" class="team-col">
+      <div class="team-col-header opp">🔴 Opposition</div>
+      <div class="warn-bar" id="warn5-opp">5 opp players on court — sub someone off first</div>
+      <div class="court-action-row">
+        <div class="card court-card">
+          <div class="sec-label" style="color:var(--red);">On court</div>
+          <div id="opp-oncourt-list"><span class="oncourt-empty">No players</span></div>
+          <div class="on-count" id="opp-on-count" style="margin-top:8px;">0/5</div>
+          <div class="bench-section" id="opp-bench-section" style="display:none;">
+            <div class="bench-label">Bench</div>
+            <div class="bench-grid" id="opp-bench-grid"></div>
           </div>
-          <div class="action-grid-v">
-            <button class="action-btn pts1" onclick="logAction('1pt')">+1<div class="abl">FT made</div></button>
-            <button class="action-btn miss" onclick="logAction('ft_miss')">FT-X<div class="abl">FT missed</div></button>
-            <button class="action-btn pts2" onclick="logAction('2pt')">+2<div class="abl">2pt made</div></button>
-            <button class="action-btn miss" onclick="logAction('fga')">FGA<div class="abl">2pt missed</div></button>
-            <button class="action-btn pts3" onclick="logAction('3pt')">+3<div class="abl">3pt made</div></button>
-            <button class="action-btn miss" onclick="logAction('fga3')">3PA<div class="abl">3pt missed</div></button>
-            <button class="action-btn" onclick="logAction('oreb')">OREB<div class="abl">Off rebound</div></button>
-            <button class="action-btn" onclick="logAction('dreb')">DREB<div class="abl">Def rebound</div></button>
-            <button class="action-btn" onclick="logAction('ast')">AST<div class="abl">Assist</div></button>
-            <button class="action-btn" onclick="logAction('stl')">STL<div class="abl">Steal</div></button>
-            <button class="action-btn" onclick="logAction('blk')">BLK<div class="abl">Block</div></button>
-            <button class="action-btn tov" onclick="logAction('tov')">TO<div class="abl">Turnover</div></button>
-            <button class="action-btn foul-btn" onclick="logAction('foul')" style="grid-column:1/-1;">FOUL<div class="abl">Personal foul</div></button>
-          </div><!-- /action-grid-v -->
-        </div><!-- /action-panel -->
-        <div id="last-actions-list" style="margin-top:4px;display:none;"></div>
-      </div><!-- /action-card -->
-    </div><!-- /court-action-row -->
-  <!-- MASTER UNDO — below action, above scores -->
+        </div>
+        <div class="card action-card">
+          <div class="sec-label" style="color:var(--red);">Action</div>
+          <div id="opp-action-no-player" class="no-player-msg" style="padding:12px 0;font-size:12px;">← Select a player</div>
+          <div id="opp-action-panel" style="display:none;">
+            <div class="spb-bar" style="background:var(--red-bg);border-color:rgba(220,38,38,0.3);">
+              <div class="spb-name" id="opp-spb-name" style="color:var(--red);"></div>
+              <div class="spb-clear" onclick="deselectOppPlayer()">✕</div>
+            </div>
+            <div class="action-grid-v">
+              <button class="action-btn pts1" onclick="logOppAction('1pt')">+1<div class="abl">FT made</div></button>
+              <button class="action-btn miss" onclick="logOppAction('ft_miss')">FT-X<div class="abl">FT missed</div></button>
+              <button class="action-btn pts2" onclick="logOppAction('2pt')">+2<div class="abl">2pt made</div></button>
+              <button class="action-btn miss" onclick="logOppAction('fga')">FGA<div class="abl">2pt missed</div></button>
+              <button class="action-btn pts3" onclick="logOppAction('3pt')">+3<div class="abl">3pt made</div></button>
+              <button class="action-btn miss" onclick="logOppAction('fga3')">3PA<div class="abl">3pt missed</div></button>
+              <button class="action-btn" onclick="logOppAction('oreb')">OREB<div class="abl">Off rebound</div></button>
+              <button class="action-btn" onclick="logOppAction('dreb')">DREB<div class="abl">Def rebound</div></button>
+              <button class="action-btn" onclick="logOppAction('ast')">AST<div class="abl">Assist</div></button>
+              <button class="action-btn" onclick="logOppAction('stl')">STL<div class="abl">Steal</div></button>
+              <button class="action-btn" onclick="logOppAction('blk')">BLK<div class="abl">Block</div></button>
+              <button class="action-btn tov" onclick="logOppAction('tov')">TO<div class="abl">Turnover</div></button>
+              <button class="action-btn foul-btn" onclick="logOppAction('foul')" style="grid-column:1/-1;">FOUL<div class="abl">Personal foul</div></button>
+            </div><!-- /action-grid-v -->
+          </div><!-- /action-panel -->
+          <div id="opp-last-actions-list" style="margin-top:4px;display:none;"></div>
+        </div><!-- /action-card -->
+      </div><!-- /court-action-row -->
+      <div class="card shot-log-card" id="shot-log-opp">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div class="sec-label" style="margin-bottom:0;color:var(--red);">Shot location</div>
+          <span id="shot-log-opp-skip" onclick="skipOppShot()" style="display:none;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">Skip ✕</span>
+        </div>
+        <div id="shot-log-opp-status" style="font-size:11px;color:var(--muted);margin-bottom:6px;">No shot pending — log a 2PT/3PT attempt above, then tap where it happened</div>
+        <div style="width:100%;max-width:280px;margin:0 auto;">
+          <svg id="shot-log-court-opp" viewBox="0 0 300 165" style="width:100%;display:block;border-radius:8px;" xmlns="http://www.w3.org/2000/svg" onclick="handleOppShotTap(event)" ontouchend="handleOppShotTap(event)">
+            <rect x="0" y="0" width="300" height="165" fill="#fee2e2"/>
+            <rect x="3" y="3" width="294" height="159" rx="2" fill="#fff1f2" stroke="#fca5a5" stroke-width="1.5"/>
+            <rect x="88" y="3" width="124" height="92" fill="#fecaca" stroke="#f87171" stroke-width="1.2"/>
+            <line x1="120" y1="5" x2="180" y2="5" stroke="#b91c1c" stroke-width="4"/>
+            <circle cx="150" cy="16" r="5" fill="none" stroke="#b91c1c" stroke-width="2"/>
+            <line x1="88" y1="95" x2="212" y2="95" stroke="#f87171" stroke-width="1.2"/>
+            <path d="M 118,95 A 32,32 0 0 1 182,95" fill="none" stroke="#f87171" stroke-width="1.2"/>
+            <path d="M 118,95 A 32,32 0 0 0 182,95" fill="none" stroke="#f87171" stroke-width="1.2" stroke-dasharray="3,2"/>
+            <rect x="84" y="25" width="4" height="12" fill="#f87171"/><rect x="212" y="25" width="4" height="12" fill="#f87171"/>
+            <rect x="84" y="68" width="4" height="12" fill="#f87171"/><rect x="212" y="68" width="4" height="12" fill="#f87171"/>
+            <line x1="28" y1="3" x2="28" y2="62" stroke="#f87171" stroke-width="1.2"/>
+            <line x1="272" y1="3" x2="272" y2="62" stroke="#f87171" stroke-width="1.2"/>
+            <path d="M 28,62 A 130,130 0 0 0 272,62" fill="none" stroke="#f87171" stroke-width="1.2"/>
+            <line x1="3" y1="159" x2="297" y2="159" stroke="#fca5a5" stroke-width="1" stroke-dasharray="4,3"/>
+          </svg>
+        </div>
+      </div><!-- /shot-log-opp -->
+    </div><!-- /game-panel-opp -->
+  </div><!-- /dual-grid -->
+
+  <!-- SCORE — single combined display -->
+  <div class="scores-row">
+    <div class="score-side">
+      <div style="display:flex;align-items:center;margin-bottom:4px;">
+        <div class="score-side-label" id="home-score-label">Home</div><span class="auto-tag">auto</span>
+      </div>
+      <div class="score-num home" id="score-home">0</div>
+      <div style="font-size:11px;color:var(--muted);">from scoring above</div>
+    </div>
+    <div class="score-side">
+      <div class="score-side-label" id="score-opp-label">Opponent</div>
+      <div class="score-num away" id="score-away">0</div>
+      <div id="opp-filmed-note" style="display:none;font-size:11px;color:var(--muted);">auto from opposition log</div>
+      <div id="opp-manual-controls">
+        <div class="pts-row" style="margin-top:6px;">
+          <button class="pts-btn away" onclick="addOppScore(1)">+1</button>
+          <button class="pts-btn away" onclick="addOppScore(2)">+2</button>
+          <button class="pts-btn away" onclick="addOppScore(3)">+3</button>
+        </div>
+        <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
+          <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px;">Rebounds</div>
+          <div class="pts-row">
+            <button class="pts-btn away" onclick="addOppStat('oreb')">OREB</button>
+            <button class="pts-btn away" onclick="addOppStat('dreb')">DREB</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /scores-row -->
+
+  <!-- MASTER UNDO — shared across both teams, sits below the score line -->
   <div id="master-undo-bar" style="background:var(--amber-bg);border:1px solid rgba(217,119,6,0.3);border-radius:var(--rs);padding:10px 12px;margin-bottom:10px;">
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
       <button onclick="masterUndo()" style="flex:none;padding:9px 16px;border-radius:var(--rs);border:1px solid rgba(217,119,6,0.5);background:var(--amber);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">&#8629; Undo</button>
@@ -488,109 +626,34 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
     </div>
     <div id="master-last-5" style="display:flex;flex-direction:column;gap:2px;"></div>
   </div>
-    <div class="scores-row">
-      <div class="score-side">
-        <div style="display:flex;align-items:center;margin-bottom:4px;">
-          <div class="score-side-label" id="home-score-label">Home</div><span class="auto-tag">auto</span>
-        </div>
-        <div class="score-num home" id="score-home">0</div>
-        <div style="font-size:11px;color:var(--muted);">from scoring above</div>
-      </div>
-      <div class="score-side">
-        <div class="score-side-label" id="score-opp-label">Opponent</div>
-        <div class="score-num away" id="score-away">0</div>
-        <div id="opp-filmed-note" style="display:none;font-size:11px;color:var(--muted);">auto from opp tab</div>
-        <div id="opp-manual-controls">
-          <div class="pts-row" style="margin-top:6px;">
-            <button class="pts-btn away" onclick="addOppScore(1)">+1</button>
-            <button class="pts-btn away" onclick="addOppScore(2)">+2</button>
-            <button class="pts-btn away" onclick="addOppScore(3)">+3</button>
-          </div>
-          <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
-            <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px;">Rebounds</div>
-            <div class="pts-row">
-              <button class="pts-btn away" onclick="addOppStat('oreb')">OREB</button>
-              <button class="pts-btn away" onclick="addOppStat('dreb')">DREB</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div><!-- /scores-row -->
-    <div class="card" style="padding:10px 0;width:100%;max-width:100%;overflow-x:auto;">
-      <div class="sec-label" style="padding:0 14px 6px;">All players <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">— tap ● to sub on/off</span></div>
-      <div class="roster-wrap" style="overflow-x:auto;width:100%;">
-        <table class="rtbl" style="min-width:900px;">
-          <thead><tr><th>Player</th><th>MIN</th><th>+/−</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3PA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead>
-          <tbody id="roster-body"></tbody>
-        </table>
-      </div>
+
+  <!-- ROSTER TABLES -->
+  <div class="card" style="padding:10px 0;width:100%;max-width:100%;overflow-x:auto;">
+    <div class="sec-label" style="padding:0 14px 6px;">All players <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">— tap ● to sub on/off</span></div>
+    <div class="roster-wrap" style="overflow-x:auto;width:100%;">
+      <table class="rtbl" style="min-width:900px;">
+        <thead><tr><th>Player</th><th>MIN</th><th>+/−</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3PA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead>
+        <tbody id="roster-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card" style="padding:10px 0;width:100%;max-width:100%;overflow-x:auto;">
+    <div class="sec-label" style="padding:0 14px 6px;color:var(--red);">Opposition players <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">— tap ● to sub on/off</span></div>
+    <div class="roster-wrap" style="overflow-x:auto;width:100%;">
+      <table class="rtbl" style="min-width:900px;">
+        <thead><tr><th>Player</th><th>MIN</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3PA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead>
+        <tbody id="opp-roster-body"></tbody>
+      </table>
     </div>
   </div>
 
-  <!-- OPPOSITION PANEL -->
-  <div id="game-panel-opp" style="display:none;">
-    <div class="warn-bar" id="warn5-opp">5 opp players on court — sub someone off first</div>
-    <div class="court-action-row">
-      <div class="card court-card">
-        <div class="sec-label" style="color:var(--red);">On court</div>
-        <div id="opp-oncourt-list"><span class="oncourt-empty">No players</span></div>
-        <div class="on-count" id="opp-on-count" style="margin-top:8px;">0/5</div>
-        <div class="bench-section" id="opp-bench-section" style="display:none;">
-          <div class="bench-label">Bench</div>
-          <div class="bench-grid" id="opp-bench-grid"></div>
-        </div>
-      </div>
-      <div class="card action-card">
-        <div class="sec-label" style="color:var(--red);">Action</div>
-        <div id="opp-action-no-player" class="no-player-msg" style="padding:12px 0;font-size:12px;">← Select a player</div>
-        <div id="opp-action-panel" style="display:none;">
-          <div class="spb-bar" style="background:var(--red-bg);border-color:rgba(220,38,38,0.3);">
-            <div class="spb-name" id="opp-spb-name" style="color:var(--red);"></div>
-            <div class="spb-clear" onclick="deselectOppPlayer()">✕</div>
-          </div>
-          <div class="action-grid-v">
-            <button class="action-btn pts1" onclick="logOppAction('1pt')">+1<div class="abl">FT made</div></button>
-            <button class="action-btn miss" onclick="logOppAction('ft_miss')">FT-X<div class="abl">FT missed</div></button>
-            <button class="action-btn pts2" onclick="logOppAction('2pt')">+2<div class="abl">2pt made</div></button>
-            <button class="action-btn miss" onclick="logOppAction('fga')">FGA<div class="abl">2pt missed</div></button>
-            <button class="action-btn pts3" onclick="logOppAction('3pt')">+3<div class="abl">3pt made</div></button>
-            <button class="action-btn miss" onclick="logOppAction('fga3')">3PA<div class="abl">3pt missed</div></button>
-            <button class="action-btn" onclick="logOppAction('oreb')">OREB<div class="abl">Off rebound</div></button>
-            <button class="action-btn" onclick="logOppAction('dreb')">DREB<div class="abl">Def rebound</div></button>
-            <button class="action-btn" onclick="logOppAction('ast')">AST<div class="abl">Assist</div></button>
-            <button class="action-btn" onclick="logOppAction('stl')">STL<div class="abl">Steal</div></button>
-            <button class="action-btn" onclick="logOppAction('blk')">BLK<div class="abl">Block</div></button>
-            <button class="action-btn tov" onclick="logOppAction('tov')">TO<div class="abl">Turnover</div></button>
-            <button class="action-btn foul-btn" onclick="logOppAction('foul')" style="grid-column:1/-1;">FOUL<div class="abl">Personal foul</div></button>
-          </div><!-- /action-grid-v -->
-        </div><!-- /action-panel -->
-        <div id="opp-last-actions-list" style="margin-top:4px;display:none;"></div>
-      </div><!-- /action-card -->
-    </div><!-- /court-action-row -->
-    <div class="scores-row">
-      <div class="score-side">
-        <div class="score-side-label" id="score-opp-label2">Opponent</div>
-        <div class="score-num away" id="score-away2">0</div>
-        <div style="font-size:11px;color:var(--muted);">from scoring above</div>
-      </div>
-      <div class="score-side">
-        <div style="display:flex;align-items:center;margin-bottom:4px;">
-          <div class="score-side-label" id="home-score-label2">Home</div><span class="auto-tag">auto</span>
-        </div>
-        <div class="score-num home" id="score-home2">0</div>
-        <div style="font-size:11px;color:var(--muted);">from our team tab</div>
-      </div>
-    </div>
-    <div class="card" style="padding:10px 0;width:100%;max-width:100%;overflow-x:auto;">
-      <div class="sec-label" style="padding:0 14px 6px;color:var(--red);">Opposition players <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">— tap ● to sub on/off</span></div>
-      <div class="roster-wrap" style="overflow-x:auto;width:100%;">
-        <table class="rtbl" style="min-width:900px;">
-          <thead><tr><th>Player</th><th>MIN</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3PA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead>
-          <tbody id="opp-roster-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </div><!-- /game-panel-opp -->
+  <!-- Legacy duplicate score elements — hidden, kept only so renderOppScores() has somewhere to write -->
+  <div style="display:none;" aria-hidden="true">
+    <div class="score-side-label" id="score-opp-label2">Opponent</div>
+    <div id="score-away2">0</div>
+    <div class="score-side-label" id="home-score-label2">Home</div>
+    <div id="score-home2">0</div>
+  </div>
 
 </div><!-- /screen-game -->
 
@@ -1349,7 +1412,7 @@ function addEvent(type,data){
 // ── RENDER ────────────────────────────────────────────
 function emptyStats(){return{fgm:0,fga:0,fgm3:0,fga3:0,ftm:0,fta:0,ast:0,oreb:0,dreb:0,stl:0,blk:0,tov:0,foul:0,pts:0};}
 function emptyOppStats(){return{pts:0,fgm:0,fga:0,ftm:0,fta:0,ast:0,oreb:0,dreb:0,stl:0,blk:0,tov:0,foul:0};}
-function render(){renderOnCourtSection();renderActionPanel();renderRosterTable();renderScores();renderStatus();renderTimer();renderPeriodBar(state.currentGame);}
+function render(){renderOnCourtSection();renderActionPanel();renderRosterTable();renderOppOnCourtSection();renderOppActionPanel();renderOppRosterTable();renderScores();renderStatus();renderTimer();renderPeriodBar(state.currentGame);renderHomeShotCapture();renderOppShotCapture();}
 
 function renderStatus(){
   const cg=state.currentGame,badge=document.getElementById('status-badge'),meta=document.getElementById('game-meta');
@@ -1567,6 +1630,7 @@ let pendingOppRoster=[];   // built in pregame
 let pendingOppStarters=new Set(); // opp starters for tipoff
 let selectedOppPid=null;
 let currentGameTab='home';
+let pendingShotHome=null,pendingShotOpp=null; // independent inline shot-location capture per team
 
 function emptyOppPlayerStats(){return{pts:0,fgm:0,fga:0,fgm3:0,fga3:0,ftm:0,fta:0,ast:0,oreb:0,dreb:0,stl:0,blk:0,tov:0,foul:0};}
 
@@ -1601,20 +1665,11 @@ function oppPreAdd(){
 
 // Tab switcher
 function setGameTab(tab){
+  // Legacy tab-switch entry point. Both team panels are now shown at once (split view),
+  // so this just keeps currentGameTab in sync and refreshes the opposition panel.
   currentGameTab=tab;
   if(state.currentGame)state.currentGame._uiTab=tab;
-  const hBtn=document.getElementById('game-tab-home'),oBtn=document.getElementById('game-tab-opp');
-  const hPanel=document.getElementById('game-panel-home'),oPanel=document.getElementById('game-panel-opp');
-  if(tab==='home'){
-    hBtn.style.cssText='flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:DM Sans,sans-serif;';
-    oBtn.style.cssText='flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:var(--surface2);color:var(--muted);cursor:pointer;font-family:DM Sans,sans-serif;';
-    hPanel.style.display='block';oPanel.style.display='none';
-  } else {
-    oBtn.style.cssText='flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:var(--red);color:#fff;cursor:pointer;font-family:DM Sans,sans-serif;';
-    hBtn.style.cssText='flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:var(--surface2);color:var(--muted);cursor:pointer;font-family:DM Sans,sans-serif;';
-    hPanel.style.display='none';oPanel.style.display='block';
-    renderOppOnCourtSection();renderOppActionPanel();renderOppRosterTable();
-  }
+  renderOppOnCourtSection();renderOppActionPanel();renderOppRosterTable();
 }
 
 // Opposition on-court management
@@ -1747,7 +1802,8 @@ function logOppAction(type){
   renderLastActions(oppActionLog,'opp-last-actions-list',true);
   const _oppP=state.currentGame&&state.currentGame.oppRoster&&state.currentGame.oppRoster.find(p=>p.id===selectedOppPid);
   updateMasterLastAction((_oppP?_oppP.name:'Opp')+' — '+(type||''),true);
-  selectedOppPid=null;save();renderOppRosterTable();renderScores();renderOppScores();renderOppOnCourtSection();renderOppActionPanel();
+  if(isShotAttemptType(type)){pendingShotOpp={pid:selectedOppPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type)};}
+  selectedOppPid=null;save();renderOppRosterTable();renderScores();renderOppScores();renderOppOnCourtSection();renderOppActionPanel();renderOppShotCapture();
 }
 function undoOppAction(){
   const cg=state.currentGame;if(!cg||!oppActionLog.length){renderLastActions([],'opp-last-actions-list',true);return;}
@@ -1784,7 +1840,7 @@ function startGame(){
   addEvent('start',{label:'Starting 5: '+snames});
   state.currentGame.actionLog=[];state.currentGame.oppScoreLog=[];state.currentGame.oppActionLog=[];state.currentGame.oppStatLog=[];
   actionLog=state.currentGame.actionLog;oppScoreLog=state.currentGame.oppScoreLog;oppActionLog=state.currentGame.oppActionLog;oppStatLog=state.currentGame.oppStatLog;
-  selectedPid=null;selectedOppPid=null;
+  selectedPid=null;selectedOppPid=null;pendingShotHome=null;pendingShotOpp=null;
   startTimer();save();showScreen('game',document.getElementById('tab-btn-game'));render();renderPeriodBar(state.currentGame);requestWakeLock();
 }
 function fmtDate(d){if(!d)return'';try{const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}catch(e){return d;}}
@@ -1881,7 +1937,7 @@ function endGame(){
   if(cg.oppRoster)cg.oppRoster.forEach(p=>{oppSum.minutes[p.id]=cg.oppMinutes[p.id]||0;oppSum.stats[p.id]={...cg.oppStats[p.id]};});
   cg.oppSummary=oppSum;
   const saved={...cg};state.games.push(saved);state.games.sort((a,b)=>parseDateStr(b.date)-parseDateStr(a.date));
-  state.currentGame=null;actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];selectedPid=null;selectedOppPid=null;pendingStarters=new Set();pendingOppRoster=[];pendingOppStarters=new Set();currentGameTab='home';isFilmed=false;
+  state.currentGame=null;actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];selectedPid=null;selectedOppPid=null;pendingShotHome=null;pendingShotOpp=null;pendingStarters=new Set();pendingOppRoster=[];pendingOppStarters=new Set();currentGameTab='home';isFilmed=false;
   save();render();renderStarterGrid();renderOppPreRoster();showScreen('season',document.getElementById('tab-btn-season'));
   if(sbOk())syncGameToCloud(saved);
 }
@@ -1921,7 +1977,8 @@ function logAction(type){
   actionLog.push({pid:selectedPid,type,pts,tlId});
   renderMasterLast5();
   updateMasterLastAction((state.players.find(p=>p.id===selectedPid)?.name||'?')+' — '+(lbls[type]||type),false);
-  selectedPid=null;save();renderRosterTable();renderScores();renderOnCourtSection();renderActionPanel();
+  if(isShotAttemptType(type)){pendingShotHome={pid:selectedPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type)};}
+  selectedPid=null;save();renderRosterTable();renderScores();renderOnCourtSection();renderActionPanel();renderHomeShotCapture();
 }
 function renderMasterLast5(){
   const el=document.getElementById('master-last-5');if(!el)return;
@@ -2037,6 +2094,66 @@ function undoOppScore(){
 // ── HELPERS ───────────────────────────────────────────
 function getPlayerMins(pid,now){const cg=state.currentGame;if(!cg)return 0;let t=cg.minutes[pid]||0;if(now&&cg.stints[pid])t+=(now-cg.stints[pid])/60000;return t;}
 function fmtMins(m){return Math.floor(m)+':'+String(Math.floor((m-Math.floor(m))*60)).padStart(2,'0');}
+
+// ── INLINE SHOT LOGGING (game screen — two independent capture widgets) ──
+function isShotAttemptType(type){return type==='2pt'||type==='fga'||type==='3pt'||type==='fga3';}
+function shotMadeForType(type){return type==='2pt'||type==='3pt';}
+function shotIsThreeForType(type){return type==='3pt'||type==='fga3';}
+function svgPointFromEvent(svg,evt){
+  let clientX,clientY;
+  if(evt.changedTouches&&evt.changedTouches.length){clientX=evt.changedTouches[0].clientX;clientY=evt.changedTouches[0].clientY;}
+  else{clientX=evt.clientX;clientY=evt.clientY;}
+  const rect=svg.getBoundingClientRect();
+  return{x:(clientX-rect.left)*(300/rect.width),y:(clientY-rect.top)*(165/rect.height)};
+}
+function commitShotToGame(shotTeam,pending,x,y){
+  const cg=state.currentGame;if(!cg||!pending)return;
+  if(!cg.shots)cg.shots=[];
+  cg.shots.push({id:'s'+Date.now()+Math.random().toString(36).slice(2,7),x:Math.round(x*10)/10,y:Math.round(y*10)/10,made:!!pending.made,shotTeam,player_id:pending.pid,player_name:pending.playerName,player_num:pending.playerNum,period:cg.quarter,ts:Date.now()});
+  save();
+}
+function renderHomeShotCapture(){
+  const box=document.getElementById('shot-log-home'),status=document.getElementById('shot-log-home-status'),svg=document.getElementById('shot-log-court-home'),skipBtn=document.getElementById('shot-log-home-skip');
+  if(!box||!status||!svg)return;
+  if(pendingShotHome){
+    const kind=pendingShotHome.three?'3PT':'2PT';
+    status.innerHTML='<strong>'+(pendingShotHome.playerNum?'#'+pendingShotHome.playerNum+' ':'')+pendingShotHome.playerName+'</strong> — '+kind+' '+(pendingShotHome.made?'made':'miss')+' — tap the shot location';
+    box.classList.add('shot-log-active');svg.style.cursor='crosshair';if(skipBtn)skipBtn.style.display='inline-block';
+  } else {
+    status.textContent='No shot pending — log a 2PT/3PT attempt above, then tap where it happened';
+    box.classList.remove('shot-log-active');svg.style.cursor='default';if(skipBtn)skipBtn.style.display='none';
+  }
+}
+function renderOppShotCapture(){
+  const box=document.getElementById('shot-log-opp'),status=document.getElementById('shot-log-opp-status'),svg=document.getElementById('shot-log-court-opp'),skipBtn=document.getElementById('shot-log-opp-skip');
+  if(!box||!status||!svg)return;
+  if(pendingShotOpp){
+    const kind=pendingShotOpp.three?'3PT':'2PT';
+    status.innerHTML='<strong>'+(pendingShotOpp.playerNum?'#'+pendingShotOpp.playerNum+' ':'')+pendingShotOpp.playerName+'</strong> — '+kind+' '+(pendingShotOpp.made?'made':'miss')+' — tap the shot location';
+    box.classList.add('shot-log-active');svg.style.cursor='crosshair';if(skipBtn)skipBtn.style.display='inline-block';
+  } else {
+    status.textContent='No shot pending — log a 2PT/3PT attempt above, then tap where it happened';
+    box.classList.remove('shot-log-active');svg.style.cursor='default';if(skipBtn)skipBtn.style.display='none';
+  }
+}
+function handleHomeShotTap(evt){
+  if(!pendingShotHome)return;
+  const svg=document.getElementById('shot-log-court-home');if(!svg)return;
+  const pt=svgPointFromEvent(svg,evt);
+  commitShotToGame('home',pendingShotHome,pt.x,pt.y);
+  pendingShotHome=null;renderHomeShotCapture();
+  if(evt.preventDefault)evt.preventDefault();
+}
+function handleOppShotTap(evt){
+  if(!pendingShotOpp)return;
+  const svg=document.getElementById('shot-log-court-opp');if(!svg)return;
+  const pt=svgPointFromEvent(svg,evt);
+  commitShotToGame('opp',pendingShotOpp,pt.x,pt.y);
+  pendingShotOpp=null;renderOppShotCapture();
+  if(evt.preventDefault)evt.preventDefault();
+}
+function skipHomeShot(){pendingShotHome=null;renderHomeShotCapture();}
+function skipOppShot(){pendingShotOpp=null;renderOppShotCapture();}
 
 // ── SHOT CHART ────────────────────────────────────────
 function scResetPeriod(){scSelectedPeriod='all';}
@@ -3261,15 +3378,13 @@ function setFilmed(val){
   const rc=document.getElementById('opp-roster-card');if(rc)rc.style.display=val?'block':'none';
 }
 function applyFilmedUI(filmed){
-  const sw=document.getElementById('game-tab-switcher');
-  const hp=document.getElementById('game-panel-home'),op=document.getElementById('game-panel-opp');
+  const grid=document.getElementById('dual-grid');
   const mc=document.getElementById('opp-manual-controls'),fn=document.getElementById('opp-filmed-note');
   if(filmed){
-    if(sw)sw.style.display='flex';
+    if(grid)grid.classList.remove('single-col');
     if(mc)mc.style.display='none';if(fn)fn.style.display='block';
   } else {
-    if(sw)sw.style.display='none';
-    if(op)op.style.display='none';if(hp)hp.style.display='block';
+    if(grid)grid.classList.add('single-col');
     if(mc)mc.style.display='block';if(fn)fn.style.display='none';
   }
 }
@@ -3309,7 +3424,7 @@ function reopenGameForOpp(idx){
   cg._uiTab='opp';cg._reopenIdx=idx;
   cg.actionLog=[];cg.oppScoreLog=[];cg.oppActionLog=[];cg.oppStatLog=[];
   actionLog=cg.actionLog;oppScoreLog=cg.oppScoreLog;oppActionLog=cg.oppActionLog;oppStatLog=cg.oppStatLog;
-  selectedPid=null;selectedOppPid=null;currentGameTab='opp';
+  selectedPid=null;selectedOppPid=null;pendingShotHome=null;pendingShotOpp=null;currentGameTab='opp';
   save();showScreen('game',document.getElementById('tab-btn-game'));
   applyFilmedUI(true);setGameTab('opp');
   const rb=document.getElementById('reopen-banner');
@@ -3333,7 +3448,7 @@ function endReopenSession(){
   state.games[reopenIdx]=Object.assign({},cg);const saved=state.games[reopenIdx];
   const rb=document.getElementById('reopen-banner');if(rb)rb.style.display='none';
   state.currentGame=null;actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];
-  selectedPid=null;selectedOppPid=null;pendingStarters=new Set();pendingOppRoster=[];pendingOppStarters=new Set();
+  selectedPid=null;selectedOppPid=null;pendingShotHome=null;pendingShotOpp=null;pendingStarters=new Set();pendingOppRoster=[];pendingOppStarters=new Set();
   currentGameTab='home';reopenIdx=null;isFilmed=false;
   save();render();renderStarterGrid();renderOppPreRoster();
   showScreen('season',document.getElementById('tab-btn-season'));
