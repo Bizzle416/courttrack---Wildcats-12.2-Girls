@@ -465,6 +465,10 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
           <div class="sec-label">On court</div>
           <div id="oncourt-list"><span class="oncourt-empty">No players</span></div>
           <div class="on-count" id="on-count" style="margin-top:8px;">0/5</div>
+          <div class="bench-section" id="home-bench-section" style="display:none;">
+            <div class="bench-label">Bench</div>
+            <div class="bench-grid" id="home-bench-grid"></div>
+          </div>
         </div>
         <div class="card action-card">
           <div class="sec-label">Action</div>
@@ -495,7 +499,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
       </div><!-- /court-action-row -->
       <div class="card shot-log-card" id="shot-log-home">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <div class="sec-label" style="margin-bottom:0;">Shot location</div>
+          <div class="sec-label" style="margin-bottom:0;">Shot location <span id="shot-log-home-qlabel" style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);">— Q1</span></div>
           <span id="shot-log-home-skip" onclick="skipHomeShot()" style="display:none;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">Skip ✕</span>
         </div>
         <div id="shot-log-home-status" style="font-size:11px;color:var(--muted);margin-bottom:6px;">No shot pending — log a 2PT/3PT attempt above, then tap where it happened</div>
@@ -563,7 +567,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
       </div><!-- /court-action-row -->
       <div class="card shot-log-card" id="shot-log-opp">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <div class="sec-label" style="margin-bottom:0;color:var(--red);">Shot location</div>
+          <div class="sec-label" style="margin-bottom:0;color:var(--red);">Shot location <span id="shot-log-opp-qlabel" style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);">— Q1</span></div>
           <span id="shot-log-opp-skip" onclick="skipOppShot()" style="display:none;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">Skip ✕</span>
         </div>
         <div id="shot-log-opp-status" style="font-size:11px;color:var(--muted);margin-bottom:6px;">No shot pending — log a 2PT/3PT attempt above, then tap where it happened</div>
@@ -1448,7 +1452,7 @@ function renderOnCourtSection(){
   document.getElementById('on-count').textContent=onCount+'/5';
   document.getElementById('warn5').style.display=(onCount>=5&&cg&&!cg.ended)?'block':'none';
   const list=document.getElementById('oncourt-list');
-  if(!cg||cg.onCourt.length===0){list.innerHTML='<span class="oncourt-empty">No players</span>';return;}
+  if(!cg||cg.onCourt.length===0){list.innerHTML='<span class="oncourt-empty">No players</span>';renderHomeBench();return;}
   list.innerHTML='';
   [...cg.onCourt].sort((a,b)=>a-b).forEach(pid=>{
     const p=state.players.find(p=>p.id===pid);if(!p)return;
@@ -1459,6 +1463,16 @@ function renderOnCourtSection(){
     row.querySelector('.court-sel-btn').onclick=e=>{e.stopPropagation();selectPlayer(pid);};
     list.appendChild(row);
   });
+  renderHomeBench();
+}
+function renderHomeBench(){
+  const cg=state.currentGame;
+  const sec=document.getElementById('home-bench-section'),grid=document.getElementById('home-bench-grid');if(!sec||!grid)return;
+  if(!cg||!state.players){sec.style.display='none';return;}
+  const bench=state.players.filter(p=>!cg.onCourt.includes(p.id));
+  if(!bench.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  grid.innerHTML=bench.map(p=>`<div class="bench-pill" onclick="togglePlayer(${p.id})">${p.num} ${p.name}</div>`).join('');
 }
 function renderActionPanel(){
   const cg=state.currentGame,no=document.getElementById('action-no-player'),panel=document.getElementById('action-panel');
@@ -1804,7 +1818,7 @@ function logOppAction(type){
   renderLastActions(oppActionLog,'opp-last-actions-list',true);
   const _oppP=state.currentGame&&state.currentGame.oppRoster&&state.currentGame.oppRoster.find(p=>p.id===selectedOppPid);
   updateMasterLastAction((_oppP?_oppP.name:'Opp')+' — '+(type||''),true);
-  if(isShotAttemptType(type)){pendingShotOpp={pid:selectedOppPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type)};}
+  if(isShotAttemptType(type)){pendingShotOpp={pid:selectedOppPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type),quarter:cg.quarter};}
   selectedOppPid=null;save();renderOppRosterTable();renderScores();renderOppScores();renderOppOnCourtSection();renderOppActionPanel();renderOppShotCapture();
 }
 function undoOppAction(){
@@ -1923,7 +1937,7 @@ function setQuarter(q){
     if(cg.oppOnCourt)cg.oppOnCourt.forEach(pid=>{cg.oppStints[pid]=now;});
     startTimer();
   }
-  save();renderStatus();renderTimer();renderPeriodBar(cg);
+  save();renderStatus();renderTimer();renderPeriodBar(cg);refreshInlineShotDots();
 }
 function endGame(){
   const cg=state.currentGame;if(!cg)return;if(!confirm('End game and save to season?'))return;
@@ -1979,7 +1993,7 @@ function logAction(type){
   actionLog.push({pid:selectedPid,type,pts,tlId});
   renderMasterLast5();
   updateMasterLastAction((state.players.find(p=>p.id===selectedPid)?.name||'?')+' — '+(lbls[type]||type),false);
-  if(isShotAttemptType(type)){pendingShotHome={pid:selectedPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type)};}
+  if(isShotAttemptType(type)){pendingShotHome={pid:selectedPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type),quarter:cg.quarter};}
   selectedPid=null;save();renderRosterTable();renderScores();renderOnCourtSection();renderActionPanel();renderHomeShotCapture();
 }
 function renderMasterLast5(){
@@ -2111,15 +2125,20 @@ function svgPointFromEvent(svg,evt){
 function commitShotToGame(shotTeam,pending,x,y){
   const cg=state.currentGame;if(!cg||!pending)return;
   if(!cg.shots)cg.shots=[];
-  cg.shots.push({id:'s'+Date.now()+Math.random().toString(36).slice(2,7),x:Math.round(x*10)/10,y:Math.round(y*10)/10,made:!!pending.made,shotTeam,player_id:pending.pid,player_name:pending.playerName,player_num:pending.playerNum,period:cg.quarter,ts:Date.now()});
+  cg.shots.push({id:'s'+Date.now()+Math.random().toString(36).slice(2,7),x:Math.round(x*10)/10,y:Math.round(y*10)/10,made:!!pending.made,shotTeam,player_id:pending.pid,player_name:pending.playerName,player_num:pending.playerNum,period:(pending.quarter!=null?pending.quarter:cg.quarter),ts:Date.now()});
   save();
   refreshInlineShotDots();
 }
 function refreshInlineShotDots(){
   const cg=state.currentGame;const shots=(cg&&cg.shots)||[];
+  const q=cg?cg.quarter:null;
+  const curShots=q==null?shots:shots.filter(s=>String(s.period)===String(q));
+  const qTag=(cg&&(cg.gameType==='domestic'||cg.gameType==='tournament')?'H':'Q')+(q!=null?q:1);
+  const hl=document.getElementById('shot-log-home-qlabel');if(hl)hl.textContent='— '+qTag+' only';
+  const ol=document.getElementById('shot-log-opp-qlabel');if(ol)ol.textContent='— '+qTag+' only';
   if(typeof renderDots==='function'){
-    renderDots('shot-log-dots-home',shots.filter(s=>s.shotTeam!=='opp'),'home');
-    renderDots('shot-log-dots-opp',shots.filter(s=>s.shotTeam==='opp'),'opp');
+    renderDots('shot-log-dots-home',curShots.filter(s=>s.shotTeam!=='opp'),'home');
+    renderDots('shot-log-dots-opp',curShots.filter(s=>s.shotTeam==='opp'),'opp');
   }
 }
 function renderHomeShotCapture(){
@@ -2541,7 +2560,6 @@ function renderSeason(){
         const mt=diff===0?'Draw':((ew?(state.config.clubName||'Home'):(g.opponent||'Opp'))+' won by '+Math.abs(diff)+' pt'+(Math.abs(diff)===1?'':'s'));
         const rl2=g.round?'Round '+g.round:'Game';
         const mt2=' - '+(g.gameType==='domestic'?'Domestic':g.gameType==='tournament'?'Tournament':'VJBL');
-        const trackBtn=g.filmed!==false?'<span class="gli-edit" onclick="event.stopPropagation();reopenGameForOpp('+idx+')" style="border:1px solid rgba(220,38,38,0.35);border-radius:5px;padding:3px 8px;color:var(--red);font-weight:600;">Track opp</span>':'';
         return '<div class="round-block">'
           +'<div class="round-header"><div class="round-header-title">'+rl2+'</div>'
           +'<div class="round-header-date">'+g.date+(g.time?' - '+g.time:'')+mt2+'</div></div>'
@@ -2558,7 +2576,6 @@ function renderSeason(){
           +'<div class="game-card-footer"><div class="margin-text">'+mt+'</div>'
           +'<div style="display:flex;gap:6px;align-items:center;">'
           +'<span style="font-size:12px;color:var(--accent);">Stats & timeline</span>'
-          +trackBtn
           +'<span class="gli-edit" onclick="event.stopPropagation();openEditModal('+idx+')" style="border:1px solid var(--border2);border-radius:5px;padding:3px 8px;">Edit</span>'
           +'</div></div></div></div>';
       }).join('');
@@ -3199,7 +3216,15 @@ function openEditModal(idx){
   <div><div class="field-label">Venue</div><input type="text" id="edit-venue" value="${g.venue||''}"/></div></div>
   <div style="overflow-x:auto;"><table class="edit-tbl"><thead><tr><th>Player</th><th>MIN</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FGM</th><th>FGA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead><tbody>`;
   sorted.forEach(p=>{const mins=g.summary?Math.round(g.summary.minutes[p.id]||0):0,s=g.summary&&g.summary.stats?g.summary.stats[p.id]||emptyStats():emptyStats();html+=`<tr><td>${p.num} ${p.name}</td><td><input class="edit-input" data-pid="${p.id}" data-field="mins" value="${mins}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="pts" value="${s.pts||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="ftm" value="${s.ftm||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="fta" value="${s.fta||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="fgm" value="${s.fgm}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="fga" value="${s.fga}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="ast" value="${s.ast}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="oreb" value="${s.oreb||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="dreb" value="${s.dreb||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="stl" value="${s.stl}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="blk" value="${s.blk}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="tov" value="${s.tov}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="foul" value="${s.foul||0}"/></td></tr>`;});
-  html+=`</tbody></table></div><div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div><div class="field-label" style="margin-bottom:4px;">${state.config.clubName||'Home'} score</div><input type="text" id="edit-score-home" value="${g.scoreHome||0}"/></div><div><div class="field-label" style="margin-bottom:4px;">${g.opponent||'Opp'} score</div><input type="text" id="edit-score-away" value="${g.scoreAway||0}"/></div></div><div style="margin-top:12px;"><div class="field-label" style="margin-bottom:4px;">Stat correction notes <span style="font-weight:400;color:var(--muted);">(appears in report)</span></div><textarea id="edit-notes" placeholder="e.g. Q3 — Eva's 2 steals moved to Zoe, wrong player selected live. FT corrected for Harper." style="width:100%;height:72px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;resize:none;outline:none;">${g.editNotes||''}</textarea></div>`;
+  html+=`</tbody></table></div>`;
+  if(g.oppRoster&&g.oppRoster.length){
+    const oppSorted=[...g.oppRoster].sort((a,b)=>a.id-b.id);
+    html+=`<div style="margin-top:16px;margin-bottom:12px;border-top:1px solid var(--border);padding-top:12px;"><div style="font-size:11px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Opposition player stats — ${g.opponent||'Opponent'}</div>
+    <div style="overflow-x:auto;"><table class="edit-tbl"><thead><tr><th>Player</th><th>MIN</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FGM</th><th>FGA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead><tbody>`;
+    oppSorted.forEach(p=>{const mins=g.oppSummary?Math.round(g.oppSummary.minutes[p.id]||0):0,s=g.oppSummary&&g.oppSummary.stats?g.oppSummary.stats[p.id]||emptyOppPlayerStats():emptyOppPlayerStats();html+=`<tr><td>${p.num} ${p.name}</td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="mins" value="${mins}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="pts" value="${s.pts||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="ftm" value="${s.ftm||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="fta" value="${s.fta||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="fgm" value="${s.fgm||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="fga" value="${s.fga||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="ast" value="${s.ast||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="oreb" value="${s.oreb||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="dreb" value="${s.dreb||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="stl" value="${s.stl||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="blk" value="${s.blk||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="tov" value="${s.tov||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="foul" value="${s.foul||0}"/></td></tr>`;});
+    html+=`</tbody></table></div></div>`;
+  }
+  html+=`<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div><div class="field-label" style="margin-bottom:4px;">${state.config.clubName||'Home'} score</div><input type="text" id="edit-score-home" value="${g.scoreHome||0}"/></div><div><div class="field-label" style="margin-bottom:4px;">${g.opponent||'Opp'} score</div><input type="text" id="edit-score-away" value="${g.scoreAway||0}"/></div></div><div style="margin-top:12px;"><div class="field-label" style="margin-bottom:4px;">Stat correction notes <span style="font-weight:400;color:var(--muted);">(appears in report)</span></div><textarea id="edit-notes" placeholder="e.g. Q3 — Eva's 2 steals moved to Zoe, wrong player selected live. FT corrected for Harper." style="width:100%;height:72px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;resize:none;outline:none;">${g.editNotes||''}</textarea></div>`;
   document.getElementById('edit-modal-body').innerHTML=html;document.getElementById('edit-modal').classList.add('visible');
 }
 function saveEditModal(){
@@ -3207,6 +3232,8 @@ function saveEditModal(){
   const fv=id=>document.getElementById(id)?.value.trim();
   if(fv('edit-opponent')!==undefined)g.opponent=fv('edit-opponent');if(fv('edit-round')!==undefined)g.round=fv('edit-round');if(fv('edit-date')!==undefined)g.date=fv('edit-date');if(fv('edit-time')!==undefined)g.time=fv('edit-time');if(fv('edit-venue')!==undefined)g.venue=fv('edit-venue');
   document.querySelectorAll('#edit-modal-body .edit-input').forEach(inp=>{const pid=parseInt(inp.dataset.pid),field=inp.dataset.field,val=parseInt(inp.value)||0;if(field==='mins')g.summary.minutes[pid]=val;else{if(!g.summary.stats[pid])g.summary.stats[pid]=emptyStats();g.summary.stats[pid][field]=val;}});
+  if(!g.oppSummary)g.oppSummary={minutes:{},stats:{}};
+  document.querySelectorAll('#edit-modal-body .edit-input-opp').forEach(inp=>{const pid=parseInt(inp.dataset.pid),field=inp.dataset.field,val=parseInt(inp.value)||0;if(field==='mins')g.oppSummary.minutes[pid]=val;else{if(!g.oppSummary.stats[pid])g.oppSummary.stats[pid]=emptyOppPlayerStats();g.oppSummary.stats[pid][field]=val;}});
   const sh=document.getElementById('edit-score-home'),sa=document.getElementById('edit-score-away');
   if(sh)g.scoreHome=parseInt(sh.value)||0;if(sa)g.scoreAway=parseInt(sa.value)||0;
   const en=document.getElementById('edit-notes');if(en)g.editNotes=en.value.trim();
