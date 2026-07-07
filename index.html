@@ -485,6 +485,8 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
               <button class="action-btn miss" onclick="logAction('fga')">FGA<div class="abl">2pt missed</div></button>
               <button class="action-btn pts3" onclick="logAction('3pt')">+3<div class="abl">3pt made</div></button>
               <button class="action-btn miss" onclick="logAction('fga3')">3PA<div class="abl">3pt missed</div></button>
+              <button class="action-btn pts2" onclick="logAction('unk_made')" style="opacity:0.75;">?+2<div class="abl">Unknown made</div></button>
+              <button class="action-btn miss" onclick="logAction('unk_miss')" style="opacity:0.75;">?FGA<div class="abl">Unknown missed</div></button>
               <button class="action-btn" onclick="logAction('oreb')">OREB<div class="abl">Off rebound</div></button>
               <button class="action-btn" onclick="logAction('dreb')">DREB<div class="abl">Def rebound</div></button>
               <button class="action-btn" onclick="logAction('ast')">AST<div class="abl">Assist</div></button>
@@ -553,6 +555,8 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
               <button class="action-btn miss" onclick="logOppAction('fga')">FGA<div class="abl">2pt missed</div></button>
               <button class="action-btn pts3" onclick="logOppAction('3pt')">+3<div class="abl">3pt made</div></button>
               <button class="action-btn miss" onclick="logOppAction('fga3')">3PA<div class="abl">3pt missed</div></button>
+              <button class="action-btn pts2" onclick="logOppAction('unk_made')" style="opacity:0.75;">?+2<div class="abl">Unknown made</div></button>
+              <button class="action-btn miss" onclick="logOppAction('unk_miss')" style="opacity:0.75;">?FGA<div class="abl">Unknown missed</div></button>
               <button class="action-btn" onclick="logOppAction('oreb')">OREB<div class="abl">Off rebound</div></button>
               <button class="action-btn" onclick="logOppAction('dreb')">DREB<div class="abl">Def rebound</div></button>
               <button class="action-btn" onclick="logOppAction('ast')">AST<div class="abl">Assist</div></button>
@@ -1018,8 +1022,8 @@ let currentGameType='vjbl',currentSeasonView='results',currentStatsView='total',
 const DEFAULT_PERIOD_MINS=10; // BUILD-INJECTED per team
 const Q_SECS_REP=DEFAULT_PERIOD_MINS*60;
 
-const TL_ICONS={pts_1:'🎯',pts_2:'🏀',pts_3:'🔥',opp_pts:'⚡',opp_pts_1:'🎯',opp_pts_2:'🏀',opp_pts_3:'🔥',sub_on:'⬆️',sub_off:'⬇️',opp_sub_on:'⬆️',opp_sub_off:'⬇️',timeout:'🟢',opp_timeout:'🔴',fga:'❌',fga3:'❌',ft_miss:'✕',opp_ft_miss:'✕',ast:'👐',opp_ast:'👐',reb:'💪',oreb:'💪',dreb:'💪',opp_oreb:'💪',opp_dreb:'💪',stl:'✋',opp_stl:'✋',blk:'🚫',opp_blk:'🚫',tov:'🔄',opp_tov:'🔄',foul:'🟡',opp_foul:'🟡',opp_fga:'❌',opp_fga3:'❌',qend:'🔔',start:'🏁'};
-const TL_CLASS={pts_1:'pts',pts_2:'pts',pts_3:'pts',opp_pts:'opp',opp_pts_1:'opp',opp_pts_2:'opp',opp_pts_3:'opp',sub_on:'sub',sub_off:'sub',opp_sub_on:'sub',opp_sub_off:'sub',timeout:'timeout',opp_timeout:'timeout',fga:'stat',fga3:'stat',ft_miss:'stat',opp_ft_miss:'stat',ast:'stat',opp_ast:'stat',reb:'stat',oreb:'stat',dreb:'stat',opp_oreb:'stat',opp_dreb:'stat',stl:'stat',opp_stl:'stat',blk:'stat',opp_blk:'stat',tov:'stat',opp_tov:'stat',foul:'foul',opp_foul:'foul',opp_fga:'stat',opp_fga3:'stat',qend:'system',start:'system'};
+const TL_ICONS={pts_1:'🎯',pts_2:'🏀',pts_3:'🔥',opp_pts:'⚡',opp_pts_1:'🎯',opp_pts_2:'🏀',opp_pts_3:'🔥',unk_made:'🏀',unk_miss:'❓',opp_unk_made:'🏀',opp_unk_miss:'❓',sub_on:'⬆️',sub_off:'⬇️',opp_sub_on:'⬆️',opp_sub_off:'⬇️',timeout:'🟢',opp_timeout:'🔴',fga:'❌',fga3:'❌',ft_miss:'✕',opp_ft_miss:'✕',ast:'👐',opp_ast:'👐',reb:'💪',oreb:'💪',dreb:'💪',opp_oreb:'💪',opp_dreb:'💪',stl:'✋',opp_stl:'✋',blk:'🚫',opp_blk:'🚫',tov:'🔄',opp_tov:'🔄',foul:'🟡',opp_foul:'🟡',opp_fga:'❌',opp_fga3:'❌',qend:'🔔',start:'🏁'};
+const TL_CLASS={pts_1:'pts',pts_2:'pts',pts_3:'pts',opp_pts:'opp',opp_pts_1:'opp',opp_pts_2:'opp',opp_pts_3:'opp',unk_made:'pts',unk_miss:'stat',opp_unk_made:'opp',opp_unk_miss:'stat',sub_on:'sub',sub_off:'sub',opp_sub_on:'sub',opp_sub_off:'sub',timeout:'timeout',opp_timeout:'timeout',fga:'stat',fga3:'stat',ft_miss:'stat',opp_ft_miss:'stat',ast:'stat',opp_ast:'stat',reb:'stat',oreb:'stat',dreb:'stat',opp_oreb:'stat',opp_dreb:'stat',stl:'stat',opp_stl:'stat',blk:'stat',opp_blk:'stat',tov:'stat',opp_tov:'stat',foul:'foul',opp_foul:'foul',opp_fga:'stat',opp_fga3:'stat',qend:'system',start:'system'};
 
 // ── PERSIST ───────────────────────────────────────────
 function save(){
@@ -1821,6 +1825,8 @@ function logOppAction(type){
   let pts=0;
   if(type==='1pt'){s.ftm++;s.fta++;s.pts+=1;pts=1;cg.scoreAway+=1;addEvent('opp_pts_1',{player:pn,pts:1});}
   else if(type==='ft_miss'){s.fta++;addEvent('opp_ft_miss',{player:pn});}
+  else if(type==='unk_made'){s.fgm++;s.fga++;s.pts+=2;pts=2;cg.scoreAway+=2;addEvent('opp_pts_2',{player:pn,pts:2,unknown:true});}
+  else if(type==='unk_miss'){s.fga++;addEvent('opp_fga',{player:pn,unknown:true});}
   else if(type==='2pt'){s.fgm++;s.fga++;s.pts+=2;pts=2;cg.scoreAway+=2;addEvent('opp_pts_2',{player:pn,pts:2});}
   else if(type==='3pt'){s.fgm++;s.fga++;s.fgm3=(s.fgm3||0)+1;s.fga3=(s.fga3||0)+1;s.pts+=3;pts=3;cg.scoreAway+=3;addEvent('opp_pts_3',{player:pn,pts:3});}
   else if(type==='fga3'){s.fga++;s.fga3=(s.fga3||0)+1;addEvent('opp_fga3',{player:pn});}
@@ -1837,7 +1843,7 @@ function logOppAction(type){
   renderLastActions(oppActionLog,'opp-last-actions-list',true);
   const _oppP=state.currentGame&&state.currentGame.oppRoster&&state.currentGame.oppRoster.find(p=>p.id===selectedOppPid);
   updateMasterLastAction((_oppP?_oppP.name:'Opp')+' — '+(type||''),true);
-  if(isShotAttemptType(type)){pendingShotOpp={pid:selectedOppPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type),quarter:cg.quarter,tlId:tlId};}
+  if(isShotAttemptType(type)&&!isUnknownShotType(type)){pendingShotOpp={pid:selectedOppPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type),quarter:cg.quarter,tlId:tlId};}
   selectedOppPid=null;save();renderOppRosterTable();renderScores();renderOppScores();renderOppOnCourtSection();renderOppActionPanel();renderOppShotCapture();
 }
 function undoOppAction(){
@@ -1866,7 +1872,7 @@ function startGame(){
   const round=document.getElementById('g-round').value.trim(),opp=document.getElementById('g-opp').value.trim();
   const venue=document.getElementById('g-venue').value.trim(),gameType=currentGameType,periodSecs=getQSecs();
   const starters=Array.from(pendingStarters);
-  state.currentGame={id:Date.now(),date:fmtDate(date),time:fmtTime(time),round,opponent:opp||'Unknown',venue,gameType,periodSecs,filmed:isFilmed,quarter:1,running:true,ended:false,timeout:false,timeoutTeam:'',elapsed:0,lastTick:Date.now(),qRemaining:periodSecs,onCourt:[...starters],stints:{},minutes:{},stats:{},scoreHome:0,scoreAway:0,timeline:[],oppRoster:isFilmed?[...pendingOppRoster]:[],oppOnCourt:[],oppStints:{},oppMinutes:{},oppStats:{},oppAggregate:{oreb:0,dreb:0}};
+  state.currentGame={id:Date.now(),date:fmtDate(date),time:fmtTime(time),round,opponent:opp||'Unknown',venue,gameType,periodSecs,filmed:isFilmed,quarter:1,running:false,ended:false,timeout:false,timeoutTeam:'',elapsed:0,lastTick:Date.now(),qRemaining:periodSecs,onCourt:[...starters],stints:{},minutes:{},stats:{},scoreHome:0,scoreAway:0,timeline:[],oppRoster:isFilmed?[...pendingOppRoster]:[],oppOnCourt:[],oppStints:{},oppMinutes:{},oppStats:{},oppAggregate:{oreb:0,dreb:0}};
   pendingOppRoster.forEach(p=>{state.currentGame.oppMinutes[p.id]=0;state.currentGame.oppStats[p.id]=emptyOppPlayerStats();});
   if(pendingOppStarters.size>0){const _oppNow=Date.now();pendingOppStarters.forEach(pid=>{if(state.currentGame.oppRoster.find(p=>p.id===pid)){state.currentGame.oppOnCourt.push(pid);if(state.currentGame.filmed)state.currentGame.oppStints[pid]=_oppNow;}});}
   state.players.forEach(p=>{state.currentGame.minutes[p.id]=0;state.currentGame.stats[p.id]=emptyStats();});
@@ -1876,7 +1882,7 @@ function startGame(){
   state.currentGame.actionLog=[];state.currentGame.oppScoreLog=[];state.currentGame.oppActionLog=[];state.currentGame.oppStatLog=[];
   actionLog=state.currentGame.actionLog;oppScoreLog=state.currentGame.oppScoreLog;oppActionLog=state.currentGame.oppActionLog;oppStatLog=state.currentGame.oppStatLog;
   selectedPid=null;selectedOppPid=null;pendingShotHome=null;pendingShotOpp=null;
-  startTimer();save();showScreen('game',document.getElementById('tab-btn-game'));render();renderPeriodBar(state.currentGame);requestWakeLock();
+  save();showScreen('game',document.getElementById('tab-btn-game'));render();renderPeriodBar(state.currentGame);
 }
 function fmtDate(d){if(!d)return'';try{const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}catch(e){return d;}}
 function fmtTime(t){if(!t)return'';try{const[h,m]=t.split(':');const hr=parseInt(h);return(hr%12||12)+':'+m+(hr>=12?'pm':'am');}catch(e){return t;}}
@@ -1997,6 +2003,8 @@ function logAction(type){
   let pts=0;
   if(type==='1pt'){s.ftm++;s.fta++;s.pts+=1;pts=1;cg.scoreHome+=1;addEvent('pts_1',{player:pn,pts:1});}
   else if(type==='ft_miss'){s.fta++;addEvent('ft_miss',{player:pn});}
+  else if(type==='unk_made'){s.fgm++;s.fga++;s.pts+=2;pts=2;cg.scoreHome+=2;addEvent('pts_2',{player:pn,pts:2,unknown:true});}
+  else if(type==='unk_miss'){s.fga++;addEvent('fga',{player:pn,unknown:true});}
   else if(type==='2pt'){s.fgm++;s.fga++;s.pts+=2;pts=2;cg.scoreHome+=2;addEvent('pts_2',{player:pn,pts:2});}
   else if(type==='3pt'){s.fgm++;s.fga++;s.fgm3=(s.fgm3||0)+1;s.fga3=(s.fga3||0)+1;s.pts+=3;pts=3;cg.scoreHome+=3;addEvent('pts_3',{player:pn,pts:3});}
   else if(type==='fga3'){s.fga++;s.fga3=(s.fga3||0)+1;addEvent('fga3',{player:pn});}
@@ -2012,7 +2020,7 @@ function logAction(type){
   actionLog.push({pid:selectedPid,type,pts,tlId});
   renderMasterLast5();
   updateMasterLastAction((state.players.find(p=>p.id===selectedPid)?.name||'?')+' — '+(lbls[type]||type),false);
-  if(isShotAttemptType(type)){pendingShotHome={pid:selectedPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type),quarter:cg.quarter,tlId:tlId};}
+  if(isShotAttemptType(type)&&!isUnknownShotType(type)){pendingShotHome={pid:selectedPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type),quarter:cg.quarter,tlId:tlId};}
   selectedPid=null;save();renderRosterTable();renderScores();renderOnCourtSection();renderActionPanel();renderHomeShotCapture();
 }
 function renderMasterLast5(){
@@ -2149,8 +2157,9 @@ function removeTimelineEvent(cg,tlId,dHome,dAway){
   if(typeof pendingShotHome!=='undefined'&&pendingShotHome&&pendingShotHome.tlId===tlId){pendingShotHome=null;renderHomeShotCapture();}
   if(typeof pendingShotOpp!=='undefined'&&pendingShotOpp&&pendingShotOpp.tlId===tlId){pendingShotOpp=null;renderOppShotCapture();}
 }
+function isUnknownShotType(type){return type==='unk_made'||type==='unk_miss';}
 function isShotAttemptType(type){return type==='2pt'||type==='fga'||type==='3pt'||type==='fga3';}
-function shotMadeForType(type){return type==='2pt'||type==='3pt';}
+function shotMadeForType(type){return type==='2pt'||type==='3pt'||type==='unk_made';}
 function shotIsThreeForType(type){return type==='3pt'||type==='fga3';}
 function svgPointFromEvent(svg,evt){
   let clientX,clientY;
@@ -2983,10 +2992,22 @@ function openGameReport(idx){
       const qEvs=allEventsForTl.filter(ev=>(ev.q||1)===qNum);
       if(!qEvs.length)return;
       const ql=pd3[qk]||qk;let rows='';
+      // Render starting lineups at top of Q1
+      if(qNum===1){
+        const startEv=qEvs.find(ev=>ev.type==='start');
+        if(startEv){
+          const homeNames=startEv.data&&startEv.data.label?startEv.data.label.replace('Starting 5: ',''):'--';
+          const oppNames=startEv.data&&startEv.data.oppStarterNames?startEv.data.oppStarterNames:'';
+          rows+=`<tr style="background:#f0f6ff;"><td colspan="2" style="padding:5px 6px;font-size:11px;"><strong style="color:#1a6b4a;">🏠 Starting 5:</strong> ${homeNames}</td></tr>`;
+          if(oppNames)rows+=`<tr style="background:#fff8f8;"><td colspan="2" style="padding:5px 6px;font-size:11px;"><strong style="color:#7a1f1f;">✈️ Opp Starting 5:</strong> ${oppNames}</td></tr>`;
+        }
+      }
       qEvs.forEach(ev=>{
+        if(ev.type==='start')return;
         const fn=el2[ev.type],desc=fn?fn(ev):ev.type.replace(/_/g,' ');
         const ip=['pts_1','pts_2','pts_3'].includes(ev.type),io=['opp_pts','opp_pts_1','opp_pts_2','opp_pts_3'].includes(ev.type);
-        const sc=(ip||io)?`<span style="font-size:10px;font-weight:700;font-family:monospace;background:${ip?'#e8f8ee':'#fce8e8'};color:${ip?'#1a6b4a':'#7a1f1f'};padding:2px 5px;border-radius:3px;">${ev.scoreHome}–${ev.scoreAway}</span>`:'';
+        const scStyle=ip?'background:#e8f8ee;color:#1a6b4a;':io?'background:#fce8e8;color:#7a1f1f;':'background:#f0f0f0;color:#666;';
+        const sc=`<span style="font-size:10px;font-weight:${(ip||io)?'700':'400'};font-family:monospace;${scStyle}padding:2px 5px;border-radius:3px;">${ev.scoreHome}–${ev.scoreAway}</span>`;
         const isOppEv=ev.type.startsWith('opp_');
         const rowBg=isOppEv?'background:#fff8f8;':'';
         const countdown=tsToCountdown(ev.ts,ps2);
