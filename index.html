@@ -724,6 +724,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
       <button class="btn" onclick="closeGameDetail()" style="padding:7px 12px;">← Back</button>
       <div style="font-size:14px;font-weight:600;" id="gdp-title"></div>
       <button class="btn" onclick="exportGameJSON()" style="padding:7px 12px;margin-left:auto;white-space:nowrap;">&#11015; Game JSON</button>
+      <button class="btn btn-red" onclick="deleteGame(gdpIdx)" style="padding:7px 12px;white-space:nowrap;">🗑 Delete Game</button>
     </div>
     <div id="gdp-content"></div>
   </div>
@@ -1357,6 +1358,7 @@ function updatePeriodLabel(val){
   else if(cgt==='domestic'){const sub=document.getElementById('gt-domestic').querySelector('.gt-sub');if(sub)sub.textContent='2 × '+val+' min';}
   else{const sub=document.getElementById('gt-tournament').querySelector('.gt-sub');if(sub)sub.textContent='2 × '+val+' min';}
 }
+function updateVjblLabel(){const el=document.getElementById('gt-vjbl-sub');if(el){const m=parseInt(document.getElementById('g-period-mins')?.value)||DEFAULT_PERIOD_MINS;el.textContent='4 × '+m+' min';}}
 function setGameType(t){
   currentGameType=t;
   ['vjbl','domestic','tournament'].forEach(n=>{
@@ -2667,7 +2669,9 @@ function renderMinsSections(games){
   games=games||state.games;const c=document.getElementById('mins-sections');if(!c)return;
   if(!games.length){c.innerHTML='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No games yet</div>';return;}
   const rep=games.filter(g=>g.gameType!=='domestic'&&g.gameType!=='tournament'),dom=games.filter(g=>g.gameType==='domestic');
-  const dg={};dom.forEach(g=>{const hl=Math.round(getGameTotalMins(g)/2),k=hl+'min';if(!dg[k])dg[k]={hl,games:[]};dg[k].games.push(g);});
+  // Group VJBL by their actual quarter length too (handles mixed comps in future)
+    const vjblGroups={};rep.forEach(g=>{const qm=Math.round(getGameTotalMins(g)/4),k=qm+'min';if(!vjblGroups[k])vjblGroups[k]={qm,games:[]};vjblGroups[k].games.push(g);});
+    const dg={};dom.forEach(g=>{const hl=Math.round(getGameTotalMins(g)/2),k=hl+'min';if(!dg[k])dg[k]={hl,games:[]};dg[k].games.push(g);});
   function buildTable(fg,label,fs){
     if(!fg.length)return'';
     const sorted=[...state.players].sort((a,b)=>a.id-b.id);
@@ -2692,7 +2696,15 @@ function renderMinsSections(games){
     return`<div class="card" style="margin-bottom:10px;"><div class="sec-label">${label}</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px;">${fg.length} game${fg.length!==1?'s':''} · Fair share <strong style="color:var(--text);">${fs.toFixed(1)}</strong> min/game <span style="font-size:11px;">(avg per game played)</span></div><div class="tbl-wrap"><table class="stbl"><thead><tr><th style="min-width:110px;">Player</th><th>Total</th><th>Avg/g played</th><th>vs fair</th><th>Load</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }
   let html='';
-  if(currentMinsFilter==='all'||currentMinsFilter==='vjbl'){if(rep.length>0)html+=buildTable(rep,'VJBL — 4 × 10 min',(4*10*5)/state.players.length);else if(currentMinsFilter==='vjbl')html='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No VJBL games</div>';}
+  if(currentMinsFilter==='all'||currentMinsFilter==='vjbl'){
+      if(rep.length>0){
+        // Derive actual quarter length from game data — don't assume 10 min
+        const vjblQMins=Math.round(getGameTotalMins(rep[0])/4);
+        const vjblLabel='VJBL — 4 × '+vjblQMins+' min';
+        const vjblFs=(vjblQMins*4*5)/state.players.length;
+        html+=buildTable(rep,vjblLabel,vjblFs);
+      }else if(currentMinsFilter==='vjbl')html='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No VJBL games</div>';
+    }
   if(currentMinsFilter==='all'||currentMinsFilter==='domestic'){const de=Object.values(dg).sort((a,b)=>b.hl-a.hl);if(de.length)de.forEach(({hl,games:gr})=>html+=buildTable(gr,`Domestic — 2 × ${hl} min halves`,(hl*2*5)/state.players.length));else if(currentMinsFilter==='domestic')html='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No domestic games</div>';}
   if(!html)html='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No games in this category</div>';
   c.innerHTML=html;
@@ -3327,6 +3339,15 @@ function addPlayer(){
   document.getElementById('new-num').value='';document.getElementById('new-name').value='';save();renderSetup();
 }
 function clearAll(){if(!confirm('Clear all game data? Squad will be kept.'))return;state={...state,games:[],currentGame:null};pendingStarters=new Set();save();render();renderStarterGrid();}
+function deleteGame(idx){
+  const g=state.games[idx];if(!g)return;
+  const label=(g.round?'Round '+g.round:'Game')+' vs '+(g.opponent||'Unknown')+' ('+g.date+')';
+  if(!confirm('Delete '+label+'? This cannot be undone.'))return;
+  state.games.splice(idx,1);
+  if(state.currentGame&&state.currentGame.id===g.id)state.currentGame=null;
+  save();closeGameDetail();renderSeason();
+  showToast('Game deleted');
+}
 
 // ── DATA / CLOUD ──────────────────────────────────────
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='courttrack_backup_'+new Date().toISOString().split('T')[0]+'.json';a.click();URL.revokeObjectURL(url);}
@@ -3607,7 +3628,7 @@ applyTheme();
   }catch(e){}
 })();
 load();
-setGameType('vjbl');
+setGameType('vjbl');updateVjblLabel();
 </script>
 </body>
 </html>
