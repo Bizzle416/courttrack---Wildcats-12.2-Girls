@@ -493,6 +493,8 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
               <button class="action-btn" onclick="logAction('stl')">STL<div class="abl">Steal</div></button>
               <button class="action-btn" onclick="logAction('blk')">BLK<div class="abl">Block</div></button>
               <button class="action-btn tov" onclick="logAction('tov')">TO<div class="abl">Turnover</div></button>
+              <button class="action-btn tov" onclick="logTeamTov()" style="opacity:0.8;">TEAM TO<div class="abl">Team turnover</div></button>
+              <button class="action-btn tov" onclick="logAction('viol')">VIOL<div class="abl">Violation</div></button>
               <button class="action-btn foul-btn" onclick="logAction('foul')" style="grid-column:1/-1;">FOUL<div class="abl">Personal foul</div></button>
             </div><!-- /action-grid-v -->
           </div><!-- /action-panel -->
@@ -563,6 +565,8 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
               <button class="action-btn" onclick="logOppAction('stl')">STL<div class="abl">Steal</div></button>
               <button class="action-btn" onclick="logOppAction('blk')">BLK<div class="abl">Block</div></button>
               <button class="action-btn tov" onclick="logOppAction('tov')">TO<div class="abl">Turnover</div></button>
+              <button class="action-btn tov" onclick="logOppTeamTov()" style="opacity:0.8;">TEAM TO<div class="abl">Team turnover</div></button>
+              <button class="action-btn tov" onclick="logOppAction('viol')">VIOL<div class="abl">Violation</div></button>
               <button class="action-btn foul-btn" onclick="logOppAction('foul')" style="grid-column:1/-1;">FOUL<div class="abl">Personal foul</div></button>
             </div><!-- /action-grid-v -->
           </div><!-- /action-panel -->
@@ -642,7 +646,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
     <div class="sec-label" style="padding:0 14px 6px;">All players <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">— tap ● to sub on/off</span></div>
     <div class="roster-wrap" style="overflow-x:auto;width:100%;">
       <table class="rtbl" style="min-width:900px;">
-        <thead><tr><th>Player</th><th>MIN</th><th>+/−</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3PA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead>
+        <thead><tr><th>Player</th><th>MIN</th><th>+/−</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3PA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>VL</th><th>FL</th></tr></thead>
         <tbody id="roster-body"></tbody>
       </table>
     </div>
@@ -651,7 +655,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
     <div class="sec-label" style="padding:0 14px 6px;color:var(--red);">Opposition players <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">— tap ● to sub on/off</span></div>
     <div class="roster-wrap" style="overflow-x:auto;width:100%;">
       <table class="rtbl" style="min-width:900px;">
-        <thead><tr><th>Player</th><th>MIN</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3PA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead>
+        <thead><tr><th>Player</th><th>MIN</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FT%</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3PA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>VL</th><th>FL</th></tr></thead>
         <tbody id="opp-roster-body"></tbody>
       </table>
     </div>
@@ -1023,8 +1027,8 @@ let currentGameType='vjbl',currentSeasonView='results',currentStatsView='total',
 const DEFAULT_PERIOD_MINS=10; // BUILD-INJECTED per team
 const Q_SECS_REP=DEFAULT_PERIOD_MINS*60;
 
-const TL_ICONS={pts_1:'🎯',pts_2:'🏀',pts_3:'🔥',opp_pts:'⚡',opp_pts_1:'🎯',opp_pts_2:'🏀',opp_pts_3:'🔥',unk_made:'🏀',unk_miss:'❓',opp_unk_made:'🏀',opp_unk_miss:'❓',sub_on:'⬆️',sub_off:'⬇️',opp_sub_on:'⬆️',opp_sub_off:'⬇️',timeout:'🟢',opp_timeout:'🔴',fga:'❌',fga3:'❌',ft_miss:'✕',opp_ft_miss:'✕',ast:'👐',opp_ast:'👐',reb:'💪',oreb:'💪',dreb:'💪',opp_oreb:'💪',opp_dreb:'💪',stl:'✋',opp_stl:'✋',blk:'🚫',opp_blk:'🚫',tov:'🔄',opp_tov:'🔄',foul:'🟡',opp_foul:'🟡',opp_fga:'❌',opp_fga3:'❌',qend:'🔔',start:'🏁'};
-const TL_CLASS={pts_1:'pts',pts_2:'pts',pts_3:'pts',opp_pts:'opp',opp_pts_1:'opp',opp_pts_2:'opp',opp_pts_3:'opp',unk_made:'pts',unk_miss:'stat',opp_unk_made:'opp',opp_unk_miss:'stat',sub_on:'sub',sub_off:'sub',opp_sub_on:'sub',opp_sub_off:'sub',timeout:'timeout',opp_timeout:'timeout',fga:'stat',fga3:'stat',ft_miss:'stat',opp_ft_miss:'stat',ast:'stat',opp_ast:'stat',reb:'stat',oreb:'stat',dreb:'stat',opp_oreb:'stat',opp_dreb:'stat',stl:'stat',opp_stl:'stat',blk:'stat',opp_blk:'stat',tov:'stat',opp_tov:'stat',foul:'foul',opp_foul:'foul',opp_fga:'stat',opp_fga3:'stat',qend:'system',start:'system'};
+const TL_ICONS={pts_1:'🎯',pts_2:'🏀',pts_3:'🔥',opp_pts:'⚡',opp_pts_1:'🎯',opp_pts_2:'🏀',opp_pts_3:'🔥',sub_on:'⬆️',sub_off:'⬇️',opp_sub_on:'⬆️',opp_sub_off:'⬇️',timeout:'🟢',opp_timeout:'🔴',fga:'❌',fga3:'❌',ft_miss:'✕',opp_ft_miss:'✕',ast:'👐',opp_ast:'👐',reb:'💪',oreb:'💪',dreb:'💪',opp_oreb:'💪',opp_dreb:'💪',stl:'✋',opp_stl:'✋',blk:'🚫',opp_blk:'🚫',tov:'🔄',opp_tov:'🔄',foul:'🟡',opp_foul:'🟡',opp_fga:'❌',opp_fga3:'❌',qend:'🔔',start:'🏁',unk_made:'🏀',unk_miss:'❓',opp_unk_made:'🏀',opp_unk_miss:'❓',team_tov:'🔄',opp_team_tov:'🔄',viol:'⚠️',opp_viol:'⚠️'};
+const TL_CLASS={pts_1:'pts',pts_2:'pts',pts_3:'pts',opp_pts:'opp',opp_pts_1:'opp',opp_pts_2:'opp',opp_pts_3:'opp',sub_on:'sub',sub_off:'sub',opp_sub_on:'sub',opp_sub_off:'sub',timeout:'timeout',opp_timeout:'timeout',fga:'stat',fga3:'stat',ft_miss:'stat',opp_ft_miss:'stat',ast:'stat',opp_ast:'stat',reb:'stat',oreb:'stat',dreb:'stat',opp_oreb:'stat',opp_dreb:'stat',stl:'stat',opp_stl:'stat',blk:'stat',opp_blk:'stat',tov:'stat',opp_tov:'stat',foul:'foul',opp_foul:'foul',opp_fga:'stat',opp_fga3:'stat',qend:'system',start:'system',unk_made:'pts',unk_miss:'stat',opp_unk_made:'opp',opp_unk_miss:'stat',team_tov:'tov',opp_team_tov:'opp',viol:'tov',opp_viol:'opp'};
 
 // ── PERSIST ───────────────────────────────────────────
 function save(){
@@ -1424,8 +1428,8 @@ function addEvent(type,data){
 }
 
 // ── RENDER ────────────────────────────────────────────
-function emptyStats(){return{fgm:0,fga:0,fgm3:0,fga3:0,ftm:0,fta:0,ast:0,oreb:0,dreb:0,stl:0,blk:0,tov:0,foul:0,pts:0};}
-function emptyOppStats(){return{pts:0,fgm:0,fga:0,ftm:0,fta:0,ast:0,oreb:0,dreb:0,stl:0,blk:0,tov:0,foul:0};}
+function emptyStats(){return{fgm:0,fga:0,fgm3:0,fga3:0,ftm:0,fta:0,ast:0,oreb:0,dreb:0,stl:0,blk:0,tov:0,viol:0,foul:0,pts:0};}
+function emptyOppStats(){return{pts:0,fgm:0,fga:0,ftm:0,fta:0,ast:0,oreb:0,dreb:0,stl:0,blk:0,tov:0,viol:0,foul:0};}
 function render(){renderOnCourtSection();renderActionPanel();renderRosterTable();renderOppOnCourtSection();renderOppActionPanel();renderOppRosterTable();renderScores();renderStatus();renderTimer();renderPeriodBar(state.currentGame);renderHomeShotCapture();renderOppShotCapture();refreshInlineShotDots();}
 
 function renderStatus(){
@@ -1498,7 +1502,6 @@ function renderScores(){
 
 // ── PLUS/MINUS ────────────────────────────────────────
 function pmResolvePid(ev){
-  // ID-first matching: rename-proof. Name fallback covers legacy games only.
   if(ev.data&&ev.data.pid!=null){const p=state.players.find(pl=>pl.id===ev.data.pid);if(p)return p.id;}
   const nm=ev.data&&ev.data.player?ev.data.player:'';
   if(nm){const p=state.players.find(pl=>pl.name===nm);if(p)return p.id;}
@@ -1509,12 +1512,8 @@ function pmFromTimeline(timeline,finalSh,finalSa){
   const onAt={};
   for(const ev of(timeline||[])){
     if(ev.type==='start'){
-      if(ev.data&&Array.isArray(ev.data.pids)){
-        ev.data.pids.forEach(pid=>{if(state.players.find(pl=>pl.id===pid))onAt[pid]={sh:0,sa:0};});
-      }else{
-        const lbl=ev.data&&ev.data.label?ev.data.label:'';
-        if(lbl.includes('Starting 5:')){lbl.replace('Starting 5:','').trim().split(', ').forEach(name=>{const p=state.players.find(pl=>pl.name===name);if(p)onAt[p.id]={sh:0,sa:0};});}
-      }
+      if(ev.data&&Array.isArray(ev.data.pids)){ev.data.pids.forEach(pid=>{if(state.players.find(pl=>pl.id===pid))onAt[pid]={sh:0,sa:0};});}
+      else{const lbl=ev.data&&ev.data.label?ev.data.label:'';if(lbl.includes('Starting 5:')){lbl.replace('Starting 5:','').trim().split(', ').forEach(name=>{const p=state.players.find(pl=>pl.name===name);if(p)onAt[p.id]={sh:0,sa:0};});}}
       break;
     }
   }
@@ -1537,7 +1536,7 @@ function renderRosterTable(){
   const now=(cg&&cg.running)?Date.now():null;
   const sorted=[...state.players].sort((a,b)=>a.id-b.id);tbody.innerHTML='';
   const pmMap=calcLivePlusMinus();
-  let tMins=0,tFtm=0,tFta=0,tFgm=0,tFga=0,tFgm3=0,tFga3=0,tAst=0,tReb=0,tStl=0,tBlk=0,tTov=0,tFoul=0;
+  let tMins=0,tFtm=0,tFta=0,tFgm=0,tFga=0,tFgm3=0,tFga3=0,tAst=0,tReb=0,tStl=0,tBlk=0,tTov=0,tViol=0,tFoul=0;
   sorted.forEach(p=>{
     const isOn=cg&&cg.onCourt.includes(p.id),mins=getPlayerMins(p.id,now),s=cg&&cg.stats?cg.stats[p.id]:null;
     const tr=document.createElement('tr');if(isOn)tr.classList.add('on-row');
@@ -1550,11 +1549,11 @@ function renderRosterTable(){
     if(pm===null){pd.textContent='—';pd.className='pm-zero';}else if(pm>0){pd.textContent='+'+pm;pd.className='pm-pos';}else if(pm<0){pd.textContent=pm;pd.className='pm-neg';}else{pd.textContent='0';pd.className='pm-zero';}
     tr.appendChild(pd);
     const fgp=s&&s.fga>0?Math.round(s.fgm/s.fga*100)+'%':'—',ftp=s&&s.fta>0?Math.round(s.ftm/s.fta*100)+'%':'—';
-    const vals=s?[s.pts||0,s.ftm||0,s.fta||0,ftp,s.fgm,s.fga,fgp,s.fgm3||0,s.fga3||0,s.ast,s.oreb||0,s.dreb||0,s.stl,s.blk,s.tov,s.foul||0]:['—','—','—','—','—','—','—','—','—','—','—','—','—','—','—','—'];
-    // indices: 0=pts,1=ftm,2=fta,3=ft%,4=fgm,5=fga,6=fg%,7=fgm3,8=fga3,9=ast,10=oreb,11=dreb,12=stl,13=blk,14=tov,15=foul
-    vals.forEach((v,i)=>{const td=document.createElement('td');if(i===4)td.className='fgm-val';if(i===14)td.className='tov-val';if(i===15)td.style.color='var(--amber)';td.textContent=v;tr.appendChild(td);});
+    const vals=s?[s.pts||0,s.ftm||0,s.fta||0,ftp,s.fgm,s.fga,fgp,s.fgm3||0,s.fga3||0,s.ast,s.oreb||0,s.dreb||0,s.stl,s.blk,s.tov,s.viol||0,s.foul||0]:['—','—','—','—','—','—','—','—','—','—','—','—','—','—','—','—','—'];
+    // indices: 0=pts,1=ftm,2=fta,3=ft%,4=fgm,5=fga,6=fg%,7=fgm3,8=fga3,9=ast,10=oreb,11=dreb,12=stl,13=blk,14=tov,15=viol,16=foul
+    vals.forEach((v,i)=>{const td=document.createElement('td');if(i===4)td.className='fgm-val';if(i===14)td.className='tov-val';if(i===15&&v>0)td.style.color='var(--red)';if(i===16)td.style.color='var(--amber)';td.textContent=v;tr.appendChild(td);});
     tbody.appendChild(tr);
-    if(s){tMins+=mins;tFtm+=s.ftm||0;tFta+=s.fta||0;tFgm+=s.fgm;tFga+=s.fga;tFgm3+=s.fgm3||0;tFga3+=s.fga3||0;tAst+=s.ast;tReb+=(s.oreb||0)+(s.dreb||0);tStl+=s.stl;tBlk+=s.blk;tTov+=s.tov;tFoul+=s.foul||0;}
+    if(s){tMins+=mins;tFtm+=s.ftm||0;tFta+=s.fta||0;tFgm+=s.fgm;tFga+=s.fga;tFgm3+=s.fgm3||0;tFga3+=s.fga3||0;tAst+=s.ast;tReb+=(s.oreb||0)+(s.dreb||0);tStl+=s.stl;tBlk+=s.blk;tTov+=s.tov;tViol+=(s.viol||0);tFoul+=s.foul||0;}
   });
   if(cg){
     const ttr=document.createElement('tr');ttr.style.cssText='border-top:2px solid var(--border2);background:var(--surface2);font-weight:600;';
@@ -1566,7 +1565,7 @@ function renderRosterTable(){
     let tOreb=0,tDreb=0;sorted.forEach(p=>{const s=cg.stats?cg.stats[p.id]:null;if(s){tOreb+=s.oreb||0;tDreb+=s.dreb||0;}});
     // indices: 0=ftm,1=fta,2=ft%,3=fgm,4=fga,5=fg%,6=fgm3,7=fga3,8=ast,9=oreb,10=dreb,11=stl,12=blk,13=tov,14=foul
     const tPts=sorted.reduce((a,p)=>{const s=cg.stats?cg.stats[p.id]:null;return a+(s?s.pts||0:0);},0);
-    [tPts,tFtm,tFta,tftp,tFgm,tFga,tfgp,tFgm3,tFga3,tAst,tOreb,tDreb,tStl,tBlk,tTov,tFoul].forEach((v,i)=>{const td=document.createElement('td');td.style.fontWeight='700';if(i===4)td.style.color='#2563eb';if(i===14)td.style.color='var(--red)';if(i===15)td.style.color='var(--amber)';td.textContent=v;ttr.appendChild(td);});
+    [tPts,tFtm,tFta,tftp,tFgm,tFga,tfgp,tFgm3,tFga3,tAst,tOreb,tDreb,tStl,tBlk,tTov+(cg.teamTov||0),tViol,tFoul].forEach((v,i)=>{const td=document.createElement('td');td.style.fontWeight='700';if(i===4)td.style.color='#2563eb';if(i===14)td.style.color='var(--red)';if(i===15&&v>0)td.style.color='var(--red)';if(i===16)td.style.color='var(--amber)';td.textContent=v;ttr.appendChild(td);});
     tbody.appendChild(ttr);
   }
 }
@@ -1673,7 +1672,7 @@ let selectedOppPid=null;
 let currentGameTab='home';
 let pendingShotHome=null,pendingShotOpp=null; // independent inline shot-location capture per team
 
-function emptyOppPlayerStats(){return{pts:0,fgm:0,fga:0,fgm3:0,fga3:0,ftm:0,fta:0,ast:0,oreb:0,dreb:0,stl:0,blk:0,tov:0,foul:0};}
+function emptyOppPlayerStats(){return{pts:0,fgm:0,fga:0,fgm3:0,fga3:0,ftm:0,fta:0,ast:0,oreb:0,dreb:0,stl:0,blk:0,tov:0,viol:0,foul:0};}
 
 // Pregame roster management
 function renderOppPreRoster(){
@@ -1759,7 +1758,7 @@ function renderOppRosterTable(){
   if(!cg||!cg.oppRoster||!cg.oppRoster.length){tbody.innerHTML='<tr><td colspan="18" style="color:var(--muted);padding:10px;font-size:12px;">No opposition roster — add players in Game Setup</td></tr>';return;}
   const now=(cg&&cg.running)?Date.now():null;
   tbody.innerHTML='';
-  let tMins=0,tPts=0,tFtm=0,tFta=0,tFgm=0,tFga=0,tFgm3=0,tFga3=0,tAst=0,tOreb=0,tDreb=0,tStl=0,tBlk=0,tTov=0,tFoul=0;
+  let tMins=0,tPts=0,tFtm=0,tFta=0,tFgm=0,tFga=0,tFgm3=0,tFga3=0,tAst=0,tOreb=0,tDreb=0,tStl=0,tBlk=0,tTov=0,tViol=0,tFoul=0;
   cg.oppRoster.forEach(p=>{
     const isOn=cg.oppOnCourt.includes(p.id);
     const mins=getOppPlayerMins(p.id,now);
@@ -1772,10 +1771,10 @@ function renderOppRosterTable(){
     tr.appendChild(nd);
     const md=document.createElement('td');md.className='mins-cell';md.textContent=fmtMins(mins);tr.appendChild(md);
     // indices: 0=pts,1=ftm,2=fta,3=ft%,4=fgm,5=fga,6=fg%,7=fgm3,8=fga3,9=ast,10=oreb,11=dreb,12=stl,13=blk,14=tov,15=foul
-    const vals=s?[s.pts||0,s.ftm||0,s.fta||0,ftp,s.fgm,s.fga,fgp,s.fgm3||0,s.fga3||0,s.ast,s.oreb||0,s.dreb||0,s.stl,s.blk,s.tov,s.foul||0]:['—','—','—','—','—','—','—','—','—','—','—','—','—','—','—','—'];
+    const vals=s?[s.pts||0,s.ftm||0,s.fta||0,ftp,s.fgm,s.fga,fgp,s.fgm3||0,s.fga3||0,s.ast,s.oreb||0,s.dreb||0,s.stl,s.blk,s.tov,s.viol||0,s.foul||0]:['—','—','—','—','—','—','—','—','—','—','—','—','—','—','—','—','—'];
     vals.forEach((v,i)=>{const td=document.createElement('td');if(i===14)td.className='tov-val';if(i===15)td.style.color='var(--amber)';td.textContent=v;tr.appendChild(td);});
     tbody.appendChild(tr);
-    if(s){tMins+=mins;tPts+=s.pts||0;tFtm+=s.ftm||0;tFta+=s.fta||0;tFgm+=s.fgm||0;tFga+=s.fga||0;tFgm3+=s.fgm3||0;tFga3+=s.fga3||0;tAst+=s.ast||0;tOreb+=s.oreb||0;tDreb+=s.dreb||0;tStl+=s.stl||0;tBlk+=s.blk||0;tTov+=s.tov||0;tFoul+=s.foul||0;}
+    if(s){tMins+=mins;tPts+=s.pts||0;tFtm+=s.ftm||0;tFta+=s.fta||0;tFgm+=s.fgm||0;tFga+=s.fga||0;tFgm3+=s.fgm3||0;tFga3+=s.fga3||0;tAst+=s.ast||0;tOreb+=s.oreb||0;tDreb+=s.dreb||0;tStl+=s.stl||0;tBlk+=s.blk||0;tTov+=s.tov||0;tViol+=(s.viol||0);tFoul+=s.foul||0;}
   });
   // Totals row
   const ttr=document.createElement('tr');ttr.style.cssText='border-top:2px solid var(--border2);background:var(--surface2);font-weight:600;';
@@ -1839,13 +1838,14 @@ function logOppAction(type){
   else if(type==='stl'){s.stl++;addEvent('opp_stl',{player:pn});}
   else if(type==='blk'){s.blk++;addEvent('opp_blk',{player:pn});}
   else if(type==='tov'){s.tov++;addEvent('opp_tov',{player:pn});}
+  else if(type==='viol'){s.viol++;addEvent('opp_viol',{player:pn});}
   else if(type==='foul'){s.foul++;addEvent('opp_foul',{player:pn});}
   const tlId=cg.timeline&&cg.timeline.length>0?cg.timeline[cg.timeline.length-1].id:null;
   oppActionLog.push({pid:selectedOppPid,type,pts,tlId});
   renderLastActions(oppActionLog,'opp-last-actions-list',true);
   const _oppP=state.currentGame&&state.currentGame.oppRoster&&state.currentGame.oppRoster.find(p=>p.id===selectedOppPid);
   updateMasterLastAction((_oppP?_oppP.name:'Opp')+' — '+(type||''),true);
-  if(isShotAttemptType(type)&&!isUnknownShotType(type)){pendingShotOpp={pid:selectedOppPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type),quarter:cg.quarter,tlId:tlId};}
+  if(isShotAttemptType(type)&&!isUnknownShotType(type)){pendingShotOpp={pid:selectedOppPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type),quarter:cg.quarter};}
   selectedOppPid=null;save();renderOppRosterTable();renderScores();renderOppScores();renderOppOnCourtSection();renderOppActionPanel();renderOppShotCapture();
 }
 function undoOppAction(){
@@ -1874,13 +1874,14 @@ function startGame(){
   const round=document.getElementById('g-round').value.trim(),opp=document.getElementById('g-opp').value.trim();
   const venue=document.getElementById('g-venue').value.trim(),gameType=currentGameType,periodSecs=getQSecs();
   const starters=Array.from(pendingStarters);
-  state.currentGame={id:Date.now(),date:fmtDate(date),time:fmtTime(time),round,opponent:opp||'Unknown',venue,gameType,periodSecs,filmed:isFilmed,quarter:1,running:false,ended:false,timeout:false,timeoutTeam:'',elapsed:0,lastTick:Date.now(),qRemaining:periodSecs,onCourt:[...starters],stints:{},minutes:{},stats:{},scoreHome:0,scoreAway:0,timeline:[],oppRoster:isFilmed?[...pendingOppRoster]:[],oppOnCourt:[],oppStints:{},oppMinutes:{},oppStats:{},oppAggregate:{oreb:0,dreb:0}};
+  state.currentGame={id:Date.now(),date:fmtDate(date),time:fmtTime(time),round,opponent:opp||'Unknown',venue,gameType,periodSecs,filmed:isFilmed,quarter:1,running:false,ended:false,teamTov:0,oppTeamTov:0,timeout:false,timeoutTeam:'',elapsed:0,lastTick:Date.now(),qRemaining:periodSecs,onCourt:[...starters],stints:{},minutes:{},stats:{},scoreHome:0,scoreAway:0,timeline:[],oppRoster:isFilmed?[...pendingOppRoster]:[],oppOnCourt:[],oppStints:{},oppMinutes:{},oppStats:{},oppAggregate:{oreb:0,dreb:0}};
   pendingOppRoster.forEach(p=>{state.currentGame.oppMinutes[p.id]=0;state.currentGame.oppStats[p.id]=emptyOppPlayerStats();});
   if(pendingOppStarters.size>0){const _oppNow=Date.now();pendingOppStarters.forEach(pid=>{if(state.currentGame.oppRoster.find(p=>p.id===pid)){state.currentGame.oppOnCourt.push(pid);if(state.currentGame.filmed)state.currentGame.oppStints[pid]=_oppNow;}});}
   state.players.forEach(p=>{state.currentGame.minutes[p.id]=0;state.currentGame.stats[p.id]=emptyStats();});
   const now=Date.now();starters.forEach(pid=>{state.currentGame.stints[pid]=now;});
   const snames=starters.map(pid=>{const p=state.players.find(p=>p.id===pid);return p?p.name:'?';}).join(', ');
-  addEvent('start',{label:'Starting 5: '+snames,pids:[...starters]});
+  const oppStarterNames=Array.from(pendingOppStarters).map(pid=>{const p=(state.currentGame.oppRoster||[]).find(p=>p.id===pid);return p?p.name:'?';}).join(', ');
+  addEvent('start',{label:'Starting 5: '+snames,pids:[...starters],oppStarters:Array.from(pendingOppStarters),oppStarterNames:oppStarterNames});
   state.currentGame.actionLog=[];state.currentGame.oppScoreLog=[];state.currentGame.oppActionLog=[];state.currentGame.oppStatLog=[];
   actionLog=state.currentGame.actionLog;oppScoreLog=state.currentGame.oppScoreLog;oppActionLog=state.currentGame.oppActionLog;oppStatLog=state.currentGame.oppStatLog;
   selectedPid=null;selectedOppPid=null;pendingShotHome=null;pendingShotOpp=null;
@@ -1944,7 +1945,7 @@ function setClockManual(){
   // Going backwards (more time remaining = earlier in period) = overcredited time, deduct it
   const diffSecs=newRemaining-oldRemaining;
   if(diffSecs!==0){
-    const adjMins=diffSecs/60; // positive = clock moved back (over-credited), negative = clock moved forward (under-credited)
+    const adjMins=diffSecs/60;
     cg.onCourt.forEach(pid=>{cg.minutes[pid]=Math.max(0,(cg.minutes[pid]||0)-adjMins);});
     if(cg.oppOnCourt)cg.oppOnCourt.forEach(pid=>{cg.oppMinutes[pid]=Math.max(0,(cg.oppMinutes[pid]||0)-adjMins);});
   }
@@ -1972,7 +1973,7 @@ function endGame(){
   if(wakeLock&&wakeLock.release){wakeLock.release().catch(()=>{});wakeLock=null;}
   const pc=cg.gameType==='domestic'?2:4;cg.totalGameMins=(cg.periodSecs||600)/60*pc;
   const pmf=calcLivePlusMinus();
-  const summary={minutes:{},stats:{},plusMinus:{}};
+  const summary={minutes:{},stats:{},plusMinus:{},teamTov:cg.teamTov||0,oppTeamTov:cg.oppTeamTov||0};
   state.players.forEach(p=>{summary.minutes[p.id]=cg.minutes[p.id]||0;summary.stats[p.id]={...cg.stats[p.id]};summary.plusMinus[p.id]=pmf[p.id]||0;});
   cg.summary=summary;
   // Save opp summary for reports
@@ -1998,6 +1999,20 @@ function togglePlayer(pid){
 }
 function selectPlayer(pid){selectedPid=(selectedPid===pid)?null:pid;renderOnCourtSection();renderActionPanel();}
 function deselectPlayer(){selectedPid=null;renderOnCourtSection();renderActionPanel();}
+function logTeamTov(){
+  const cg=state.currentGame;if(!cg||cg.ended)return;
+  cg.teamTov=(cg.teamTov||0)+1;
+  const tlId=addEvent('team_tov',{});
+  actionLog.push({type:'team_tov',pid:null,pts:0,tlId});
+  save();renderScores();renderMasterLast5();showToast('Team Turnover');
+}
+function logOppTeamTov(){
+  const cg=state.currentGame;if(!cg||cg.ended)return;
+  cg.oppTeamTov=(cg.oppTeamTov||0)+1;
+  const tlId=addEvent('opp_team_tov',{});
+  oppActionLog.push({type:'opp_team_tov',pid:null,pts:0,tlId});
+  save();renderScores();renderMasterLast5();showToast('Opp Team Turnover');
+}
 function logAction(type){
   const cg=state.currentGame;if(!cg||cg.ended||selectedPid===null)return;
   const s=cg.stats[selectedPid],p=state.players.find(p=>p.id===selectedPid),pn=p?p.name:'?';
@@ -2017,18 +2032,19 @@ function logAction(type){
   else if(type==='stl'){s.stl++;addEvent('stl',{player:pn});}
   else if(type==='blk'){s.blk++;addEvent('blk',{player:pn});}
   else if(type==='tov'){s.tov++;addEvent('tov',{player:pn});}
+  else if(type==='viol'){s.viol++;addEvent('viol',{player:pn});}
   else if(type==='foul'){s.foul++;addEvent('foul',{player:pn});}
   const tlId=cg.timeline&&cg.timeline.length>0?cg.timeline[cg.timeline.length-1].id:null;
   actionLog.push({pid:selectedPid,type,pts,tlId});
   renderMasterLast5();
   updateMasterLastAction((state.players.find(p=>p.id===selectedPid)?.name||'?')+' — '+(lbls[type]||type),false);
-  if(isShotAttemptType(type)&&!isUnknownShotType(type)){pendingShotHome={pid:selectedPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type),quarter:cg.quarter,tlId:tlId};}
+  if(isShotAttemptType(type)&&!isUnknownShotType(type)){pendingShotHome={pid:selectedPid,playerName:pn,playerNum:p?p.num:'',made:shotMadeForType(type),three:shotIsThreeForType(type),quarter:cg.quarter};}
   selectedPid=null;save();renderRosterTable();renderScores();renderOnCourtSection();renderActionPanel();renderHomeShotCapture();
 }
 function renderMasterLast5(){
   const el=document.getElementById('master-last-5');if(!el)return;
   const cg=state.currentGame;if(!cg){el.innerHTML='';return;}
-  const labels={'1pt':'FT made','ft_miss':'FT missed','2pt':'+2','3pt':'+3','fga':'2pt miss','fga3':'3pt miss','ast':'AST','oreb':'OREB','dreb':'DREB','stl':'STL','blk':'BLK','tov':'TO','foul':'Foul'};
+  const labels={'1pt':'FT made','ft_miss':'FT missed','2pt':'+2','3pt':'+3','fga':'2pt miss','fga3':'3pt miss','ast':'AST','oreb':'OREB','dreb':'DREB','stl':'STL','blk':'BLK','tov':'TO','viol':'Violation','team_tov':'Team TO','opp_team_tov':'Team TO','foul':'Foul','unk_made':'Unk +2','unk_miss':'Unk miss'};
   // Merge home and opp logs with team tag, sort by tlIdx descending
   const homeEntries=(actionLog||[]).map(e=>({...e,team:'home'}));
   const oppEntries=(oppActionLog||[]).map(e=>({...e,team:'opp'}));
@@ -2074,7 +2090,8 @@ function masterUndo(){
   if(latest.src==='home'){
     const p=state.players.find(p=>p.id===lastHome.pid);
     undoAction();
-    updateMasterLastAction('Undone: '+(p?p.name:'?')+' — '+lastHome.type,false);
+    const undoLabel=lastHome.type==='team_tov'?'Team Turnover':(lastHome.type==='opp_team_tov'?'Opp Team TO':lastHome.type);
+    updateMasterLastAction('Undone: '+(lastHome.pid?(state.players.find(p=>p.id===lastHome.pid)||{}).name||'?':'Team')+' — '+undoLabel,false);
   } else if(latest.src==='oppStat'){
     const p=cg.oppRoster&&cg.oppRoster.find(p=>p.id===lastOppStat.pid);
     undoOppAction();
@@ -2107,6 +2124,16 @@ function renderLastActions(logArr,elId,isOpp){
     </div>`;
   }).join('');
 }
+function removeTimelineEvent(cg,tlId,dHome,dAway){
+  if(!cg.timeline||tlId==null)return;
+  const pos=cg.timeline.findIndex(e=>e.id===tlId);
+  if(pos===-1)return;
+  cg.timeline.splice(pos,1);
+  if(dHome||dAway){for(let i=pos;i<cg.timeline.length;i++){cg.timeline[i].scoreHome=Math.max(0,(cg.timeline[i].scoreHome||0)-dHome);cg.timeline[i].scoreAway=Math.max(0,(cg.timeline[i].scoreAway||0)-dAway);}}
+  if(cg.shots&&cg.shots.length){cg.shots=cg.shots.filter(s=>s.tlId!==tlId);refreshInlineShotDots();}
+  if(typeof pendingShotHome!=='undefined'&&pendingShotHome&&pendingShotHome.tlId===tlId){pendingShotHome=null;renderHomeShotCapture();}
+  if(typeof pendingShotOpp!=='undefined'&&pendingShotOpp&&pendingShotOpp.tlId===tlId){pendingShotOpp=null;renderOppShotCapture();}
+}
 function undoAction(){
   const cg=state.currentGame;if(!cg||!actionLog.length){document.getElementById('last-action').textContent='Nothing to undo.';return;}
   const last=actionLog.pop(),s=cg.stats[last.pid];
@@ -2116,7 +2143,9 @@ function undoAction(){
   else if(last.type==='ft_miss'){if(s.fta>0)s.fta--;}
   else if(last.type==='fga'){if(s.fga>0)s.fga--;}
   else if(last.type==='fga3'){if(s.fga>0)s.fga--;if((s.fga3||0)>0)s.fga3--;}
-  else{if(s[last.type]!==undefined&&s[last.type]>0)s[last.type]--;}
+  else if(last.type==='team_tov'){cg.teamTov=Math.max(0,(cg.teamTov||1)-1);}
+  else if(last.type==='opp_team_tov'){cg.oppTeamTov=Math.max(0,(cg.oppTeamTov||1)-1);}
+  else{if(s&&s[last.type]!==undefined&&s[last.type]>0)s[last.type]--;}
   removeTimelineEvent(cg,last.tlId,last.pts||0,0);
   renderLastActions(actionLog,'last-actions-list',false);
   updateMasterLastAction('Undone: '+(state.players.find(p=>p.id===last.pid)?.name||'?')+' — '+last.type,false);
@@ -2141,24 +2170,6 @@ function getPlayerMins(pid,now){const cg=state.currentGame;if(!cg)return 0;let t
 function fmtMins(m){return Math.floor(m)+':'+String(Math.floor((m-Math.floor(m))*60)).padStart(2,'0');}
 
 // ── INLINE SHOT LOGGING (game screen — two independent capture widgets) ──
-function removeTimelineEvent(cg,tlId,dHome,dAway){
-  // Removes event and repairs running-score snapshots on all later events,
-  // so plus/minus computed from snapshots stays correct after an undo.
-  if(!cg.timeline||tlId==null)return;
-  const pos=cg.timeline.findIndex(e=>e.id===tlId);
-  if(pos===-1)return;
-  cg.timeline.splice(pos,1);
-  if(dHome||dAway){
-    for(let i=pos;i<cg.timeline.length;i++){
-      cg.timeline[i].scoreHome=Math.max(0,(cg.timeline[i].scoreHome||0)-dHome);
-      cg.timeline[i].scoreAway=Math.max(0,(cg.timeline[i].scoreAway||0)-dAway);
-    }
-  }
-  // Remove any committed shot dot linked to this event, and clear a pending one
-  if(cg.shots&&cg.shots.length){cg.shots=cg.shots.filter(s=>s.tlId!==tlId);refreshInlineShotDots();}
-  if(typeof pendingShotHome!=='undefined'&&pendingShotHome&&pendingShotHome.tlId===tlId){pendingShotHome=null;renderHomeShotCapture();}
-  if(typeof pendingShotOpp!=='undefined'&&pendingShotOpp&&pendingShotOpp.tlId===tlId){pendingShotOpp=null;renderOppShotCapture();}
-}
 function isUnknownShotType(type){return type==='unk_made'||type==='unk_miss';}
 function isShotAttemptType(type){return type==='2pt'||type==='fga'||type==='3pt'||type==='fga3';}
 function shotMadeForType(type){return type==='2pt'||type==='3pt'||type==='unk_made';}
@@ -2173,7 +2184,7 @@ function svgPointFromEvent(svg,evt){
 function commitShotToGame(shotTeam,pending,x,y){
   const cg=state.currentGame;if(!cg||!pending)return;
   if(!cg.shots)cg.shots=[];
-  cg.shots.push({id:'s'+Date.now()+Math.random().toString(36).slice(2,7),x:Math.round(x*10)/10,y:Math.round(y*10)/10,made:!!pending.made,shotTeam,player_id:pending.pid,player_name:pending.playerName,player_num:pending.playerNum,period:(pending.quarter!=null?pending.quarter:cg.quarter),ts:Date.now(),tlId:(pending.tlId!=null?pending.tlId:null)});
+  cg.shots.push({id:'s'+Date.now()+Math.random().toString(36).slice(2,7),x:Math.round(x*10)/10,y:Math.round(y*10)/10,made:!!pending.made,shotTeam,player_id:pending.pid,player_name:pending.playerName,player_num:pending.playerNum,period:(pending.quarter!=null?pending.quarter:cg.quarter),ts:Date.now()});
   save();
   refreshInlineShotDots();
 }
@@ -2642,7 +2653,7 @@ function renderSeason(){
   state.players.forEach(function(p){totS[p.id]=emptyStats();gpC[p.id]=0;totPm[p.id]=0;});
   games.forEach(function(g){if(g.summary){state.players.forEach(function(p){
     const hm=(g.summary.minutes[p.id]||0)>0.5;if(hm)gpC[p.id]++;
-    if(g.summary.stats){['fgm','fga','fgm3','fga3','ftm','fta','ast','reb','stl','blk','tov','foul','pts'].forEach(function(k){totS[p.id][k]+=(g.summary.stats[p.id]?g.summary.stats[p.id][k]||0:0);});}
+    if(g.summary.stats){['fgm','fga','fgm3','fga3','ftm','fta','ast','reb','stl','blk','tov','viol','foul','pts'].forEach(function(k){totS[p.id][k]+=(g.summary.stats[p.id]?g.summary.stats[p.id][k]||0:0);});}
     totPm[p.id]+=(g.summary.plusMinus?g.summary.plusMinus[p.id]||0:0);
   });}});
   renderSeasonStatsTable(totS,gpC,totPm);
@@ -2669,9 +2680,7 @@ function renderMinsSections(games){
   games=games||state.games;const c=document.getElementById('mins-sections');if(!c)return;
   if(!games.length){c.innerHTML='<div style="font-size:13px;color:var(--muted);padding:16px 0;">No games yet</div>';return;}
   const rep=games.filter(g=>g.gameType!=='domestic'&&g.gameType!=='tournament'),dom=games.filter(g=>g.gameType==='domestic');
-  // Group VJBL by their actual quarter length too (handles mixed comps in future)
-    const vjblGroups={};rep.forEach(g=>{const qm=Math.round(getGameTotalMins(g)/4),k=qm+'min';if(!vjblGroups[k])vjblGroups[k]={qm,games:[]};vjblGroups[k].games.push(g);});
-    const dg={};dom.forEach(g=>{const hl=Math.round(getGameTotalMins(g)/2),k=hl+'min';if(!dg[k])dg[k]={hl,games:[]};dg[k].games.push(g);});
+  const dg={};dom.forEach(g=>{const hl=Math.round(getGameTotalMins(g)/2),k=hl+'min';if(!dg[k])dg[k]={hl,games:[]};dg[k].games.push(g);});
   function buildTable(fg,label,fs){
     if(!fg.length)return'';
     const sorted=[...state.players].sort((a,b)=>a.id-b.id);
@@ -2698,7 +2707,6 @@ function renderMinsSections(games){
   let html='';
   if(currentMinsFilter==='all'||currentMinsFilter==='vjbl'){
       if(rep.length>0){
-        // Derive actual quarter length from game data — don't assume 10 min
         const vjblQMins=Math.round(getGameTotalMins(rep[0])/4);
         const vjblLabel='VJBL — 4 × '+vjblQMins+' min';
         const vjblFs=(vjblQMins*4*5)/state.players.length;
@@ -2869,8 +2877,6 @@ function computePlusMinus(g){
 function computeRating(s,mins,pm,gameMins){
   if(mins<0.5)return null;
   const gm=gameMins||40;
-  // Floor at 25% of game length: brief cameos can't explode the per-game rate
-  // and compress everyone else's rating in the squad-range normalisation.
   const sc=gm/Math.max(mins,gm*0.25);
   const reb=(s.oreb||0)+(s.dreb||0);
   return((s.pts||0)*1.0+(s.stl||0)*1.5+(s.blk||0)*1.2+reb*0.8+(s.ast||0)*1.0-(s.tov||0)*1.5-(s.foul||0)*1.0)*sc+pm*0.15;
@@ -2900,13 +2906,13 @@ function openGameReport(idx){
   sRows+=`<tr style="background:#f5f5f7;font-weight:700;border-top:2px solid #dde;"><td style="text-align:left;padding:7px 8px;">TEAM</td><td>—</td><td>—</td><td>${tpts}</td><td>${tftm}/${tfta}</td><td style="color:#666;">${tfta>0?Math.round(tftm/tfta*100)+'%':'—'}</td><td style="color:#2563eb;">${tfgm}/${tfga}</td><td style="color:#666;">${tfga>0?Math.round(tfgm/tfga*100)+'%':'—'}</td><td>${tast}</td><td>${toreb}</td><td>${tdreb}</td><td>${tstl}</td><td>${tblk}</td><td style="color:#dc2626;">${ttov}</td><td style="color:#d97706;">${tfoul}</td><td>—</td></tr>`;
   // Advanced stats table — home team
   const totMins=pd.reduce((a,p)=>a+p.mins,0);
-  const RATE_MINS=Math.round(getGameTotalMins(g))||40; // scale rates to THIS game's length
+  const RATE_MINS=Math.round(getGameTotalMins(g))||40;
   function per40(v,m){return m<0.5?'—':(v*RATE_MINS/m).toFixed(1);}
   function di40(s,m){if(m<5)return'—';const di=(((s.stl||0)+(s.blk||0))-(s.tov||0)-(s.foul||0))*RATE_MINS/m;return(di>0?'+':'')+di.toFixed(1);}
   function effi(s){const pos=(s.pts||0)+(s.ast||0)+(s.oreb||0)+(s.dreb||0)+(s.stl||0)+(s.blk||0);const neg=(s.tov||0)+(s.foul||0);const fga=s.fga||0,ftm=s.ftm||0,fgm=s.fgm||0;return pos-neg;}
   let advRows='';
   sbd.forEach(p=>{if(p.mins<0.5)return;const s=p.s,m=p.mins;const ts=(s.fgm3||0)>0?Math.round((s.fgm3||0)/(s.fga3||1)*100)+'%':'—';const efft=s.fga>0?Math.round(((s.fgm||0)+(s.fgm3||0)*0.5)/s.fga*100)+'%':'—';const d=di40(s,m);const dcol=d==='—'?'#999':parseFloat(d)>0?'#1a6b4a':parseFloat(d)<0?'#991b1b':'#666';advRows+=`<tr><td style="text-align:left;font-weight:500;padding:5px 7px;">${p.num} ${p.name}</td><td>${per40(s.pts||0,m)}</td><td>${ts}</td><td>${efft}</td><td>${per40(s.ast||0,m)}</td><td>${per40((s.oreb||0)+(s.dreb||0),m)}</td><td>${per40(s.stl||0,m)}</td><td style="color:${dcol};font-weight:600;">${d}</td><td>${effi(s)}</td></tr>`;});
-  const advHtml=advRows?`<h2>Advanced Stats — ${homeTeam.trim()}</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;text-align:left;">Player</th><th title="Points per full game (${RATE_MINS} min)">Pts/${RATE_MINS}</th><th title="3-point percentage">3P%</th><th title="Effective FG%: (FGM + 0.5×3PM) / FGA">eFG%</th><th title="Assists per full game">Ast/${RATE_MINS}</th><th title="Rebounds per full game">Reb/${RATE_MINS}</th><th title="Steals per full game">Stl/${RATE_MINS}</th><th title="Defensive Impact per full game: (STL+BLK-TOV-FL) scaled to game length">DI/${RATE_MINS}</th><th title="Efficiency: (PTS+AST+REB+STL+BLK) − (TOV+FL)">EFF</th></tr></thead><tbody>${advRows}</tbody></table></div><div style="font-size:10px;color:#bbb;margin-top:5px;">DI/${RATE_MINS} = Defensive Impact per full game (${RATE_MINS} min): (STL+BLK−TOV−FL)×${RATE_MINS}/MIN · eFG% weights 3-pointers · EFF = raw efficiency units</div>`:'';
+  const advHtml=advRows?`<h2>Advanced Stats — ${homeTeam.trim()}</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;text-align:left;">Player</th><th title="Points per 40 min">Pts/40</th><th title="3-point percentage">3P%</th><th title="Effective FG%: (FGM + 0.5×3PM) / FGA">eFG%</th><th title="Assists per 40 min">Ast/40</th><th title="Rebounds per 40 min">Reb/40</th><th title="Steals per 40 min">Stl/40</th><th title="Defensive Impact per 40: (STL+BLK-TOV-FL)×40/min">DI/40</th><th title="Efficiency: (PTS+AST+REB+STL+BLK) − (TOV+FL)">EFF</th></tr></thead><tbody>${advRows}</tbody></table></div><div style="font-size:10px;color:#bbb;margin-top:5px;">DI/40 = Defensive Impact per 40 min: (STL+BLK−TOV−FL)×40/MIN · eFG% weights 3-pointers · EFF = raw efficiency units</div>`:'';
 
   // Period scores
   let qHtml='';
@@ -3004,7 +3010,6 @@ function openGameReport(idx){
       const qEvs=allEventsForTl.filter(ev=>(ev.q||1)===qNum);
       if(!qEvs.length)return;
       const ql=pd3[qk]||qk;let rows='';
-      // Render starting lineups at top of Q1
       if(qNum===1){
         const startEv=qEvs.find(ev=>ev.type==='start');
         if(startEv){
@@ -3050,7 +3055,7 @@ function openGameReport(idx){
         const d=di40(s,m);const dcol=d==='—'?'#999':parseFloat(d)>0?'#1a6b4a':parseFloat(d)<0?'#991b1b':'#666';
         oppAdvRows+=`<tr><td style="text-align:left;font-weight:500;padding:5px 7px;">${p.num} ${p.name}</td><td>${per40(s.pts||0,m)}</td><td>${ts2}</td><td>${efft}</td><td>${per40(s.ast||0,m)}</td><td>${per40((s.oreb||0)+(s.dreb||0),m)}</td><td>${per40(s.stl||0,m)}</td><td style="color:${dcol};font-weight:600;">${d}</td><td>${effi(s)}</td></tr>`;
       });
-      const oppAdvHtml=oppAdvRows?`<h2 style="color:#dc2626;border-color:#dc2626;">${opp} — Advanced Stats</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;text-align:left;">Player</th><th>Pts/${RATE_MINS}</th><th>3P%</th><th>eFG%</th><th>Ast/${RATE_MINS}</th><th>Reb/${RATE_MINS}</th><th>Stl/${RATE_MINS}</th><th>DI/${RATE_MINS}</th><th>EFF</th></tr></thead><tbody>${oppAdvRows}</tbody></table></div>`:'';
+      const oppAdvHtml=oppAdvRows?`<h2 style="color:#dc2626;border-color:#dc2626;">${opp} — Advanced Stats</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;text-align:left;">Player</th><th>Pts/40</th><th>3P%</th><th>eFG%</th><th>Ast/40</th><th>Reb/40</th><th>Stl/40</th><th>DI/40</th><th>EFF</th></tr></thead><tbody>${oppAdvRows}</tbody></table></div>`:'';
       oppStatsHtml+=`<h2>${opp} — Opposition Stats</h2><div style="overflow-x:auto;"><table><thead><tr><th style="min-width:120px;text-align:left;">Player</th><th>PTS</th><th>FT</th><th>FT%</th><th>FG</th><th>FG%</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead><tbody>${oppRows}</tbody></table></div>`;oppStatsHtml+=oppAdvHtml;
     }
   }
@@ -3231,7 +3236,7 @@ ${fhLabel}${faLabel}
   }
   const gameFlowHtml=buildGameFlowChart(g);
 
-  const note='Rating (1–10): per-full-game rates — PTS ×1.0 · STL ×1.5 · BLK ×1.2 · REB ×0.8 · AST ×1.0 − TOV ×1.5 − F ×1.0, scaled to this game\'s length (minutes floored at 25% of game length) + plus/minus ×0.15, normalised to squad range';
+  const note='Rating (1–10): Pts/40 ×1.0 · STL/40 ×1.5 · BLK/40 ×1.2 · REB/40 ×0.8 · AST/40 ×1.0 − TOV/40 ×1.5 − F/40 ×1.0 + plus/minus ×0.15, scaled to squad range';
   const html2=`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${homeTeam.trim()} — ${rl} vs ${opp}</title>
 <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f5f5f7;color:#1a1a1a;}.page{background:#fff;max-width:900px;margin:0 auto;padding:28px 28px 40px;}.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e8e8e8;}.page-title h1{font-size:17px;font-weight:700;margin:0 0 3px;}.page-title .sub{font-size:11px;color:#888;}.result{font-size:13px;font-weight:700;border-radius:6px;padding:6px 12px;background:${rBg};color:${rCol};}.scores{display:flex;gap:24px;margin:16px 0 20px;justify-content:center;}.sc{text-align:center;background:#f8faff;border-radius:10px;padding:12px 20px;min-width:100px;}.sc-n{font-size:11px;color:#666;font-weight:600;text-transform:uppercase;margin-bottom:4px;}.sc-v{font-family:monospace;font-size:38px;font-weight:800;line-height:1;}.mg{text-align:center;font-size:12px;color:#888;font-style:italic;margin-bottom:20px;}h2{font-size:13px;font-weight:700;color:#3b82f6;border-bottom:2px solid #3b82f6;padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;letter-spacing:0.05em;}table{width:100%;border-collapse:collapse;font-size:11.5px;}th{font-size:10px;font-weight:600;color:#888;text-align:right;padding:5px 7px;border-bottom:1px solid #e8e8e8;white-space:nowrap;text-transform:uppercase;}th:first-child{text-align:left;}td{padding:6px 7px;border-bottom:1px solid #f0f0f0;text-align:right;vertical-align:middle;}td:first-child{text-align:left;}tfoot td{background:#f5f5f7;border-top:2px solid #dde;border-bottom:none;}.note{font-size:10px;color:#bbb;margin-top:8px;line-height:1.6;}.pb{display:block;margin:20px auto 0;padding:12px 28px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}.ios{text-align:center;font-size:12px;color:#888;margin-top:10px;}@media print{.pb,.ios{display:none;}body{background:#fff;}td,th{font-size:10px;padding:4px 5px;}}</style></head>
 <body><div class="page">
@@ -3260,18 +3265,18 @@ ${g.editNotes?`<div style="margin-top:24px;padding:14px 16px;background:#fffbf0;
 <tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">BLK</td><td style="padding:5px 8px;">Blocks — deflecting or rejecting an opposition shot attempt.</td></tr>
 <tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">TO</td><td style="padding:5px 8px;">Turnovers — losing possession without taking a shot (bad pass, travel, charge etc).</td></tr>
 <tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">FL</td><td style="padding:5px 8px;">Personal fouls — contact fouls called against the player. Highlighted red at 4+.</td></tr>
-<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">Pts/40</td><td style="padding:5px 8px;">Points per full game — scoring normalised to this game's total minutes (e.g. 28 for 4×7 min quarters). Formula: PTS × GameMins ÷ MIN, with MIN floored at 25% of game length so brief cameos aren't inflated.</td></tr>
-<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">Ast/40</td><td style="padding:5px 8px;">Assists per full game — assist rate normalised to the game's total minutes. Useful for comparing players with different court time.</td></tr>
-<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">Reb/40</td><td style="padding:5px 8px;">Total rebounds (OREB + DREB) per full game.</td></tr>
-<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">Stl/40</td><td style="padding:5px 8px;">Steals per full game.</td></tr>
-<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">DI/40</td><td style="padding:5px 8px;">Defensive Impact per full game. Formula: (STL + BLK − TOV − FL) × GameMins ÷ MIN. Positive = net positive defensive contributor. Minimum 5 minutes required.</td></tr>
+<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">Pts/40</td><td style="padding:5px 8px;">Points per 40 minutes — normalises scoring to a full game equivalent regardless of minutes played. Formula: PTS × 40 ÷ MIN.</td></tr>
+<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">Ast/40</td><td style="padding:5px 8px;">Assists per 40 minutes — normalised assist rate. Useful for comparing players with different court time.</td></tr>
+<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">Reb/40</td><td style="padding:5px 8px;">Total rebounds (OREB + DREB) per 40 minutes.</td></tr>
+<tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">Stl/40</td><td style="padding:5px 8px;">Steals per 40 minutes.</td></tr>
+<tr><td style="padding:5px 8px;font-weight:600;vertical-align:top;">DI/40</td><td style="padding:5px 8px;">Defensive Impact per 40 minutes. Formula: (STL + BLK − TOV − FL) × 40 ÷ MIN. Positive = net positive defensive contributor. Minimum 5 minutes required.</td></tr>
 <tr style="background:#f9f9f9;"><td style="padding:5px 8px;font-weight:600;vertical-align:top;">EFF</td><td style="padding:5px 8px;">Raw efficiency units. Formula: (PTS + AST + OREB + DREB + STL + BLK) − (TOV + FL). A simple total contribution score — not normalised for minutes.</td></tr>
 </tbody></table>
 <div style="margin-top:20px;padding:14px 16px;background:#f0f6ff;border-left:3px solid #3b82f6;border-radius:4px;">
 <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:6px;">Player Rating (1.0 – 10.0)</div>
 <div style="font-size:11px;color:#444;line-height:1.7;">
 The player rating is a single number summarising each player's contribution, scaled from 1 to 10 relative to the squad in this game.<br>
-<strong>Formula:</strong> Raw score = (Pts/Gm × 1.0) + (Stl/Gm × 1.5) + (Blk/Gm × 1.2) + (Reb/Gm × 0.8) + (Ast/Gm × 1.0) − (Tov/Gm × 1.5) − (Fouls/Gm × 1.0) + (Plus/minus × 0.15), where /Gm = per full game with minutes floored at 25% of game length<br>
+<strong>Formula:</strong> Raw score = (Pts/40 × 1.0) + (Stl/40 × 1.5) + (Blk/40 × 1.2) + (Reb/40 × 0.8) + (Ast/40 × 1.0) − (Tov/40 × 1.5) − (Fouls/40 × 1.0) + (Plus/minus × 0.15)<br>
 Defensive contributions (steals, blocks) are weighted higher than scoring. Turnovers and fouls are penalised. The raw scores are then scaled so the best performer in each game scores 10.0 and the lowest scores 1.0 — meaning ratings are relative to the squad, not absolute.<br>
 <strong>Minimum 30 seconds</strong> of court time required. DNP = Did Not Play (below threshold).
 </div>
@@ -3292,14 +3297,14 @@ function openEditModal(idx){
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><div><div class="field-label">Opposition</div><input type="text" id="edit-opponent" value="${g.opponent||''}"/></div><div><div class="field-label">Round</div><input type="text" id="edit-round" value="${g.round||''}"/></div></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><div><div class="field-label">Date</div><input type="text" id="edit-date" value="${g.date||''}"/></div><div><div class="field-label">Time</div><input type="text" id="edit-time" value="${g.time||''}"/></div></div>
   <div><div class="field-label">Venue</div><input type="text" id="edit-venue" value="${g.venue||''}"/></div></div>
-  <div style="overflow-x:auto;"><table class="edit-tbl"><thead><tr><th>Player</th><th>MIN</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FGM</th><th>FGA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead><tbody>`;
-  sorted.forEach(p=>{const mins=g.summary?Math.round(g.summary.minutes[p.id]||0):0,s=g.summary&&g.summary.stats?g.summary.stats[p.id]||emptyStats():emptyStats();html+=`<tr><td>${p.num} ${p.name}</td><td><input class="edit-input" data-pid="${p.id}" data-field="mins" value="${mins}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="pts" value="${s.pts||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="ftm" value="${s.ftm||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="fta" value="${s.fta||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="fgm" value="${s.fgm}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="fga" value="${s.fga}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="ast" value="${s.ast}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="oreb" value="${s.oreb||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="dreb" value="${s.dreb||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="stl" value="${s.stl}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="blk" value="${s.blk}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="tov" value="${s.tov}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="foul" value="${s.foul||0}"/></td></tr>`;});
+  <div style="overflow-x:auto;"><table class="edit-tbl"><thead><tr><th>Player</th><th>MIN</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FGM</th><th>FGA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>VL</th><th>FL</th></tr></thead><tbody>`;
+  sorted.forEach(p=>{const mins=g.summary?Math.round(g.summary.minutes[p.id]||0):0,s=g.summary&&g.summary.stats?g.summary.stats[p.id]||emptyStats():emptyStats();html+=`<tr><td>${p.num} ${p.name}</td><td><input class="edit-input" data-pid="${p.id}" data-field="mins" value="${mins}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="pts" value="${s.pts||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="ftm" value="${s.ftm||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="fta" value="${s.fta||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="fgm" value="${s.fgm}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="fga" value="${s.fga}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="ast" value="${s.ast}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="oreb" value="${s.oreb||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="dreb" value="${s.dreb||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="stl" value="${s.stl}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="blk" value="${s.blk}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="tov" value="${s.tov}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="viol" value="${s.viol||0}"/></td><td><input class="edit-input" data-pid="${p.id}" data-field="foul" value="${s.foul||0}"/></td></tr>`;});
   html+=`</tbody></table></div>`;
   if(g.oppRoster&&g.oppRoster.length){
     const oppSorted=[...g.oppRoster].sort((a,b)=>a.id-b.id);
     html+=`<div style="margin-top:16px;margin-bottom:12px;border-top:1px solid var(--border);padding-top:12px;"><div style="font-size:11px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Opposition player stats — ${g.opponent||'Opponent'}</div>
-    <div style="overflow-x:auto;"><table class="edit-tbl"><thead><tr><th>Player</th><th>MIN</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FGM</th><th>FGA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>FL</th></tr></thead><tbody>`;
-    oppSorted.forEach(p=>{const mins=g.oppSummary?Math.round(g.oppSummary.minutes[p.id]||0):0,s=g.oppSummary&&g.oppSummary.stats?g.oppSummary.stats[p.id]||emptyOppPlayerStats():emptyOppPlayerStats();html+=`<tr><td>${p.num} ${p.name}</td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="mins" value="${mins}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="pts" value="${s.pts||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="ftm" value="${s.ftm||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="fta" value="${s.fta||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="fgm" value="${s.fgm||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="fga" value="${s.fga||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="ast" value="${s.ast||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="oreb" value="${s.oreb||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="dreb" value="${s.dreb||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="stl" value="${s.stl||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="blk" value="${s.blk||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="tov" value="${s.tov||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="foul" value="${s.foul||0}"/></td></tr>`;});
+    <div style="overflow-x:auto;"><table class="edit-tbl"><thead><tr><th>Player</th><th>MIN</th><th>PTS</th><th>FTM</th><th>FTA</th><th>FGM</th><th>FGA</th><th>AST</th><th>OREB</th><th>DREB</th><th>STL</th><th>BLK</th><th>TO</th><th>VL</th><th>FL</th></tr></thead><tbody>`;
+    oppSorted.forEach(p=>{const mins=g.oppSummary?Math.round(g.oppSummary.minutes[p.id]||0):0,s=g.oppSummary&&g.oppSummary.stats?g.oppSummary.stats[p.id]||emptyOppPlayerStats():emptyOppPlayerStats();html+=`<tr><td>${p.num} ${p.name}</td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="mins" value="${mins}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="pts" value="${s.pts||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="ftm" value="${s.ftm||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="fta" value="${s.fta||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="fgm" value="${s.fgm||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="fga" value="${s.fga||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="ast" value="${s.ast||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="oreb" value="${s.oreb||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="dreb" value="${s.dreb||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="stl" value="${s.stl||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="blk" value="${s.blk||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="tov" value="${s.tov||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="viol" value="${s.viol||0}"/></td><td><input class="edit-input-opp" data-pid="${p.id}" data-field="foul" value="${s.foul||0}"/></td></tr>`;});
     html+=`</tbody></table></div></div>`;
   }
   html+=`<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div><div class="field-label" style="margin-bottom:4px;">${state.config.clubName||'Home'} score</div><input type="text" id="edit-score-home" value="${g.scoreHome||0}"/></div><div><div class="field-label" style="margin-bottom:4px;">${g.opponent||'Opp'} score</div><input type="text" id="edit-score-away" value="${g.scoreAway||0}"/></div></div><div style="margin-top:12px;"><div class="field-label" style="margin-bottom:4px;">Stat correction notes <span style="font-weight:400;color:var(--muted);">(appears in report)</span></div><textarea id="edit-notes" placeholder="e.g. Q3 — Eva's 2 steals moved to Zoe, wrong player selected live. FT corrected for Harper." style="width:100%;height:72px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;resize:none;outline:none;">${g.editNotes||''}</textarea></div>`;
@@ -3316,7 +3321,7 @@ function saveEditModal(){
   if(sh)g.scoreHome=parseInt(sh.value)||0;if(sa)g.scoreAway=parseInt(sa.value)||0;
   const en=document.getElementById('edit-notes');if(en)g.editNotes=en.value.trim();
   save();closeEditModal();renderSeason();
-  if(sbOk())syncGameToCloud(g); // keep cloud copy in step with corrections
+  if(sbOk())syncGameToCloud(g);
 }
 function closeEditModal(){document.getElementById('edit-modal').classList.remove('visible');editingGameIdx=null;}
 
@@ -3339,15 +3344,6 @@ function addPlayer(){
   document.getElementById('new-num').value='';document.getElementById('new-name').value='';save();renderSetup();
 }
 function clearAll(){if(!confirm('Clear all game data? Squad will be kept.'))return;state={...state,games:[],currentGame:null};pendingStarters=new Set();save();render();renderStarterGrid();}
-function deleteGame(idx){
-  const g=state.games[idx];if(!g)return;
-  const label=(g.round?'Round '+g.round:'Game')+' vs '+(g.opponent||'Unknown')+' ('+g.date+')';
-  if(!confirm('Delete '+label+'? This cannot be undone.'))return;
-  state.games.splice(idx,1);
-  if(state.currentGame&&state.currentGame.id===g.id)state.currentGame=null;
-  save();closeGameDetail();renderSeason();
-  showToast('Game deleted');
-}
 
 // ── DATA / CLOUD ──────────────────────────────────────
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='courttrack_backup_'+new Date().toISOString().split('T')[0]+'.json';a.click();URL.revokeObjectURL(url);}
@@ -3419,7 +3415,6 @@ async function pullFromCloud(){
     const cg=await sbLoadGames();
     if(!cg||!cg.length){showToast('No games found in cloud');return;}
     autoRemapPlayerIds(cg);
-    // MERGE: cloud wins for games it has, but never destroy local-only games
     const cloudIds=new Set(cg.map(g=>String(g.id)));
     const localOnly=state.games.filter(g=>!cloudIds.has(String(g.id)));
     state.games=[...cg,...localOnly];
@@ -3432,16 +3427,7 @@ async function pullFromCloud(){
 function exportGameJSON(){
   const g=(gdpIdx!==null)?state.games[gdpIdx]:null;
   if(!g){showToast('No game selected');return;}
-  const payload={
-    exportedAt:new Date().toISOString(),
-    app:'CourtTrack',
-    schema:1,
-    club:state.config.clubName||'',
-    team:state.config.teamName||'',
-    season:state.config.season||'',
-    roster:state.players.map(p=>({id:p.id,num:p.num,name:p.name})),
-    game:g
-  };
+  const payload={exportedAt:new Date().toISOString(),app:'CourtTrack',schema:1,club:state.config.clubName||'',team:state.config.teamName||'',season:state.config.season||'',roster:state.players.map(p=>({id:p.id,num:p.num,name:p.name})),game:g};
   const json=JSON.stringify(payload,null,1);
   const blob=new Blob([json],{type:'application/json'}),url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -3451,7 +3437,15 @@ function exportGameJSON(){
   a.click();URL.revokeObjectURL(url);
   showToast('Game JSON exported');
 }
-
+function deleteGame(idx){
+  const g=state.games[idx];if(!g)return;
+  const label=(g.round?'Round '+g.round:'Game')+' vs '+(g.opponent||'Unknown')+' ('+g.date+')';
+  if(!confirm('Delete '+label+'? This cannot be undone.'))return;
+  state.games.splice(idx,1);
+  if(state.currentGame&&state.currentGame.id===g.id)state.currentGame=null;
+  save();closeGameDetail();renderSeason();
+  showToast('Game deleted');
+}
 function exportCSV(){
   const games=state.games;if(!games.length){showToast('No games to export');return;}
   const sorted=[...state.players].sort((a,b)=>a.id-b.id);
@@ -3591,7 +3585,7 @@ function endReopenSession(){
   if(wakeLock&&wakeLock.release){wakeLock.release().catch(()=>{});wakeLock=null;}
   const pc=cg.gameType==='domestic'?2:4;cg.totalGameMins=(cg.periodSecs||600)/60*pc;
   const pmf=calcLivePlusMinus();
-  const summary={minutes:{},stats:{},plusMinus:{}};
+  const summary={minutes:{},stats:{},plusMinus:{},teamTov:cg.teamTov||0,oppTeamTov:cg.oppTeamTov||0};
   state.players.forEach(function(p){summary.minutes[p.id]=cg.minutes[p.id]||0;summary.stats[p.id]=Object.assign({},cg.stats[p.id]);summary.plusMinus[p.id]=pmf[p.id]||0;});
   cg.summary=summary;
   const oppSum={minutes:{},stats:{}};
