@@ -978,6 +978,13 @@ function teamId(){
   const legacyMap={'eltham_wildcats_12_2_girls':'eltham_u12_wildcats'};
   return legacyMap[generated]||generated;
 }
+// All known team keys this deployment may have used historically
+function allTeamKeys(){
+  const primary=teamId();
+  const aliases=['eltham_u12_girls2','eltham_u12_wildcats','eltham_wildcats_u12_girls_2','eltham_wildcats_12_2_girls'];
+  const all=new Set([primary,...aliases]);
+  return Array.from(all);
+}
 async function sbFetch(path,options={}){
   if(!sbOk())return null;
   const res=await fetch(sbUrl()+'/rest/v1/'+path,{
@@ -991,9 +998,22 @@ async function sbSaveGame(game){
   return await sbFetch('games?on_conflict=game_id',{method:'POST',prefer:'resolution=merge-duplicates,return=minimal',body:JSON.stringify({game_id:String(game.id),team:teamId(),data:JSON.stringify(game)})});
 }
 async function sbLoadGames(){
-  const rows=await sbFetch('games?team=eq.'+teamId()+'&order=game_id.desc&select=*');
-  if(!rows)return[];
-  return rows.map(r=>typeof r.data==='string'?JSON.parse(r.data):r.data);
+  // Fetch across all known team keys so legacy-keyed games are found
+  const keys=allTeamKeys();
+  const seen=new Set();
+  const all=[];
+  for(const k of keys){
+    const rows=await sbFetch('games?team=eq.'+encodeURIComponent(k)+'&order=game_id.desc&select=*');
+    if(!rows)continue;
+    rows.forEach(r=>{
+      if(!seen.has(r.game_id)){
+        seen.add(r.game_id);
+        const g=typeof r.data==='string'?JSON.parse(r.data):r.data;
+        all.push(g);
+      }
+    });
+  }
+  return all;
 }
 async function sbLoadGamesForKey(url,key){
   // Used during join flow when state.config not yet set
@@ -3408,6 +3428,40 @@ async function pushAllToCloud(){
   for(const g of state.games){const r=await sbSaveGame(g);if(r!==null)ok++;}
   showToast('✓ Synced '+ok+'/'+state.games.length+' games');
 }
+async function autoSyncOnLoad(){
+  if(!sbOk())return;
+  try{
+    // Step 1: Pull games from cloud (across all known team keys) that aren't local
+    const cloudGames=await sbLoadGames();
+    let pulled=0;
+    if(cloudGames&&cloudGames.length){
+      autoRemapPlayerIds(cloudGames);
+      const localIds=new Set(state.games.map(g=>String(g.id)));
+      const newFromCloud=cloudGames.filter(g=>!localIds.has(String(g.id)));
+      if(newFromCloud.length){
+        state.games=[...state.games,...newFromCloud];
+        state.games.sort((a,b)=>parseDateStr(b.date)-parseDateStr(a.date));
+        pulled=newFromCloud.length;
+      }
+    }
+    // Step 2: Push local games that aren't in cloud
+    const cloudIds=new Set((cloudGames||[]).map(g=>String(g.id)));
+    const toPush=state.games.filter(g=>!cloudIds.has(String(g.id)));
+    let pushed=0;
+    for(const g of toPush){
+      const r=await sbSaveGame(g);
+      if(r!==null)pushed++;
+    }
+    // Step 3: Save and re-render if anything changed
+    if(pulled>0||pushed>0){
+      save();
+      renderSeason();
+      if(pulled>0&&pushed>0)showToast('↕ Synced: pulled '+pulled+', pushed '+pushed+' games');
+      else if(pulled>0)showToast('↓ Pulled '+pulled+' game'+(pulled===1?'':'s')+' from cloud');
+      else showToast('↑ Pushed '+pushed+' game'+(pushed===1?'':'s')+' to cloud');
+    }
+  }catch(e){console.warn('CourtTrack: autoSyncOnLoad failed',e);}
+}
 async function pullFromCloud(){
   if(!sbOk()){showToast('⚠ No cloud credentials — add in Squad tab');return;}
   showToast('Pulling from cloud...');
@@ -3622,6 +3676,7 @@ applyTheme();
   }catch(e){}
 })();
 load();
+setTimeout(autoSyncOnLoad, 800); // auto-sync after state is ready
 // -- PRE-SEEDED TEAM CONFIG (build-injected) --
 /* BUILD:PRESEED_BLOCK */ (function preseed(){
   /* BUILD:PRESEED_KEY */ var KEY = 'courttrack_eltham122';
