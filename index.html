@@ -275,22 +275,22 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
 
 <!-- ONBOARDING OVERLAY -->
 <div class="onboard-overlay" id="onboard-overlay">
-  <div class="onboard-logo">🏀 CourtTrack</div>
-  <div class="onboard-sub">Basketball statistics tracker</div>
+  <div class="onboard-logo">🏀 Eltham Wildcats U12 Girls 2</div>
+  <div class="onboard-sub">Stat Centre</div>
 
   <!-- PATH CHOOSER -->
   <div id="ob-path-chooser">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-      <button onclick="showObPath('join')" style="padding:16px 10px;border-radius:var(--rs);border:2px solid var(--accent);background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:center;line-height:1.4;">
-        <div style="font-size:20px;margin-bottom:4px;">🔗</div>
-        <div>Join existing team</div>
-        <div style="font-size:11px;opacity:0.85;margin-top:2px;">Load squad & data from cloud</div>
-      </button>
-      <button onclick="showObPath('new')" style="padding:16px 10px;border-radius:var(--rs);border:2px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:center;line-height:1.4;">
-        <div style="font-size:20px;margin-bottom:4px;">✨</div>
-        <div>New team</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Set up from scratch</div>
-      </button>
+    <div class="onboard-section" style="text-align:center;padding:26px 16px;">
+      <div style="font-size:40px;margin-bottom:10px;">🏀</div>
+      <div style="font-size:17px;font-weight:600;margin-bottom:6px;">Welcome to the Eltham Wildcats U12 Girls 2 Stat Centre</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;">Tap below to load the squad and every game logged so far.</div>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="quickLoadTeam()">Load our data →</button>
+      <div id="ob-quickload-status" style="font-size:12px;color:var(--muted);margin-top:10px;min-height:18px;"></div>
+    </div>
+    <div style="text-align:center;margin-top:4px;">
+      <span style="font-size:11.5px;color:var(--muted);cursor:pointer;text-decoration:underline;" onclick="showObPath('join')">Enter connection details manually</span>
+      <span style="color:var(--muted);"> &middot; </span>
+      <span style="font-size:11.5px;color:var(--muted);cursor:pointer;text-decoration:underline;" onclick="showObPath('new')">Set up a different team</span>
     </div>
   </div>
 
@@ -300,7 +300,7 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
     <div id="ob-auto-connect" style="display:none;">
       <div class="onboard-section" style="text-align:center;padding:20px 0;">
         <div style="font-size:40px;margin-bottom:8px;">🔗</div>
-        <div style="font-size:16px;font-weight:600;margin-bottom:6px;" id="ob-auto-team-name">Connecting to your team...</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:6px;" id="ob-auto-team-name">Connecting to the Eltham Wildcats U12 Girls 2 Stat Centre...</div>
         <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Tap below to load your squad and season data.</div>
         <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="joinExistingTeam()">🏀 Connect &amp; load →</button>
       </div>
@@ -903,6 +903,15 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
     <div class="sec-label">Cloud credentials</div>
     <div class="field"><div class="field-label">Supabase URL</div><input type="text" id="settings-sb-url" placeholder="https://xxxx.supabase.co" oninput="updateCloudSettings()"/></div>
     <div class="field"><div class="field-label">Supabase anon key</div><input type="text" id="settings-sb-key" placeholder="eyJhbGci..." oninput="updateCloudSettings()"/></div>
+    <div class="field"><div class="field-label">Cloud sign-in — required to save games to cloud</div>
+      <input type="email" id="settings-sb-email" placeholder="coach@email.com" autocomplete="username" style="margin-bottom:6px;"/>
+      <input type="password" id="settings-sb-pass" placeholder="Password" autocomplete="current-password"/>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary" style="padding:9px 14px;" onclick="settingsSignIn()">Sign in</button>
+        <button class="btn" style="padding:9px 14px;" onclick="sbSignOut();updateAuthStatus();">Sign out</button>
+        <span id="sb-auth-status" style="font-size:11px;color:var(--muted);"></span>
+      </div>
+    </div>
   </div>
   <div class="card"><div class="sec-label">Danger zone</div><button class="btn btn-red" style="width:100%;" onclick="clearAll()">Clear all game data</button></div>
 </div>
@@ -985,13 +994,51 @@ function allTeamKeys(){
   const all=new Set([primary,...aliases]);
   return Array.from(all);
 }
+// -- CLOUD AUTH (required for writes under RLS) --------------------
+function sbSession(){try{return JSON.parse(localStorage.getItem('courttrack_sb_session')||'null');}catch(e){return null;}}
+function sbSetSession(s){if(s)localStorage.setItem('courttrack_sb_session',JSON.stringify(s));else localStorage.removeItem('courttrack_sb_session');}
+async function sbSignIn(email,password){
+  try{
+    const res=await fetch(sbUrl()+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':sbKey(),'Content-Type':'application/json'},body:JSON.stringify({email:email,password:password})});
+    const j=await res.json();
+    if(!res.ok||!j.access_token){showToast('⚠ Sign-in failed: '+(j.error_description||j.msg||res.status));return false;}
+    sbSetSession({at:j.access_token,rt:j.refresh_token,exp:Date.now()+((j.expires_in||3600)-120)*1000,email:email});
+    showToast('✓ Signed in — cloud writes enabled');return true;
+  }catch(e){showToast('⚠ Sign-in failed: network error');return false;}
+}
+async function sbRefreshToken(){
+  const s=sbSession();if(!s||!s.rt)return null;
+  try{
+    const res=await fetch(sbUrl()+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':sbKey(),'Content-Type':'application/json'},body:JSON.stringify({refresh_token:s.rt})});
+    const j=await res.json();
+    if(!res.ok||!j.access_token){sbSetSession(null);return null;}
+    sbSetSession({at:j.access_token,rt:j.refresh_token,exp:Date.now()+((j.expires_in||3600)-120)*1000,email:s.email});
+    return j.access_token;
+  }catch(e){return null;}
+}
+async function sbToken(){
+  const s=sbSession();if(!s)return null;
+  if(Date.now()<s.exp)return s.at;
+  return await sbRefreshToken();
+}
+function sbSignOut(){sbSetSession(null);showToast('Signed out of cloud sync');}
+function sbAuthed(){return !!sbSession();}
 async function sbFetch(path,options={}){
   if(!sbOk())return null;
-  const res=await fetch(sbUrl()+'/rest/v1/'+path,{
+  let tok=await sbToken();
+  const doFetch=function(t){return fetch(sbUrl()+'/rest/v1/'+path,{
     ...options,
-    headers:{'apikey':sbKey(),'Authorization':'Bearer '+sbKey(),'Content-Type':'application/json',...(options.prefer?{'Prefer':options.prefer}:{}),...(options.headers||{})}
-  });
-  if(!res.ok){const t=await res.text();console.error('SB error:',res.status,t);showToast('⚠ Cloud error: '+res.status);return null;}
+    headers:{'apikey':sbKey(),'Authorization':'Bearer '+(t||sbKey()),'Content-Type':'application/json',...(options.prefer?{'Prefer':options.prefer}:{}),...(options.headers||{})}
+  });};
+  let res=await doFetch(tok);
+  if(res.status===401&&tok){tok=await sbRefreshToken();if(tok)res=await doFetch(tok);}
+  if(!res.ok){
+    const t=await res.text();console.error('SB error:',res.status,t);
+    const isWrite=options.method&&options.method!=='GET';
+    if(isWrite&&(res.status===401||res.status===403)){showToast('⚠ Cloud save blocked — sign in via Settings → Squad');}
+    else{showToast('⚠ Cloud error: '+res.status);}
+    return null;
+  }
   const text=await res.text();return text?JSON.parse(text):null;
 }
 async function sbSaveGame(game){
@@ -3546,7 +3593,7 @@ function showScreen(name,el){
   if(name==='pregame'){renderStarterGrid();renderOppPreRoster();}
   if(name==='game'){renderPeriodBar(state.currentGame);renderStatus();renderTimer();applyFilmedUI(state.currentGame?state.currentGame.filmed:isFilmed);setGameTab(currentGameTab);}
   if(name==='season')renderSeason();
-  if(name==='squad'){renderSetup();document.getElementById('settings-club').value=state.config.clubName||'';document.getElementById('settings-team').value=state.config.teamName||'';document.getElementById('settings-season').value=state.config.season||'';document.getElementById('settings-sb-url').value=state.config.sbUrl||'';document.getElementById('settings-sb-key').value=state.config.sbKey||'';}
+  if(name==='squad'){renderSetup();document.getElementById('settings-club').value=state.config.clubName||'';document.getElementById('settings-team').value=state.config.teamName||'';document.getElementById('settings-season').value=state.config.season||'';document.getElementById('settings-sb-url').value=state.config.sbUrl||'';document.getElementById('settings-sb-key').value=state.config.sbKey||'';updateAuthStatus();}
   if(name==='timeline'){populateTlSelector();renderTimeline();}
   if(name==='shots'){populateScGameSel();populateImportGameSel();checkPendingShots();renderShotChart();}
   requestWakeLock();
@@ -3675,9 +3722,6 @@ applyTheme();
     history.replaceState(null,'',window.location.pathname);
   }catch(e){}
 })();
-load();
-setTimeout(autoSyncOnLoad, 800); // auto-sync after state is ready
-// -- PRE-SEEDED TEAM CONFIG (build-injected) --
 /* BUILD:PRESEED_BLOCK */ (function preseed(){
   /* BUILD:PRESEED_KEY */ var KEY = 'courttrack_eltham122';
   try {
@@ -3713,7 +3757,38 @@ setTimeout(autoSyncOnLoad, 800); // auto-sync after state is ready
     }
   } catch(e) { console.warn('Pre-seed failed', e); }
 })();
+load();
+
+setTimeout(autoSyncOnLoad, 800); // auto-sync after state is ready
+// -- PRE-SEEDED TEAM CONFIG (build-injected) --
+
 setGameType('vjbl');updateVjblLabel();
+
+async function settingsSignIn(){
+  const e=(document.getElementById('settings-sb-email').value||'').trim();
+  const p=document.getElementById('settings-sb-pass').value||'';
+  if(!e||!p){showToast('Enter email and password');return;}
+  if(await sbSignIn(e,p)){updateAuthStatus();document.getElementById('settings-sb-pass').value='';}
+}
+function updateAuthStatus(){
+  const el=document.getElementById('sb-auth-status');if(!el)return;
+  const s=sbSession();
+  el.textContent=s?('Signed in as '+(s.email||'coach')+' — writes enabled'):'Not signed in — cloud saves are blocked';
+  el.style.color=s?'#1a9e72':'#d9413f';
+}
+
+// -- ONE-TAP LOAD for this team's dedicated deployment --
+const PRESEED_SB_URL='https://uenxuzczcwtmiuzbnoxk.supabase.co';
+const PRESEED_SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVlbnh1emN6Y3d0bWl1emJub3hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTkwMzUsImV4cCI6MjA5OTI5NTAzNX0.rsSJOZDPI7gBw6FeC7WPLwUeIZue2OD8yy8pZvz6xdY';
+function quickLoadTeam(){
+  const urlEl=document.getElementById('ob-join-url');
+  const keyEl=document.getElementById('ob-join-key');
+  if(urlEl)urlEl.value=(state.config&&state.config.sbUrl)||PRESEED_SB_URL;
+  if(keyEl)keyEl.value=(state.config&&state.config.sbKey)||PRESEED_SB_KEY;
+  const status=document.getElementById('ob-quickload-status');
+  if(status)status.textContent='Connecting to cloud...';
+  joinExistingTeam();
+}
 </script>
 </body>
 </html>
