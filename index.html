@@ -3666,7 +3666,7 @@ function reopenGameForOpp(idx){
   if(!cg.oppStints)cg.oppStints={};if(!cg.oppMinutes)cg.oppMinutes={};if(!cg.oppStats)cg.oppStats={};
   cg.oppRoster.forEach(function(p){cg.oppMinutes[p.id]=0;cg.oppStats[p.id]=emptyOppPlayerStats();});
   state.players.forEach(function(p){cg.minutes[p.id]=g.summary?g.summary.minutes[p.id]||0:cg.minutes[p.id]||0;if(!cg.stats[p.id])cg.stats[p.id]=emptyStats();if(g.summary&&g.summary.stats&&g.summary.stats[p.id])cg.stats[p.id]=Object.assign({},g.summary.stats[p.id]);});
-  cg.scoreAway=0;cg.onCourt=[];cg.stints={};
+  cg.scoreAway=g.scoreAway||0;cg.onCourt=[];cg.stints={};
   state.currentGame=cg;isFilmed=true;
   cg._uiTab='opp';cg._reopenIdx=idx;
   cg.actionLog=[];cg.oppScoreLog=[];cg.oppActionLog=[];cg.oppStatLog=[];
