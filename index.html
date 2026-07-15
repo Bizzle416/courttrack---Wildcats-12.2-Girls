@@ -403,6 +403,13 @@ table.stbl td:first-child{text-align:left;font-weight:500;}
         <button class="game-type-btn active" id="filmed-no" onclick="setFilmed(false)"><div class="gt-title">No</div><div class="gt-sub">Score + rebounds only</div></button>
       </div>
     </div>
+    <div class="field">
+      <div class="field-label">Shot clock? <span style="font-weight:400;font-size:11px;color:var(--muted);">per VJBL timing rules</span></div>
+      <div class="game-type-row">
+        <button class="game-type-btn" id="sc-yes" onclick="setShotClock(true)"><div class="gt-title">⏱ Yes</div><div class="gt-sub">24 sec in play</div></button>
+        <button class="game-type-btn active" id="sc-no" onclick="setShotClock(false)"><div class="gt-title">No</div><div class="gt-sub">Not in play</div></button>
+      </div>
+    </div>
   </div>
   <div class="card">
     <div class="sec-label">Starting 5</div>
@@ -1092,6 +1099,7 @@ let shotCache={};
 let scSelectedPlayer='all',scShotFilter='all',scSelectedPeriod='all';
 let currentGameType='vjbl',currentSeasonView='results',currentStatsView='total',currentMinsFilter='all';
 /* BUILD:DEFAULT_PERIOD_MINS */ const DEFAULT_PERIOD_MINS=10; // BUILD-INJECTED per team
+/* BUILD:DEFAULT_SHOT_CLOCK */ const DEFAULT_SHOT_CLOCK=false; // false = no shot clock (U12 competition)
 const Q_SECS_REP=DEFAULT_PERIOD_MINS*60;
 
 const TL_ICONS={pts_1:'🎯',pts_2:'🏀',pts_3:'🔥',opp_pts:'⚡',opp_pts_1:'🎯',opp_pts_2:'🏀',opp_pts_3:'🔥',sub_on:'⬆️',sub_off:'⬇️',opp_sub_on:'⬆️',opp_sub_off:'⬇️',timeout:'🟢',opp_timeout:'🔴',fga:'❌',fga3:'❌',ft_miss:'✕',opp_ft_miss:'✕',ast:'👐',opp_ast:'👐',reb:'💪',oreb:'💪',dreb:'💪',opp_oreb:'💪',opp_dreb:'💪',stl:'✋',opp_stl:'✋',blk:'🚫',opp_blk:'🚫',tov:'🔄',opp_tov:'🔄',foul:'🟡',opp_foul:'🟡',opp_fga:'❌',opp_fga3:'❌',qend:'🔔',start:'🏁',unk_made:'🏀',unk_miss:'❓',opp_unk_made:'🏀',opp_unk_miss:'❓',team_tov:'🔄',opp_team_tov:'🔄',viol:'⚠️',opp_viol:'⚠️'};
@@ -1360,7 +1368,7 @@ function showApp(){
   document.getElementById('settings-sb-key').value=state.config.sbKey||'';
   document.getElementById('g-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('g-time').value='18:00';
-  renderStarterGrid();renderOppPreRoster();setGameType(currentGameType||'vjbl');
+  renderStarterGrid();renderOppPreRoster();setGameType(currentGameType||'vjbl');setShotClock(isShotClock);
   if(state.currentGame){
     currentGameType=state.currentGame.gameType||'vjbl';
     // Restore undo logs from persisted game state
@@ -1941,7 +1949,7 @@ function startGame(){
   const round=document.getElementById('g-round').value.trim(),opp=document.getElementById('g-opp').value.trim();
   const venue=document.getElementById('g-venue').value.trim(),gameType=currentGameType,periodSecs=getQSecs();
   const starters=Array.from(pendingStarters);
-  state.currentGame={id:Date.now(),date:fmtDate(date),time:fmtTime(time),round,opponent:opp||'Unknown',venue,gameType,periodSecs,filmed:isFilmed,quarter:1,running:false,ended:false,teamTov:0,oppTeamTov:0,timeout:false,timeoutTeam:'',elapsed:0,lastTick:Date.now(),qRemaining:periodSecs,onCourt:[...starters],stints:{},minutes:{},stats:{},scoreHome:0,scoreAway:0,timeline:[],oppRoster:isFilmed?[...pendingOppRoster]:[],oppOnCourt:[],oppStints:{},oppMinutes:{},oppStats:{},oppAggregate:{oreb:0,dreb:0}};
+  state.currentGame={id:Date.now(),date:fmtDate(date),time:fmtTime(time),round,opponent:opp||'Unknown',venue,gameType,periodSecs,filmed:isFilmed,hasShotClock:isShotClock,quarter:1,running:false,ended:false,teamTov:0,oppTeamTov:0,timeout:false,timeoutTeam:'',elapsed:0,lastTick:Date.now(),qRemaining:periodSecs,onCourt:[...starters],stints:{},minutes:{},stats:{},scoreHome:0,scoreAway:0,timeline:[],oppRoster:isFilmed?[...pendingOppRoster]:[],oppOnCourt:[],oppStints:{},oppMinutes:{},oppStats:{},oppAggregate:{oreb:0,dreb:0}};
   pendingOppRoster.forEach(p=>{state.currentGame.oppMinutes[p.id]=0;state.currentGame.oppStats[p.id]=emptyOppPlayerStats();});
   if(pendingOppStarters.size>0){const _oppNow=Date.now();pendingOppStarters.forEach(pid=>{if(state.currentGame.oppRoster.find(p=>p.id===pid)){state.currentGame.oppOnCourt.push(pid);if(state.currentGame.filmed)state.currentGame.oppStints[pid]=_oppNow;}});}
   state.players.forEach(p=>{state.currentGame.minutes[p.id]=0;state.currentGame.stats[p.id]=emptyStats();});
@@ -2048,7 +2056,7 @@ function endGame(){
   if(cg.oppRoster)cg.oppRoster.forEach(p=>{oppSum.minutes[p.id]=cg.oppMinutes[p.id]||0;oppSum.stats[p.id]={...cg.oppStats[p.id]};});
   cg.oppSummary=oppSum;
   const saved={...cg};state.games.push(saved);state.games.sort((a,b)=>parseDateStr(b.date)-parseDateStr(a.date));
-  state.currentGame=null;actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];selectedPid=null;selectedOppPid=null;pendingShotHome=null;pendingShotOpp=null;pendingStarters=new Set();pendingOppRoster=[];pendingOppStarters=new Set();currentGameTab='home';isFilmed=false;
+  state.currentGame=null;actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];selectedPid=null;selectedOppPid=null;pendingShotHome=null;pendingShotOpp=null;pendingStarters=new Set();pendingOppRoster=[];pendingOppStarters=new Set();currentGameTab='home';isFilmed=false;isShotClock=DEFAULT_SHOT_CLOCK;
   save();render();renderStarterGrid();renderOppPreRoster();showScreen('season',document.getElementById('tab-btn-season'));
   if(sbOk())syncGameToCloud(saved);
 }
@@ -3614,6 +3622,7 @@ function applyTheme(){const s=localStorage.getItem('ct_theme');if(s==='dark'){do
 
 // ── FILMING FLAG ──────────────────────────────────────
 let isFilmed=false;
+let isShotClock=DEFAULT_SHOT_CLOCK;
 let reopenIdx=null;
 let oppStatLog=[];
 
@@ -3623,6 +3632,12 @@ function setFilmed(val){
   if(yb)yb.classList.toggle('active',val);
   if(nb)nb.classList.toggle('active',!val);
   const rc=document.getElementById('opp-roster-card');if(rc)rc.style.display=val?'block':'none';
+}
+function setShotClock(val){
+  isShotClock=val;
+  const yb=document.getElementById('sc-yes'),nb=document.getElementById('sc-no');
+  if(yb)yb.classList.toggle('active',val);
+  if(nb)nb.classList.toggle('active',!val);
 }
 function applyFilmedUI(filmed){
   const grid=document.getElementById('dual-grid');
@@ -3696,7 +3711,7 @@ function endReopenSession(){
   const rb=document.getElementById('reopen-banner');if(rb)rb.style.display='none';
   state.currentGame=null;actionLog=[];oppScoreLog=[];oppActionLog=[];oppStatLog=[];
   selectedPid=null;selectedOppPid=null;pendingShotHome=null;pendingShotOpp=null;pendingStarters=new Set();pendingOppRoster=[];pendingOppStarters=new Set();
-  currentGameTab='home';reopenIdx=null;isFilmed=false;
+  currentGameTab='home';reopenIdx=null;isFilmed=false;isShotClock=DEFAULT_SHOT_CLOCK;
   save();render();renderStarterGrid();renderOppPreRoster();
   showScreen('season',document.getElementById('tab-btn-season'));
   if(sbOk())syncGameToCloud(saved);
